@@ -1,3 +1,11 @@
 *
-!.gitignore
-!*.py
+*/
+!src/
+!include/
+!**/.gitignore
+!**/*.py
+!Makefile
+!**/*.cu
+!**/*.cuh
+!**/*.cpp
+!**/*.h
