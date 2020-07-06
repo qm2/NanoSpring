@@ -7,21 +7,23 @@ NanoporeReads::NanoporeReads(char *fileName, int k, int n) : k(k), n(n), sketche
     while (std::getline(infile, line)) {
 //        std::cout << line << std::endl;
         size_t index = line.find(':');
-        this->readPos.push_back(std::stol(line.substr(0, index)));
+        readPos.push_back(std::stol(line.substr(0, index)));
         {
             std::unique_ptr<std::string> ptr(new std::string(line.substr(index + 1)));
-            this->editStrings.push_back(std::move(ptr));
+            editStrings.push_back(std::move(ptr));
         }
-//        std::cout << this->readPos.back() << std::endl;
-//        std::cout << this->editStrings.back() << std::endl;
+//        std::cout << readPos.back() << std::endl;
+//        std::cout << editStrings.back() << std::endl;
         std::getline(infile, line);
         {
             std::unique_ptr<std::string> ptr(new std::string(line));
-            this->readData.push_back(std::move(ptr));
+            readData.push_back(std::move(ptr));
         }
         numReads++;
     }
-    this->readLen = this->readData[0]->length();
+    readLen = readData[0]->length();
+    readPosSorted = readPos;
+    std::sort(readPosSorted.begin(), readPosSorted.end());
     std::cout << "numReads " << numReads << std::endl;
     std::cout << "readLen " << readLen << std::endl;
 }
@@ -29,7 +31,7 @@ NanoporeReads::NanoporeReads(char *fileName, int k, int n) : k(k), n(n), sketche
 void NanoporeReads::calculateMinHashSketches() {
     // We store all the k-mers as uint64s. This would work for all k<=32,
     // which is definitely sufficient
-    const size_t numKMers = this->readLen - this->k + 1;
+    const size_t numKMers = readLen - k + 1;
     kMer_t *kMers;
     // Because of memory constraints on the GPUs we cannot deal with all the reads at once.
     // So we arrange the reads into blocks of blockSize reads and only work on a single block
@@ -37,7 +39,7 @@ void NanoporeReads::calculateMinHashSketches() {
     const size_t blockSize = 2048;
     std::cout << "numKMers " << numKMers << std::endl;
 
-    cudaMallocManaged(&(this->sketches), this->n * this->numReads * sizeof(kMer_t));
+    cudaMallocManaged(&(sketches), n * numReads * sizeof(kMer_t));
 
     std::random_device rd;
     std::mt19937_64 gen(rd());
@@ -46,12 +48,12 @@ void NanoporeReads::calculateMinHashSketches() {
     std::uniform_int_distribution<unsigned long long> dis;
 
     kMer_t *randNumbers;
-    cudaMallocManaged(&randNumbers, this->n * sizeof(kMer_t));
-    for (size_t i = 0; i < this->n; ++i) {
+    cudaMallocManaged(&randNumbers, n * sizeof(kMer_t));
+    for (size_t i = 0; i < n; ++i) {
         randNumbers[i] = dis(gen);
     }
 
-    for (size_t currentRead = 0; currentRead < this->numReads; currentRead += blockSize) {
+    for (size_t currentRead = 0; currentRead < numReads; currentRead += blockSize) {
         std::cout << "CurrentRead " << currentRead << std::endl;
         const long readsLeft = numReads - (long) currentRead;
         const size_t currentBlockSize = readsLeft > blockSize ? blockSize : readsLeft;
@@ -65,7 +67,7 @@ void NanoporeReads::calculateMinHashSketches() {
                 for (size_t index = baseIndex; index < numKMers + baseIndex; index++) {
                     kMers[index] =
                             kMerToInt(readData[i + currentRead]->substr(
-                                    index - baseIndex, this->k));
+                                    index - baseIndex, k));
                 }
             }
         };
@@ -79,12 +81,12 @@ void NanoporeReads::calculateMinHashSketches() {
         // Now we generate all hashes
         // hashes is indexed by (read number, k-mer number, hash number)
         kMer_t *hashes;
-        cudaMallocManaged(&hashes, this->n * currentBlockSize * numKMers * sizeof(kMer_t));
+        cudaMallocManaged(&hashes, n * currentBlockSize * numKMers * sizeof(kMer_t));
 
         const size_t blockSize = 512;
         const size_t numBlocks = 512;
         hashKMer <<< numBlocks, blockSize >>>(currentBlockSize * numKMers,
-                                              this->n, kMers, hashes, randNumbers);
+                                              n, kMers, hashes, randNumbers);
         // Finish calculating the hashes and frees unneeded memory
         cudaDeviceSynchronize();
 
@@ -97,8 +99,8 @@ void NanoporeReads::calculateMinHashSketches() {
         <<< (currentBlockSize + blockSize - 1)
         / blockSize, blockSize >>>(currentBlockSize,
                                    currentRead, numKMers,
-                                   this->n, hashes,
-                                   this->sketches, kMers);
+                                   n, hashes,
+                                   sketches, kMers);
         cudaDeviceSynchronize();
         cudaFree(kMers);
         cudaFree(hashes);
@@ -185,14 +187,14 @@ __global__ void calcSketch(const size_t numReads, const size_t currentRead,
 }
 
 NanoporeReads::~NanoporeReads() {
-    cudaFree(this->sketches);
+    cudaFree(sketches);
 }
 
 void NanoporeReads::printHashes() {
-    for (size_t i = 0; i < this->numReads; ++i) {
-        std::cout << this->readPos[i];
-        for (size_t j = 0; j < this->n; ++j) {
-            std::cout << ", \"" << this->sketches[i * this->n + j] << "\"";
+    for (size_t i = 0; i < numReads; ++i) {
+        std::cout << readPos[i];
+        for (size_t j = 0; j < n; ++j) {
+            std::cout << ", \"" << sketches[i * n + j] << "\"";
         }
         std::cout << std::endl;
     }
@@ -201,26 +203,98 @@ void NanoporeReads::printHashes() {
 void NanoporeReads::populateHashTables() {
     std::cout << "Starting to populate hash tables" << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
-    for (size_t i = 0; i < this->n; ++i) {
-        this->hashTables.push_back(std::map<kMer_t, std::vector<size_t>>());
+    for (size_t i = 0; i < n; ++i) {
+        hashTables.push_back(std::map<kMer_t, std::vector<size_t >>());
     }
-#pragma omp parallel for
-    for (size_t i = 0; i < this->n; ++i) {
-        std::map<kMer_t, std::vector<size_t>> &hT = this->hashTables[i];
+//#pragma omp parallel for
+    for (size_t i = 0; i < n; ++i) {
+        std::map<kMer_t, std::vector<size_t>> &hT = hashTables[i];
         size_t currentIndex = i;
-        for (size_t j = 0; j < this->numReads; ++j) {
-            currentIndex += this->n;
-            try {
-                hT[this->sketches[currentIndex]].push_back(j);
-            } catch (std::out_of_range) {
-                std::vector<size_t> v;
-                hT[this->sketches[currentIndex]] = v;
-                v.push_back(j);
-            }
+        for (size_t j = 0; j < numReads; ++j) {
+            hT[sketches[currentIndex]].push_back(j);
+//            std::cout << "Inserting " << j << " to " << sketches[currentIndex] << std::endl;
+            currentIndex += n;
         }
     }
+
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     std::cout << "finished populating hash tables" << std::endl;
     std::cout << duration.count() << " milliseconds passed" << std::endl;
+}
+
+filterStats NanoporeReads::getFilterStats(unsigned int overlapBaseThreshold, unsigned int overlapSketchThreshold) {
+    filterStats result(overlapBaseThreshold, overlapSketchThreshold);
+    // First we calculate the number of overlaps and disjoints
+    for (size_t i = 0; i < numReads; ++i) {
+        long curTh = readPosSorted[i] + readLen - overlapBaseThreshold;
+        for (size_t j = i + 1; j < numReads; ++j) {
+            if (((long) readPosSorted[j]) <= curTh)
+                result.numOverlaps++;
+            else
+                break;
+        }
+    }
+    result.numDisjoint = (numReads * (unsigned long long) (numReads - 1)) / 2 - result.numOverlaps;
+
+    // Now we calculate falsePositives, falseNegatives, etc
+    for (size_t i = 0; i < numReads; ++i) {
+        std::multiset<size_t> matches;
+        unsigned long curPos = readPos[i];
+        long th = readLen - overlapBaseThreshold;
+        for (size_t sketchIndex = 0; sketchIndex < n; ++sketchIndex) {
+            kMer_t curHash = sketches[i * n + sketchIndex];
+//            std::cout << i << " " << sketchIndex << " " << curHash << std::endl;
+//            auto currentMap = hashTables[sketchIndex];
+//            for (auto p : currentMap) {
+//                std::cout << p.first << " ";
+//            }
+//            std::cout << std::endl;
+            std::vector<size_t> &m = hashTables[sketchIndex].at(curHash);
+            matches.insert(m.begin(), m.end());
+        }
+        auto end = matches.end();
+        for (auto it = matches.begin(); it != end; it = matches.upper_bound(*it)) {
+            if (*it <= i)
+                continue;
+            unsigned long pos = readPos[*it];
+            if (matches.count(*it) >= overlapSketchThreshold) {
+                if (abs((long) pos - (long) curPos) > th)
+                    result.falsePositives++;
+                result.totalPositive++;
+            }
+        }
+//        std::cout << std::endl;
+    }
+
+    result.totalNegative = result.numOverlaps + result.numDisjoint - result.totalPositive;
+    result.falseNegatives = result.numOverlaps - result.totalPositive + result.falsePositives;
+    return result;
+}
+
+filterStats::filterStats(unsigned int overlapBaseThreshold, unsigned int overlapSketchThreshold) :
+        overlapBaseThreshold(overlapBaseThreshold), overlapSketchThreshold(overlapSketchThreshold),
+        totalPositive(0), totalNegative(0), numOverlaps(0), numDisjoint(0),
+        falsePositives(0), falseNegatives(0) {
+}
+
+std::ostream &operator<<(std::ostream &out, const filterStats &o) {
+    const int w = 13;
+    out << std::setw(w) << "overlapBaseTh" << ","
+        << std::setw(w) << "numKMerTh" << ","
+        << std::setw(w) << "totalPos" << ","
+        << std::setw(w) << "totalNeg" << ","
+        << std::setw(w) << "numOverlaps" << ","
+        << std::setw(w) << "numDisjoint" << ","
+        << std::setw(w) << "falsePos" << ","
+        << std::setw(w) << "falseNeg" << std::endl;
+    out << std::setw(w) << o.overlapBaseThreshold << ","
+        << std::setw(w) << o.overlapSketchThreshold << ","
+        << std::setw(w) << o.totalPositive << ","
+        << std::setw(w) << o.totalNegative << ","
+        << std::setw(w) << o.numOverlaps << ","
+        << std::setw(w) << o.numDisjoint << ","
+        << std::setw(w) << o.falsePositives << ","
+        << std::setw(w) << o.falseNegatives << std::endl;
+    return out;
 }

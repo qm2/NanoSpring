@@ -74,7 +74,10 @@ $(OBJ_DIR)/%.o : $(SRC_DIR)/%.cpp include/%.h
 	$(CC) $(CC_FLAGS) -c $< -o $@
 
 # Compile CUDA source files to object files:
-$(OBJ_DIR)/%.o : $(SRC_DIR)/%.cu $(INC_DIR)/%.cuh
+$(OBJ_DIR)/testMinHash.o: $(SRC_DIR)/testMinHash.cu $(INC_DIR)/testMinHash.cuh $(INC_DIR)/NanoporeReads.cuh
+	$(NVCC) $(NVCC_FLAGS) -c $< -o $@ $(NVCC_LIBS)
+
+$(OBJ_DIR)/NanoporeReads.o : $(SRC_DIR)/NanoporeReads.cu $(INC_DIR)/NanoporeReads.cuh
 	$(NVCC) $(NVCC_FLAGS) -c $< -o $@ $(NVCC_LIBS)
 
 # Clean objects in object directory.

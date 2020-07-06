@@ -12,6 +12,10 @@
 #include <map>
 #include <gperftools/profiler.h>
 #include <chrono>
+#include <iomanip>
+#include <algorithm>
+#include <set>
+#include <cmath>
 
 #define KMER_BITS 64
 #define ROTATE_BITS 13
@@ -19,6 +23,17 @@
 #define HASH_C32 2654435769L
 
 typedef uint64_t kMer_t;
+
+class filterStats {
+public:
+    unsigned int totalPositive, totalNegative, numOverlaps,
+            numDisjoint, falsePositives, falseNegatives;
+    const unsigned int overlapBaseThreshold, overlapSketchThreshold;
+
+    filterStats(unsigned int overlapBaseThreshold, unsigned int overlapSketchThreshold);
+
+    friend std::ostream &operator<<(std::ostream &out, const filterStats &o);
+};
 
 class NanoporeReads {
 public:
@@ -38,6 +53,8 @@ public:
 
     void printHashes();
 
+    filterStats getFilterStats(unsigned int overlapBaseThreshold, unsigned int overlapSketchThreshold);
+
 private:
     const size_t k, n;
     unsigned long numReads;
@@ -46,6 +63,7 @@ private:
 
     std::vector<std::unique_ptr<std::string>> readData;
     std::vector<unsigned long> readPos;
+    std::vector<unsigned long> readPosSorted;
     std::vector<std::unique_ptr<std::string>> editStrings;
 
     /***
@@ -75,6 +93,7 @@ private:
 //    */
 //    static bool base2Bool1(char c);
 };
+
 
 __global__ void hashKMer(const size_t totalKMers, const size_t n,
                          kMer_t *kMers, kMer_t *hashes, kMer_t *randNumbers);
