@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <stdlib.h>
+#include <gperftools/profiler.h>
 #include "NanoporeReads.cuh"
 
 #endif //EXPERIMENTS_TESTMINHASH_H

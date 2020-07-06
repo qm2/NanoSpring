@@ -12,6 +12,7 @@ CUDA_ROOT_DIR=/usr/local/cuda
 # CC compiler options:
 CC=g++
 CC_FLAGS=-fopenmp -g
+CC_LD_FLAGS=
 CC_LIBS=
 
 ##########################################################
@@ -21,6 +22,7 @@ CC_LIBS=
 # NVCC compiler options:
 NVCC=nvcc
 NVCC_FLAGS=-g -Xcompiler -fopenmp
+NVCC_LD_FLAGS=-lprofiler
 NVCC_LIBS=
 
 # CUDA library directory:
@@ -61,7 +63,7 @@ OBJS = $(OBJ_DIR)/main.o $(OBJ_DIR)/cuda_kernel.o
 all: $(EXE)
 
 testMinHash : $(OBJ_DIR)/testMinHash.o $(OBJ_DIR)/NanoporeReads.o
-	$(NVCC) $(NVCC_FLAGS) $^ -o $@
+	$(NVCC) $(NVCC_FLAGS) $(NVCC_LD_FLAGS) $^ -o $@
 
 # Compile main .cpp file to object files:
 $(OBJ_DIR)/%.o : %.cpp

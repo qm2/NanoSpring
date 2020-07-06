@@ -8,14 +8,22 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <random>
+#include <map>
+#include <gperftools/profiler.h>
+#include <chrono>
 
 #define KMER_BITS 64
-#define ROTATE_BITS 1
+#define ROTATE_BITS 13
+#define HASH_C64 11400714819323198485ULL
+#define HASH_C32 2654435769L
 
 typedef uint64_t kMer_t;
 
 class NanoporeReads {
 public:
+    std::vector<std::map<kMer_t, std::vector<size_t>>> hashTables;
+
     /***
      * Initializes from a file of reads with arguments k and n.
      * @param fileName Name of file to read
@@ -36,9 +44,9 @@ private:
     unsigned long readLen;
     kMer_t *sketches;
 
-    std::vector <std::unique_ptr<std::string>> readData;
+    std::vector<std::unique_ptr<std::string>> readData;
     std::vector<unsigned long> readPos;
-    std::vector <std::unique_ptr<std::string>> editStrings;
+    std::vector<std::unique_ptr<std::string>> editStrings;
 
     /***
      * Turns a k-mer in string format to an int
@@ -48,6 +56,8 @@ private:
     static kMer_t kMerToInt(const std::string &s);
 
     static char baseToInt(const char base);
+
+    void populateHashTables();
 
 
 
@@ -67,10 +77,21 @@ private:
 };
 
 __global__ void hashKMer(const size_t totalKMers, const size_t n,
-                         kMer_t *kMers, kMer_t *hashes);
+                         kMer_t *kMers, kMer_t *hashes, kMer_t *randNumbers);
 
+/***
+ * Kernel to calculate the sketch. If kMers is provided then the sequence is stored;
+ * if not, the hash values are stored
+ * @param numReads
+ * @param currentRead
+ * @param numKMers
+ * @param n
+ * @param hashes
+ * @param sketches
+ * @param kMers
+ */
 __global__ void calcSketch(const size_t numReads, const size_t currentRead,
                            const size_t numKMers, const size_t n,
-                           kMer_t *hashes, kMer_t *sketches);
+                           kMer_t *hashes, kMer_t *sketches, kMer_t *kMers);
 
 #endif //EXPERIMENTS_NANOPOREREADS_H

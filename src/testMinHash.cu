@@ -11,10 +11,12 @@ int main(int argc, char **argv) {
         return 1;
     }
     {
+//        ProfilerStart("testMinHash.prof");
         NanoporeReads nanoporeReads(argv[1], atol(argv[2]), atol(argv[3]));
         nanoporeReads.calculateMinHashSketches();
-        nanoporeReads.printHashes();
+//        nanoporeReads.printHashes();
         std::cout << "here" << std::endl;
+//        ProfilerStop();
     }
     std::cout << "there" << std::endl;
 
