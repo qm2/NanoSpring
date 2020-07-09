@@ -26,12 +26,14 @@ int main(int argc, char **argv) {
 //
 //            }
 //        }
-        while (true) {
-            unsigned int overlapBaseTh, overlapSketchTh;
-            std::cin >> overlapBaseTh >> overlapSketchTh;
-            std::cout << nanoporeReads.getFilterStats(overlapBaseTh, overlapSketchTh) << std::endl;
+//        while (true) {
+//            unsigned int overlapBaseTh, overlapSketchTh;
+//            std::cin >> overlapBaseTh >> overlapSketchTh;
+//            std::cout << nanoporeReads.getFilterStats(overlapBaseTh, overlapSketchTh) << std::endl;
+//
+//        }
+//                std::cout << nanoporeReads.getFilterStats(1000, 1) << std::endl;
 
-        }
     }
 
     std::cout << "there" << std::endl;

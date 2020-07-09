@@ -21,6 +21,8 @@
 #define ROTATE_BITS 13
 #define HASH_C64 11400714819323198485ULL
 #define HASH_C32 2654435769L
+#define _GPU
+//#undef _GPU
 
 typedef uint64_t kMer_t;
 
@@ -30,6 +32,7 @@ public:
             numDisjoint, falsePositives, falseNegatives;
     const unsigned int overlapBaseThreshold, overlapSketchThreshold;
 
+
     filterStats(unsigned int overlapBaseThreshold, unsigned int overlapSketchThreshold);
 
     friend std::ostream &operator<<(std::ostream &out, const filterStats &o);
@@ -37,6 +40,13 @@ public:
 
 class NanoporeReads {
 public:
+    std::vector<std::unique_ptr<std::string>> readData;
+    std::vector<unsigned long> readPos;
+    std::vector<unsigned long> readPosSorted;
+    std::vector<std::unique_ptr<std::string>> editStrings;
+    unsigned long numReads;
+    unsigned long readLen;
+
     std::vector<std::map<kMer_t, std::vector<size_t>>> hashTables;
 
     /***
@@ -45,7 +55,7 @@ public:
      * @param k k-mer
      * @param n Size of sketch
      */
-    NanoporeReads(char *fileName, int k, int n);
+    NanoporeReads(const char *fileName, int k, int n);
 
     ~NanoporeReads();
 
@@ -55,23 +65,18 @@ public:
 
     filterStats getFilterStats(unsigned int overlapBaseThreshold, unsigned int overlapSketchThreshold);
 
-private:
-    const size_t k, n;
-    unsigned long numReads;
-    unsigned long readLen;
-    kMer_t *sketches;
-
-    std::vector<std::unique_ptr<std::string>> readData;
-    std::vector<unsigned long> readPos;
-    std::vector<unsigned long> readPosSorted;
-    std::vector<std::unique_ptr<std::string>> editStrings;
-
     /***
      * Turns a k-mer in string format to an int
      * @param s k-mer
      * @return int representing k-mer
      */
     static kMer_t kMerToInt(const std::string &s);
+
+private:
+    const size_t k, n;
+
+    kMer_t *sketches;
+
 
     static char baseToInt(const char base);
 
@@ -94,9 +99,13 @@ private:
 //    static bool base2Bool1(char c);
 };
 
+#ifdef _GPU
 
-__global__ void hashKMer(const size_t totalKMers, const size_t n,
-                         kMer_t *kMers, kMer_t *hashes, kMer_t *randNumbers);
+__global__
+#endif
+
+void hashKMer(const size_t totalKMers, const size_t n,
+              kMer_t *kMers, kMer_t *hashes, kMer_t *randNumbers);
 
 /***
  * Kernel to calculate the sketch. If kMers is provided then the sequence is stored;
@@ -109,8 +118,13 @@ __global__ void hashKMer(const size_t totalKMers, const size_t n,
  * @param sketches
  * @param kMers
  */
-__global__ void calcSketch(const size_t numReads, const size_t currentRead,
-                           const size_t numKMers, const size_t n,
-                           kMer_t *hashes, kMer_t *sketches, kMer_t *kMers);
+#ifdef _GPU
+
+__global__
+#endif
+
+void calcSketch(const size_t numReads, const size_t currentRead,
+                const size_t numKMers, const size_t n,
+                kMer_t *hashes, kMer_t *sketches, kMer_t *kMers);
 
 #endif //EXPERIMENTS_NANOPOREREADS_H

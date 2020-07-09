@@ -1,6 +1,6 @@
 #include "../include/NanoporeReads.cuh"
 
-NanoporeReads::NanoporeReads(char *fileName, int k, int n) : k(k), n(n), sketches(NULL) {
+NanoporeReads::NanoporeReads(const char *fileName, int k, int n) : k(k), n(n), sketches(NULL) {
     std::ifstream infile(fileName);
     std::string line;
     numReads = 0;
@@ -82,19 +82,30 @@ void NanoporeReads::calculateMinHashSketches() {
         // hashes is indexed by (read number, k-mer number, hash number)
         kMer_t *hashes;
         cudaMallocManaged(&hashes, n * currentBlockSize * numKMers * sizeof(kMer_t));
-
+#ifdef _GPU
         const size_t blockSize = 512;
         const size_t numBlocks = 512;
         hashKMer <<< numBlocks, blockSize >>>(currentBlockSize * numKMers,
                                               n, kMers, hashes, randNumbers);
         // Finish calculating the hashes and frees unneeded memory
         cudaDeviceSynchronize();
+#else
+        {
+            auto start = std::chrono::high_resolution_clock::now();
+            hashKMer(currentBlockSize * numKMers, n, kMers, hashes, randNumbers);
+            auto end = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+            std::cout << "finished hashKMer" << std::endl;
+            std::cout << duration.count() << " milliseconds passed" << std::endl;
+        }
+#endif
 
 //        for (size_t i = 0; i < currentBlockSize * numKMers * n; ++i) {
 //            std::cout << i << " " << hashes[i] << std::endl;
 //        }
 
         // Now we are going to compute the sketches which are the minimums of the hashes
+#ifdef _GPU
         calcSketch
         <<< (currentBlockSize + blockSize - 1)
         / blockSize, blockSize >>>(currentBlockSize,
@@ -102,6 +113,17 @@ void NanoporeReads::calculateMinHashSketches() {
                                    n, hashes,
                                    sketches, kMers);
         cudaDeviceSynchronize();
+#else
+        {
+            auto start = std::chrono::high_resolution_clock::now();
+            calcSketch(currentBlockSize, currentRead, numKMers, n, hashes,
+                       sketches, kMers);
+            auto end = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+            std::cout << "finished calcSketch" << std::endl;
+            std::cout << duration.count() << " milliseconds passed" << std::endl;
+        }
+#endif
         cudaFree(kMers);
         cudaFree(hashes);
     }
@@ -119,50 +141,90 @@ kMer_t NanoporeReads::kMerToInt(const std::string &s) {
     return result;
 }
 
+// Using the bit operations version of this function provides a 13X improvement in speed
 char NanoporeReads::baseToInt(const char base) {
-    switch (base) {
-        case 'A':
-            return 0;
-        case 'T':
-            return 1;
-        case 'C':
-            return 2;
-        case 'G':
-            return 3;
-        default:
-            std::cout << "Oh No!" << std::endl;
-            return 0;
-    }
+    return (base & 0b10) | ((base & 0b100) >> 2);
+//    switch (base) {
+//        case 'A':
+//            return 0;
+//        case 'T':
+//            return 1;
+//        case 'C':
+//            return 2;
+//        case 'G':
+//            return 3;
+//        default:
+//            std::cout << "Oh No!" << std::endl;
+//            return 0;
+//    }
 }
 
-__global__ void hashKMer(const size_t totalKMers, const size_t n,
-                         kMer_t *kMers, kMer_t *hashes, kMer_t *randNumbers) {
+#ifdef _GPU
+
+__global__
+#endif
+
+void hashKMer(const size_t totalKMers, const size_t n,
+              kMer_t *kMers, kMer_t
+              *hashes,
+              kMer_t *randNumbers
+) {
+#ifdef _GPU
     size_t index = blockIdx.x * blockDim.x + threadIdx.x;
     size_t stride = blockDim.x * gridDim.x;
-    for (size_t i = index; i < totalKMers; i += stride) {
+#else
+    size_t index = 0;
+    size_t stride = 1;
+#endif
+#ifndef _GPU
+#pragma omp parallel for
+#endif
+    for (
+            size_t i = index;
+            i < totalKMers;
+            i += stride) {
         size_t hashIndex = i * n;
         kMer_t currentHash = kMers[i];
         currentHash = (currentHash * (uint64_t) HASH_C64);
         currentHash ^= randNumbers[0];
-        hashes[hashIndex++] = currentHash;
-        for (size_t j = 1; j < n; j++) {
+        hashes[hashIndex++] =
+                currentHash;
+        for (
+                size_t j = 1;
+                j < n;
+                j++) {
             kMer_t newHash = ((currentHash >> ROTATE_BITS)
                               | (currentHash << (KMER_BITS - ROTATE_BITS)))
                              ^0xABCD32108475AC38;
             newHash = (newHash * (uint64_t) HASH_C64);
             newHash ^= randNumbers[j];
-            newHash += currentHash;
+            newHash +=
+                    currentHash;
             currentHash = newHash;
-            hashes[hashIndex++] = currentHash;
+            hashes[hashIndex++] =
+                    currentHash;
         }
     }
 }
 
-__global__ void calcSketch(const size_t numReads, const size_t currentRead,
-                           const size_t numKMers, const size_t n,
-                           kMer_t *hashes, kMer_t *sketches, kMer_t *kMers) {
+#ifdef _GPU
+
+__global__
+#endif
+
+void calcSketch(const size_t numReads, const size_t currentRead,
+                const size_t numKMers, const size_t n,
+                kMer_t *hashes, kMer_t *sketches, kMer_t *kMers) {
+#ifdef _GPU
     size_t index = blockIdx.x * blockDim.x + threadIdx.x;
     size_t stride = blockDim.x * gridDim.x;
+#else
+    size_t index = 0;
+    size_t stride = 1;
+#endif
+#ifndef _GPU
+#pragma omp parallel for
+#endif
     for (size_t i = index; i < numReads; i += stride) {
         size_t sketchIndex = (i + currentRead) * n;
         for (size_t j = 0; j < n; ++j) {
@@ -174,13 +236,14 @@ __global__ void calcSketch(const size_t numReads, const size_t currentRead,
                 hashIndex += n;
                 minIndex = currentMin < temp ? minIndex : l;
                 currentMin = currentMin < temp ? currentMin : temp;
+//                currentMin = temp ^ ((currentMin ^ temp) & -(currentMin < temp));
             }
             //std::cout << "thread: " << i << " hash id: " << j << std::endl;
             //std::cout << "minIndex " << minIndex << ":" << kMers[i * numKMers + minIndex];
 
-            if (kMers)
+            if (kMers) {
                 sketches[sketchIndex++] = kMers[i * numKMers + minIndex];
-            else
+            } else
                 sketches[sketchIndex++] = currentMin;
         }
     }
