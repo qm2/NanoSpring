@@ -361,3 +361,28 @@ std::ostream &operator<<(std::ostream &out, const filterStats &o) {
         << std::setw(w) << o.falseNegatives << std::endl;
     return out;
 }
+
+MinHashReadFilter::MinHashReadFilter(size_t overlapSketchThreshold, NanoporeReads &nR) :
+        overlapSketchThreshold(overlapSketchThreshold), nR(nR) {
+}
+
+void MinHashReadFilter::getFilteredReads(size_t readToFind, std::vector<size_t> &results) {
+    size_t n = nR.n;
+    auto sketches = nR.sketches;
+    auto hashTables = nR.hashTables;
+    std::multiset<size_t> matches;
+    results.clear();
+    for (size_t sketchIndex = 0; sketchIndex < n; ++sketchIndex) {
+        kMer_t curHash = sketches[readToFind * n + sketchIndex];
+        std::vector<size_t> &m = hashTables[sketchIndex].at(curHash);
+        matches.insert(m.begin(), m.end());
+    }
+    auto end = matches.end();
+    for (auto it = matches.begin(); it != end; it = matches.upper_bound(*it)) {
+        if (*it == readToFind)
+            continue;
+        if (matches.count(*it) >= overlapSketchThreshold) {
+            results.push_back(*it);
+        }
+    }
+}

@@ -36,6 +36,7 @@ void TestAligner::test(const size_t k, const size_t kMerNumTh, const size_t base
     size_t numNegatives = 0;
     size_t falseNegatives = 0;
     size_t trueNegatives = 0;
+    double posError = 0;
     for (size_t i = 0; i < nR.numReads; ++i) {
         if (i == randomReadIndex)
             continue;
@@ -43,10 +44,14 @@ void TestAligner::test(const size_t k, const size_t kMerNumTh, const size_t base
 //            std::cout << i << std::endl;
         ssize_t relPos;
         if (rA->align(randomRead, *nR.readData[i], relPos)) {
+            //std::cout << "Real " << (long) nR.readPos[i] - (long) randomPos
+                      //<< " Predicted " << relPos << std::endl;
+            posError += abs((long) nR.readPos[i] - (long) randomPos
+                    - relPos);
             numPositives++;
             if (abs(randomPos - (long) nR.readPos[i]) > th) {
                 falsePositives++;
-                std::cout << (long) nR.readLen - abs((long) randomPos - (long) nR.readPos[i]) << std::endl;
+                //std::cout << (long) nR.readLen - abs((long) randomPos - (long) nR.readPos[i]) << std::endl;
             } else
                 truePositives++;
         } else {
@@ -56,7 +61,10 @@ void TestAligner::test(const size_t k, const size_t kMerNumTh, const size_t base
             else
                 falseNegatives++;
         }
+
     }
+    posError /= numPositives;
+    std::cout << "Average position error is " << posError << std::endl;
     const int w = 13;
     std::cout << std::setw(w) << "k" << ","
               << std::setw(w) << "kMerNumTh" << ","

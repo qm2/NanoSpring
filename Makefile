@@ -50,7 +50,7 @@ INC_DIR = include
 ## Make variables ##
 
 # Target executable name:
-EXE = testMinHash testAligner
+EXE = testMinHash testAligner testContig
 
 # Object files:
 OBJS = $(OBJ_DIR)/main.o $(OBJ_DIR)/cuda_kernel.o
@@ -66,6 +66,9 @@ testMinHash : $(OBJ_DIR)/testMinHash.o $(OBJ_DIR)/NanoporeReads.o
 	$(NVCC) $(NVCC_FLAGS) $(NVCC_LD_FLAGS) $^ -o $@
 
 testAligner : $(OBJ_DIR)/testAligner.o $(OBJ_DIR)/NanoporeReads.o $(OBJ_DIR)/ReadAligner.o
+	$(NVCC) $(NVCC_FLAGS) $(NVCC_LD_FLAGS) $^ -o $@
+
+testContig : $(OBJ_DIR)/testContigGenerator.o $(OBJ_DIR)/NanoporeReads.o $(OBJ_DIR)/ReadAligner.o $(OBJ_DIR)/Contig.o
 	$(NVCC) $(NVCC_FLAGS) $(NVCC_LD_FLAGS) $^ -o $@
 
 # Compile main .cpp file to object files:
@@ -84,10 +87,16 @@ $(OBJ_DIR)/testAligner.o: $(SRC_DIR)/testAligner.cu $(INC_DIR)/testAligner.cuh $
 $(OBJ_DIR)/testMinHash.o: $(SRC_DIR)/testMinHash.cu $(INC_DIR)/testMinHash.cuh $(INC_DIR)/NanoporeReads.cuh
 	$(NVCC) $(NVCC_FLAGS) -c $< -o $@ $(NVCC_LIBS)
 
+$(OBJ_DIR)/testContigGenerator.o: $(SRC_DIR)/testContigGenerator.cu $(INC_DIR)/testContigGenerator.cuh $(INC_DIR)/NanoporeReads.cuh $(INC_DIR)/ReadAligner.cuh $(INC_DIR)/Contig.cuh
+	$(NVCC) $(NVCC_FLAGS) -c $< -o $@ $(NVCC_LIBS)
+
 $(OBJ_DIR)/NanoporeReads.o : $(SRC_DIR)/NanoporeReads.cu $(INC_DIR)/NanoporeReads.cuh
 	$(NVCC) $(NVCC_FLAGS) -c $< -o $@ $(NVCC_LIBS)
 
 $(OBJ_DIR)/ReadAligner.o : $(SRC_DIR)/ReadAligner.cu $(INC_DIR)/ReadAligner.cuh $(INC_DIR)/NanoporeReads.cuh
+	$(NVCC) $(NVCC_FLAGS) -c $< -o $@ $(NVCC_LIBS)
+
+$(OBJ_DIR)/Contig.o : $(SRC_DIR)/Contig.cu $(INC_DIR)/Contig.cuh $(INC_DIR)/NanoporeReads.cuh $(INC_DIR)/ReadAligner.cuh
 	$(NVCC) $(NVCC_FLAGS) -c $< -o $@ $(NVCC_LIBS)
 
 # Clean objects in object directory.

@@ -46,7 +46,9 @@ public:
     std::vector<std::unique_ptr<std::string>> editStrings;
     unsigned long numReads;
     unsigned long readLen;
+    const size_t k, n;
 
+    kMer_t *sketches;
     std::vector<std::map<kMer_t, std::vector<size_t>>> hashTables;
 
     /***
@@ -73,9 +75,6 @@ public:
     static kMer_t kMerToInt(const std::string &s);
 
 private:
-    const size_t k, n;
-
-    kMer_t *sketches;
 
 
     static char baseToInt(const char base);
@@ -126,5 +125,21 @@ __global__
 void calcSketch(const size_t numReads, const size_t currentRead,
                 const size_t numKMers, const size_t n,
                 kMer_t *hashes, kMer_t *sketches, kMer_t *kMers);
+
+class ReadFilter {
+public:
+    virtual void getFilteredReads(size_t readToFind, std::vector<size_t> &results) = 0;
+};
+
+class MinHashReadFilter : public ReadFilter {
+public:
+    void getFilteredReads(size_t readToFind, std::vector<size_t> &results);
+
+    MinHashReadFilter(size_t overlapSketchThreshold, NanoporeReads &nR);
+
+private:
+    size_t overlapSketchThreshold;
+    NanoporeReads &nR;
+};
 
 #endif //EXPERIMENTS_NANOPOREREADS_H

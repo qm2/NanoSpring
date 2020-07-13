@@ -19,6 +19,7 @@ bool MergeSortReadAligner::align(const std::string &r1, const std::string &r2, s
     auto k2 = v2.begin();
     auto end2 = v2.end();
     size_t numMatching = 0;
+    double sum = 0;
     for (auto k1 = begin1; k1 < end1;) {
         if (k2 >= end2)
             break;
@@ -30,10 +31,13 @@ bool MergeSortReadAligner::align(const std::string &r1, const std::string &r2, s
             k2 = std::upper_bound(k2, end2, *k2);
         else {
             numMatching++;
+            sum += (long) k1->second - (long) k2->second;
             k1 = std::upper_bound(k1, end1, *k1);
             k2 = std::upper_bound(k2, end2, *k2);
         }
     }
+    if (numMatching > 0)
+        relPos = sum / numMatching;
     return numMatching >= kMerNumTh;
 }
 
