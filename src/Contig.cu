@@ -61,7 +61,11 @@ void ContigGenerator::generateContigs() {
             std::cout << l << " reads left to contig" << std::endl;
         }
 
-        while (addRelatedReads(*(currentContig.reads.end()--))) {
+        while (true) {
+            auto lastRead = currentContig.reads.end();
+            lastRead--;
+            if (!addRelatedReads(*lastRead))
+                break;
             size_t l = reads2Contig.size();
             std::cout << l << " reads left to contig" << std::endl;
         }

@@ -7,7 +7,11 @@
 int main(int argc, char **argv) {
     srand(time(NULL));
     ProfilerStart("testAligner.prof");
-    TestAligner ta(std::string("results/test0.reads").c_str());
+    if (argc < 2) {
+        std::cout << "Usage ./testAligner filename" << std::endl;
+        return 1;
+    }
+    TestAligner ta(argv[1]);
     size_t k, kMerNumTh, baseOverlapTh, n;
     while (true) {
         std::cout << "k kMerNumth baseOverlapTh n" << std::endl;
@@ -45,9 +49,9 @@ void TestAligner::test(const size_t k, const size_t kMerNumTh, const size_t base
         ssize_t relPos;
         if (rA->align(randomRead, *nR.readData[i], relPos)) {
             //std::cout << "Real " << (long) nR.readPos[i] - (long) randomPos
-                      //<< " Predicted " << relPos << std::endl;
+            //<< " Predicted " << relPos << std::endl;
             posError += abs((long) nR.readPos[i] - (long) randomPos
-                    - relPos);
+                            - relPos);
             numPositives++;
             if (abs(randomPos - (long) nR.readPos[i]) > th) {
                 falsePositives++;
