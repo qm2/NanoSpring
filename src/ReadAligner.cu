@@ -46,8 +46,12 @@ void MergeSortReadAligner::stringToSortedKMers(const std::string &s, std::vector
     if (maxI <= 0)
         return;
     v.reserve(maxI);
-    for (size_t i = 0; i < maxI; ++i) {
-        v.push_back(std::make_pair(NanoporeReads::kMerToInt(s.substr(i, k)), i));
+    kMer_t currentKMer = NanoporeReads::kMerToInt(s.substr(0, k));
+    v.push_back(std::make_pair(currentKMer, 0));
+    const unsigned long long mask = (1ull << (2 * k)) - 1;
+    for (size_t i = 1; i < maxI; ++i) {
+        currentKMer = ((currentKMer << 2) | NanoporeReads::baseToInt(s[i + k - 1])) & mask;
+        v.push_back(std::make_pair(currentKMer, i));
     }
     std::sort(v.begin(), v.end());
 }

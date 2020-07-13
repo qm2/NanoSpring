@@ -22,7 +22,7 @@
 #define HASH_C64 11400714819323198485ULL
 #define HASH_C32 2654435769L
 #define _GPU
-//#undef _GPU
+#undef _GPU
 
 typedef uint64_t kMer_t;
 
@@ -74,10 +74,10 @@ public:
      */
     static kMer_t kMerToInt(const std::string &s);
 
+    static char baseToInt(const char base);
+
 private:
 
-
-    static char baseToInt(const char base);
 
     void populateHashTables();
 
