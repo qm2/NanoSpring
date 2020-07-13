@@ -11,12 +11,12 @@ int main(int argc, char **argv) {
         return 1;
     }
     {
-//        ProfilerStart("testMinHash.prof");
+        ProfilerStart("testMinHash.prof");
         NanoporeReads nanoporeReads(argv[1], atol(argv[2]), atol(argv[3]));
         nanoporeReads.calculateMinHashSketches();
 //        nanoporeReads.printHashes();
         std::cout << "here" << std::endl;
-//        ProfilerStop();
+        ProfilerStop();
 //        unsigned int overlapBaseThs[] = {10, 20, 50, 100, 500, 1000};
 //        unsigned int overlapBaseThs[] = {500, 1000, 2000, 5000, 8000};
 //        unsigned int overlapSketchThs[] = {1, 2, 3, 4, 5, 6, 7};

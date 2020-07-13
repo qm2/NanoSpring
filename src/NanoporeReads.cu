@@ -36,7 +36,7 @@ void NanoporeReads::calculateMinHashSketches() {
     // Because of memory constraints on the GPUs we cannot deal with all the reads at once.
     // So we arrange the reads into blocks of blockSize reads and only work on a single block
     // at the same time.
-    const size_t blockSize = 2048;
+    const size_t blockSize = 1024;
     std::cout << "numKMers " << numKMers << std::endl;
 
     cudaMallocManaged(&(sketches), n * numReads * sizeof(kMer_t));

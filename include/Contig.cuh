@@ -6,7 +6,10 @@
 #define EXPERIMENTS_CONTIG_CUH
 
 #include <set>
+#include <algorithm>
 #include <unordered_set>
+#include <cmath>
+#include <omp.h>
 #include "ReadAligner.cuh"
 
 // We use the indices of the reads to represent them

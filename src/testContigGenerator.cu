@@ -1,6 +1,7 @@
 #include "../include/testContigGenerator.cuh"
 
 int main(int argc, char **argv) {
+    std::srand(unsigned(std::time(0)));
     ProfilerStart("testContig.prof");
     if (argc < 2) {
         std::cout << "Usage ./testContig filename" << std::endl;
@@ -13,12 +14,24 @@ int main(int argc, char **argv) {
         if (k == 0)
             return 0;
         MergeSortReadAligner rA(21, 10);
-//        MergeSortReadAligner rA(8, 1);
+//        MergeSortReadAligner rA(10, 1);
         NanoporeReads nR(argv[1], k, n);
         MinHashReadFilter rF(overlapSketchThreshold, nR);
-        nR.calculateMinHashSketches();
+        {
+            auto start = std::chrono::high_resolution_clock::now();
+            nR.calculateMinHashSketches();
+            auto end = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+            std::cout << "Calculating MinHashes took " << duration.count() << " milliseconds" << std::endl;
+        }
         ContigGenerator cG(&rA, nR, &rF);
-        cG.generateContigs();
+        {
+            auto start = std::chrono::high_resolution_clock::now();
+            cG.generateContigs();
+            auto end = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+            std::cout << "Generating contigs took " << duration.count() << " milliseconds" << std::endl;
+        }
         std::cout << cG << std::endl;
     }
     ProfilerStop();
