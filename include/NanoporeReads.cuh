@@ -76,35 +76,20 @@ public:
 
     static char baseToInt(const char base);
 
-private:
 
+private:
+    static void hashKMer(const size_t numReads, const size_t numKMers, const size_t n,
+                         kMer_t *kMers, kMer_t *hashes, kMer_t *randNumbers);
+
+    static void calcSketch(const size_t numReads, const size_t currentRead,
+                           const size_t numKMers, const size_t n,
+                           kMer_t *hashes, kMer_t *sketches, kMer_t *kMers);
 
     void populateHashTables();
-
-
-
-//    /**
-//    * Changes "ATCG" into two bools
-//    * @param c Base
-//    * @return First bit in representation (ATCG: 00, 01, 10, 11)
-//    */
-//    static bool base2Bool0(char c);
-//
-//    /**
-//    * Changes "ATCG" into two bools
-//    * @param c Base
-//    * @return Second bit in representation (ATCG: 00, 01, 10, 11)
-//    */
-//    static bool base2Bool1(char c);
 };
 
-#ifdef _GPU
-
-__global__
-#endif
-
-void hashKMer(const size_t totalKMers, const size_t n,
-              kMer_t *kMers, kMer_t *hashes, kMer_t *randNumbers);
+__global__ void hashKMer_GPU(const size_t totalKMers, const size_t n,
+                             kMer_t *kMers, kMer_t *hashes, kMer_t *randNumbers);
 
 /***
  * Kernel to calculate the sketch. If kMers is provided then the sequence is stored;
@@ -117,14 +102,9 @@ void hashKMer(const size_t totalKMers, const size_t n,
  * @param sketches
  * @param kMers
  */
-#ifdef _GPU
-
-__global__
-#endif
-
-void calcSketch(const size_t numReads, const size_t currentRead,
-                const size_t numKMers, const size_t n,
-                kMer_t *hashes, kMer_t *sketches, kMer_t *kMers);
+__global__ void calcSketch_GPU(const size_t numReads, const size_t currentRead,
+                               const size_t numKMers, const size_t n,
+                               kMer_t *hashes, kMer_t *sketches, kMer_t *kMers);
 
 class ReadFilter {
 public:

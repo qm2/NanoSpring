@@ -51,7 +51,7 @@ private:
     std::unordered_map<read_t, std::pair<Contig *, long>> readsInContig;
     std::unordered_set<read_t> reads2Contig;
 
-    bool addRelatedReads(std::pair<long, read_t> r);
+    bool addRelatedReads(const std::pair<long, read_t> r);
 
     /***
      * Merges the second contig into the first one

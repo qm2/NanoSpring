@@ -85,14 +85,14 @@ void NanoporeReads::calculateMinHashSketches() {
 #ifdef _GPU
         const size_t blockSize = 512;
         const size_t numBlocks = 512;
-        hashKMer <<< numBlocks, blockSize >>>(currentBlockSize * numKMers,
+        hashKMer_GPU <<< numBlocks, blockSize >>>(currentBlockSize * numKMers,
                                               n, kMers, hashes, randNumbers);
         // Finish calculating the hashes and frees unneeded memory
         cudaDeviceSynchronize();
 #else
         {
             auto start = std::chrono::high_resolution_clock::now();
-            hashKMer(currentBlockSize * numKMers, n, kMers, hashes, randNumbers);
+            hashKMer(currentBlockSize, numKMers, n, kMers, hashes, randNumbers);
             auto end = std::chrono::high_resolution_clock::now();
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
             std::cout << "finished hashKMer" << std::endl;
@@ -106,7 +106,7 @@ void NanoporeReads::calculateMinHashSketches() {
 
         // Now we are going to compute the sketches which are the minimums of the hashes
 #ifdef _GPU
-        calcSketch
+        calcSketch_GPU
         <<< (currentBlockSize + blockSize - 1)
         / blockSize, blockSize >>>(currentBlockSize,
                                    currentRead, numKMers,
@@ -159,26 +159,38 @@ char NanoporeReads::baseToInt(const char base) {
 //    }
 }
 
-#ifdef _GPU
+void
+NanoporeReads::hashKMer(const size_t numReads, const size_t numKMers, const size_t n, kMer_t *kMers, kMer_t *hashes,
+                        kMer_t *randNumbers) {
+#pragma omp parallel for
+    for (size_t i = 0; i < numReads; i += 1) {
+//#pragma omp parallel for
+        for (size_t j = 0; j < numKMers; j += 1) {
+            size_t hashIndex = i * n * numKMers + j * n;
+            kMer_t currentHash = kMers[i * numKMers + j];
+            currentHash = (currentHash * (uint64_t) HASH_C64);
+            currentHash ^= randNumbers[0];
+            hashes[hashIndex] = currentHash;
+            for (size_t l = 1; l < n; l++) {
+                kMer_t newHash = ((currentHash >> ROTATE_BITS)
+                                  | (currentHash << (KMER_BITS - ROTATE_BITS)))
+                                 ^0xABCD32108475AC38;
+                newHash = (newHash * (uint64_t) HASH_C64);
+                newHash ^= randNumbers[l];
+                newHash += currentHash;
+                currentHash = newHash;
+                hashes[hashIndex + l] = currentHash;
+            }
+        }
+    }
+}
 
-__global__
-#endif
-
-void hashKMer(const size_t totalKMers, const size_t n,
-              kMer_t *kMers, kMer_t
-              *hashes,
-              kMer_t *randNumbers
-) {
-#ifdef _GPU
+__global__ void hashKMer_GPU(const size_t totalKMers, const size_t n,
+                             kMer_t *kMers, kMer_t
+                             *hashes,
+                             kMer_t *randNumbers) {
     size_t index = blockIdx.x * blockDim.x + threadIdx.x;
     size_t stride = blockDim.x * gridDim.x;
-#else
-    size_t index = 0;
-    size_t stride = 1;
-#endif
-#ifndef _GPU
-#pragma omp parallel for
-#endif
     for (
             size_t i = index;
             i < totalKMers;
@@ -198,8 +210,7 @@ void hashKMer(const size_t totalKMers, const size_t n,
                              ^0xABCD32108475AC38;
             newHash = (newHash * (uint64_t) HASH_C64);
             newHash ^= randNumbers[j];
-            newHash +=
-                    currentHash;
+            newHash += currentHash;
             currentHash = newHash;
             hashes[hashIndex++] =
                     currentHash;
@@ -207,24 +218,39 @@ void hashKMer(const size_t totalKMers, const size_t n,
     }
 }
 
-#ifdef _GPU
+void NanoporeReads::calcSketch(const size_t numReads, const size_t currentRead,
+                               const size_t numKMers, const size_t n,
+                               kMer_t *hashes, kMer_t *sketches, kMer_t *kMers) {
+//#pragma omp parallel for
+    for (size_t i = 0; i < numReads; i++) {
+        size_t sketchIndex = (i + currentRead) * n;
+#pragma omp parallel for
+        for (size_t j = 0; j < n; ++j) {
+            size_t hashIndex = i * n * numKMers + j;
+            kMer_t currentMin = ~(kMer_t) 0;
+//            size_t minIndex = 0;
+//#pragma omp parallel for reduction(min:currentMin)
+            for (size_t l = 0; l < numKMers * n; l += n) {
+//                kMer_t temp = hashes[hashIndex];
+//                hashIndex += n;
+                kMer_t temp = hashes[hashIndex + l];
+//                minIndex = currentMin < temp ? minIndex : l;
+                currentMin = currentMin < temp ? currentMin : temp;
+            }
+//            if (kMers) {
+//                sketches[sketchIndex++] = kMers[i * numKMers + minIndex];
+//            } else
+            sketches[sketchIndex + j] = currentMin;
+        }
+    }
+}
 
-__global__
-#endif
+__global__ void calcSketch_GPU(const size_t numReads, const size_t currentRead,
+                               const size_t numKMers, const size_t n,
+                               kMer_t *hashes, kMer_t *sketches, kMer_t *kMers) {
 
-void calcSketch(const size_t numReads, const size_t currentRead,
-                const size_t numKMers, const size_t n,
-                kMer_t *hashes, kMer_t *sketches, kMer_t *kMers) {
-#ifdef _GPU
     size_t index = blockIdx.x * blockDim.x + threadIdx.x;
     size_t stride = blockDim.x * gridDim.x;
-#else
-    size_t index = 0;
-    size_t stride = 1;
-#endif
-#ifndef _GPU
-#pragma omp parallel for
-#endif
     for (size_t i = index; i < numReads; i += stride) {
         size_t sketchIndex = (i + currentRead) * n;
         for (size_t j = 0; j < n; ++j) {
@@ -368,20 +394,24 @@ MinHashReadFilter::MinHashReadFilter(size_t overlapSketchThreshold, NanoporeRead
 
 void MinHashReadFilter::getFilteredReads(size_t readToFind, std::vector<size_t> &results) {
     size_t n = nR.n;
-    auto sketches = nR.sketches;
-    auto hashTables = nR.hashTables;
-    std::multiset<size_t> matches;
+    auto &sketches = nR.sketches;
+    auto &hashTables = nR.hashTables;
+    std::vector<size_t> matches;
     results.clear();
     for (size_t sketchIndex = 0; sketchIndex < n; ++sketchIndex) {
         kMer_t curHash = sketches[readToFind * n + sketchIndex];
         std::vector<size_t> &m = hashTables[sketchIndex].at(curHash);
-        matches.insert(m.begin(), m.end());
+        matches.insert(matches.end(), m.begin(), m.end());
     }
+    std::sort(matches.begin(), matches.end());
     auto end = matches.end();
-    for (auto it = matches.begin(); it != end; it = matches.upper_bound(*it)) {
+    auto next = matches.begin();
+    for (auto it = matches.begin(); it != end; it = next) {
+        next = std::upper_bound(it, end, *it);
         if (*it == readToFind)
             continue;
-        if (matches.count(*it) >= overlapSketchThreshold) {
+
+        if (next - it >= overlapSketchThreshold) {
             results.push_back(*it);
         }
     }

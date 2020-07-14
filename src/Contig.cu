@@ -67,25 +67,26 @@ void ContigGenerator::initialize() {
     reads2Contig.insert(temp.begin(), temp.end());
 }
 
-bool ContigGenerator::addRelatedReads(std::pair<long, read_t> r) {
+bool ContigGenerator::addRelatedReads(const std::pair<long, read_t> r) {
 //            std::cout << "Adding related reads" << std::endl;
     std::vector<size_t> results;
     rF->getFilteredReads(r.second, results);
     bool addedRead = false;
-    size_t resultLen = results.size();
+    size_t const resultLen = results.size();
     bool merged = false;
     long relPosInMerge;
     Contig *contig2MergeWith;
 
     omp_lock_t lock;
     omp_init_lock(&lock);
-#pragma omp parallel for
+#pragma omp parallel for default(none) shared(lock, results, addedRead, merged, contig2MergeWith, relPosInMerge)
     for (size_t i = 0; i < resultLen; i++) {
         size_t it = results[i];
         long relPos;
         omp_set_lock(&lock);
-        try {
-            std::pair<Contig *, long> &matchedRead = readsInContig.at(it);
+        auto findRead = readsInContig.find(it);
+        if (findRead != readsInContig.end()) {
+            std::pair<Contig *, long> matchedRead = findRead->second;
             if (!merged && matchedRead.first != activeContig &&
                 rA->align(*nR.readData[r.second], *nR.readData[it], relPos)) {
                 merged = true;
@@ -94,7 +95,7 @@ bool ContigGenerator::addRelatedReads(std::pair<long, read_t> r) {
             }
             omp_unset_lock(&lock);
             continue;
-        } catch (const std::out_of_range &e) {
+        } else {
             omp_unset_lock(&lock);
         }
 
