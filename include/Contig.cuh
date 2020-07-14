@@ -10,6 +10,8 @@
 #include <unordered_set>
 #include <cmath>
 #include <omp.h>
+#include <stdexcept>
+#include <unordered_map>
 #include "ReadAligner.cuh"
 
 // We use the indices of the reads to represent them
@@ -28,18 +30,38 @@ class ContigGenerator {
 public:
     ContigGenerator(ReadAligner *rA, NanoporeReads &nR, ReadFilter *rF);
 
+    ~ContigGenerator();
+
     void generateContigs();
 
     friend std::ostream &operator<<(std::ostream &out, const ContigGenerator &o);
 
 private:
+    bool hasActiveContig = false;
+    Contig *activeContig = nullptr;
+
     /***
      * This is the read aligner used to align the reads as they are being added to the Contig
      */
     ReadAligner *rA;
     NanoporeReads &nR;
     ReadFilter *rF;
-    std::vector<Contig> contigs;
+    std::set<Contig *> contigs;
+    // We maintain a list of all reads that have not been treated and a map from reads to contigs
+    std::unordered_map<read_t, std::pair<Contig *, long>> readsInContig;
+    std::unordered_set<read_t> reads2Contig;
+
+    bool addRelatedReads(std::pair<long, read_t> r);
+
+    /***
+     * Merges the second contig into the first one
+     * @param c1
+     * @param c2
+     * @param pos
+     */
+    void mergeContigs(Contig *c1, Contig *c2, long pos);
+
+    void initialize();
 };
 
 #endif //EXPERIMENTS_CONTIG_CUH
