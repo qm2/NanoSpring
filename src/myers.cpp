@@ -1,5 +1,6 @@
 #include "myers.h"
 #include <map>
+#include <iostream>
 
 /***
  * An edit path in the myers algorithm consists of a starting point (from another furthest reaching path),
@@ -9,21 +10,20 @@
 class EditPath {
 public:
     // start point
-    unsigned int xStart;
-    unsigned int yStart;
+    int xStart;
+    int yStart;
 
     // mid point
-    unsigned int xMid;
-    unsigned int yMid;
+    int xMid;
+    int yMid;
 
     // snake length
     unsigned int snakeLen;
 
-    EditPath(unsigned int xStart, unsigned int yStart, unsigned int xMid, unsigned int yMid, unsigned int snakeLen);
+    EditPath(int xStart, int yStart, int xMid, int yMid, unsigned int snakeLen);
 };
 
-EditPath::EditPath(unsigned int xStart, unsigned int yStart, unsigned int xMid, unsigned int yMid,
-                   unsigned int snakeLen)
+EditPath::EditPath(int xStart, int yStart, int xMid, int yMid, unsigned int snakeLen)
         : xStart(xStart), yStart(yStart), xMid(xMid), yMid(yMid), snakeLen(snakeLen) {}
 
 std::vector<Edit> *myers(const std::string &s1, const std::string &s2) {
@@ -39,7 +39,7 @@ std::vector<Edit> *myers(const std::string &s1, const std::string &s2) {
     V[1] = 0;
 
     // Each member maps end point to a portion of the path leading to that end point
-    std::map<std::pair<unsigned int, unsigned int>, EditPath> editInfo;
+    std::map<std::pair<int, int>, EditPath> editInfo;
 
     for (int d = 0; d <= max; d++) {
         for (int k = -d; k <= d; k += 2) {
@@ -50,16 +50,16 @@ std::vector<Edit> *myers(const std::string &s1, const std::string &s2) {
             int kPrev = down ? k + 1 : k - 1;
 
             // starting point
-            unsigned int xStart = V[kPrev];
-            unsigned int yStart = xStart - kPrev;
+            int xStart = V[kPrev];
+            int yStart = xStart - kPrev;
 
             // middle point
-            unsigned int xMid = down ? xStart : xStart + 1;
-            unsigned int yMid = xMid - k;
+            int xMid = down ? xStart : xStart + 1;
+            int yMid = xMid - k;
 
             // end point
-            unsigned int xEnd = xMid;
-            unsigned int yEnd = yMid;
+            int xEnd = xMid;
+            int yEnd = yMid;
 
             // we go along the diagonal until we fail
             unsigned int snakeLen = 0;
@@ -72,6 +72,7 @@ std::vector<Edit> *myers(const std::string &s1, const std::string &s2) {
             // we save this furthest reaching end point
             V[k] = xEnd;
 
+//            std::cout << xStart << " " << yStart << std::endl;
             editInfo.insert(std::make_pair(std::make_pair(xEnd, yEnd),
                                            EditPath(xStart, yStart, xMid, yMid, snakeLen)));
 
@@ -89,11 +90,12 @@ std::vector<Edit> *myers(const std::string &s1, const std::string &s2) {
 
     }
 
-    unsigned int currentX = len1;
-    unsigned int currentY = len2;
+    int currentX = len1;
+    int currentY = len2;
     std::vector<Edit> *editScript = new std::vector<Edit>;
     editScript->reserve(max);
-    while (!(currentX == 0 && currentY == 0)) {
+    while (currentX > 0 || currentY > 0) {
+//        std::cout << currentX << " " << currentY << std::endl;
         EditPath &e = editInfo.at(std::make_pair(currentX, currentY));
         if (e.snakeLen > 0) {
             // If there is a snake (a series of diagonals)
