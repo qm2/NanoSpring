@@ -3,19 +3,9 @@
 
 #include <vector>
 #include <string>
-#include <fstream>
 #include <iostream>
-#include <cstdint>
-#include <functional>
 #include <memory>
-#include <random>
 #include <map>
-#include <gperftools/profiler.h>
-#include <chrono>
-#include <iomanip>
-#include <algorithm>
-#include <set>
-#include <cmath>
 
 #define KMER_BITS 64
 #define ROTATE_BITS 13

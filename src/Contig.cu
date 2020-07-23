@@ -1,4 +1,8 @@
 #include "../include/Contig.cuh"
+#include <omp.h>
+#include <algorithm>
+#include <stdexcept>
+#include <cmath>
 
 ContigGenerator::ContigGenerator(ReadAligner *rA, NanoporeReads &nR, ReadFilter *rF) : rA(rA), nR(nR), rF(rF) {
 

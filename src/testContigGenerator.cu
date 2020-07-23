@@ -1,4 +1,9 @@
 #include "../include/testContigGenerator.cuh"
+#include "../include/Contig.cuh"
+#include <gperftools/profiler.h>
+#include <iostream>
+#include <ctime>
+#include <chrono>
 
 int main(int argc, char **argv) {
     std::srand(unsigned(std::time(0)));

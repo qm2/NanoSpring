@@ -1,8 +1,8 @@
-//
-// Created by The MAC PRO on 2020/7/9.
-//
-
 #include "../include/testAligner.cuh"
+#include "../include/ReadAligner.cuh"
+#include <iomanip>
+#include <ctime>
+#include <gperftools/profiler.h>
 
 int main(int argc, char **argv) {
     srand(time(NULL));

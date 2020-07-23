@@ -1,4 +1,14 @@
 #include "../include/NanoporeReads.cuh"
+#include <fstream>
+#include <cstdint>
+#include <functional>
+#include <random>
+#include <gperftools/profiler.h>
+#include <chrono>
+#include <iomanip>
+#include <algorithm>
+#include <set>
+#include <cmath>
 
 NanoporeReads::NanoporeReads(const char *fileName, int k, int n) : k(k), n(n), sketches(NULL) {
     std::ifstream infile(fileName);

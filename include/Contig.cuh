@@ -1,16 +1,8 @@
-//
-// Created by yifan on 7/10/20.
-//
-
 #ifndef EXPERIMENTS_CONTIG_CUH
 #define EXPERIMENTS_CONTIG_CUH
 
 #include <set>
-#include <algorithm>
 #include <unordered_set>
-#include <cmath>
-#include <omp.h>
-#include <stdexcept>
 #include <unordered_map>
 #include "ReadAligner.cuh"
 

@@ -1,13 +1,6 @@
-//
-// Created by The MAC PRO on 2020/7/9.
-//
-
 #ifndef EXPERIMENTS_READALIGNER_CUH
 #define EXPERIMENTS_READALIGNER_CUH
 
-#include <string>
-#include <vector>
-#include <algorithm>
 #include "NanoporeReads.cuh"
 
 class ReadAligner {
