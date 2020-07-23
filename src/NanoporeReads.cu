@@ -1,4 +1,4 @@
-#include "../include/NanoporeReads.cuh"
+#include "NanoporeReads.cuh"
 #include <fstream>
 #include <cstdint>
 #include <functional>

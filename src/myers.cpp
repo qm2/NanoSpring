@@ -1,0 +1,115 @@
+#include "myers.h"
+#include <map>
+
+/***
+ * An edit path in the myers algorithm consists of a starting point (from another furthest reaching path),
+ * and a horizontal or vertical move to the mid point, and finally a snake (all diagonal moves) to the
+ * end point.
+ */
+class EditPath {
+public:
+    // start point
+    unsigned int xStart;
+    unsigned int yStart;
+
+    // mid point
+    unsigned int xMid;
+    unsigned int yMid;
+
+    // snake length
+    unsigned int snakeLen;
+
+    EditPath(unsigned int xStart, unsigned int yStart, unsigned int xMid, unsigned int yMid, unsigned int snakeLen);
+};
+
+EditPath::EditPath(unsigned int xStart, unsigned int yStart, unsigned int xMid, unsigned int yMid,
+                   unsigned int snakeLen)
+        : xStart(xStart), yStart(yStart), xMid(xMid), yMid(yMid), snakeLen(snakeLen) {}
+
+std::vector<Edit> *myers(const std::string &s1, const std::string &s2) {
+    unsigned const int len1 = s1.length();
+    unsigned const int len2 = s2.length();
+    unsigned const int max = len1 + len2;
+    bool foundEdit = false;
+
+    unsigned int VTemp[2 * max + 1];
+
+    unsigned int *V = VTemp + max;
+
+    V[1] = 0;
+
+    // Each member maps end point to a portion of the path leading to that end point
+    std::map<std::pair<unsigned int, unsigned int>, EditPath> editInfo;
+
+    for (int d = 0; d <= max; d++) {
+        for (int k = -d; k <= d; k += 2) {
+            // we either choose to go down or go right
+            // We choose to go down if 1. we have no choice or 2. going down is the better choice
+            bool down = (k == -d || (k < d && V[k - 1] < V[k + 1]));
+
+            int kPrev = down ? k + 1 : k - 1;
+
+            // starting point
+            unsigned int xStart = V[kPrev];
+            unsigned int yStart = xStart - kPrev;
+
+            // middle point
+            unsigned int xMid = down ? xStart : xStart + 1;
+            unsigned int yMid = xMid - k;
+
+            // end point
+            unsigned int xEnd = xMid;
+            unsigned int yEnd = yMid;
+
+            // we go along the diagonal until we fail
+            unsigned int snakeLen = 0;
+            while (xEnd < len1 && yEnd < len2 && s1[xEnd] == s2[yEnd]) {
+                ++xEnd;
+                ++yEnd;
+                ++snakeLen;
+            }
+
+            // we save this furthest reaching end point
+            V[k] = xEnd;
+
+            editInfo.insert(std::make_pair(std::make_pair(xEnd, yEnd),
+                                           EditPath(xStart, yStart, xMid, yMid, snakeLen)));
+
+            // whether we have found an edit
+            if (xEnd >= len1 && yEnd >= len2) {
+//                std::cout << "Minimum edits required to convert string A into B is: " << d << std::endl;
+                foundEdit = true;
+                break;
+            }
+
+        }
+
+        if (foundEdit)
+            break;
+
+    }
+
+    unsigned int currentX = len1;
+    unsigned int currentY = len2;
+    std::vector<Edit> *editScript = new std::vector<Edit>;
+    editScript->reserve(max);
+    while (!(currentX == 0 && currentY == 0)) {
+        EditPath &e = editInfo.at(std::make_pair(currentX, currentY));
+        if (e.snakeLen > 0) {
+            // If there is a snake (a series of diagonals)
+            editScript->push_back(Edit(SAME, e.snakeLen));
+        }
+        if (e.xMid > e.xStart) {
+            // If we moved right, then this is a deletion
+            editScript->push_back(Edit(DELETE, s1[e.xStart]));
+        } else if (e.yMid > e.yStart) {
+            // If we moved down and there is an insertion
+            editScript->push_back(Edit(INSERT, s2[e.yStart]));
+        }
+        currentX = e.xStart;
+        currentY = e.yStart;
+    }
+
+    editScript->shrink_to_fit();
+    return editScript;
+}

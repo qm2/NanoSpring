@@ -1,9 +1,7 @@
-//
-// Created by The MAC PRO on 2020/7/3.
-//
-
-#include "../include/testMinHash.cuh"
-
+#include <iostream>
+#include <stdlib.h>
+#include <gperftools/profiler.h>
+#include "NanoporeReads.cuh"
 
 int main(int argc, char **argv) {
     if (argc < 4) {

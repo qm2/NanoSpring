@@ -1,4 +1,3 @@
-#include "../include/testContigGenerator.cuh"
 #include "../include/Contig.cuh"
 #include <gperftools/profiler.h>
 #include <iostream>

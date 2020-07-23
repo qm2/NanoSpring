@@ -21,7 +21,7 @@ CC_LIBS=
 
 # NVCC compiler options:
 NVCC=nvcc
-NVCC_FLAGS=-g -Xcompiler -fopenmp -O3
+NVCC_FLAGS=-g -Xcompiler -fopenmp -O3 -Iinclude
 NVCC_LD_FLAGS=-lprofiler
 NVCC_LIBS=
 
@@ -50,7 +50,7 @@ INC_DIR = include
 ## Make variables ##
 
 # Target executable name:
-EXE = testMinHash testAligner testContig
+EXE = testMinHash testAligner testContig testConsensus testMyers
 
 # Object files:
 OBJS = $(OBJ_DIR)/main.o $(OBJ_DIR)/cuda_kernel.o
@@ -71,6 +71,12 @@ testAligner : $(OBJ_DIR)/testAligner.o $(OBJ_DIR)/NanoporeReads.o $(OBJ_DIR)/Rea
 testContig : $(OBJ_DIR)/testContigGenerator.o $(OBJ_DIR)/NanoporeReads.o $(OBJ_DIR)/ReadAligner.o $(OBJ_DIR)/Contig.o
 	$(NVCC) $(NVCC_FLAGS) $(NVCC_LD_FLAGS) $^ -o $@
 
+testConsensus : $(OBJ_DIR)/testConsensus.o $(OBJ_DIR)/Consensus.o
+	$(NVCC) $(NVCC_FLAGS) $(NVCC_LD_FLAGS) $^ -o $@
+
+testMyers : $(OBJ_DIR)/testMyers.o $(OBJ_DIR)/myers.o $(OBJ_DIR)/Edits.o
+	$(NVCC) $(NVCC_FLAGS) $(NVCC_LD_FLAGS) $^ -o $@
+
 # Compile main .cpp file to object files:
 $(OBJ_DIR)/%.o : %.cpp
 	$(CC) $(CC_FLAGS) -c $< -o $@
@@ -84,10 +90,16 @@ $(OBJ_DIR)/%.o : $(SRC_DIR)/%.cpp include/%.h
 $(OBJ_DIR)/testAligner.o: $(SRC_DIR)/testAligner.cu $(INC_DIR)/testAligner.cuh $(INC_DIR)/NanoporeReads.cuh $(INC_DIR)/ReadAligner.cuh
 	$(NVCC) $(NVCC_FLAGS) -c $< -o $@ $(NVCC_LIBS)
 
-$(OBJ_DIR)/testMinHash.o: $(SRC_DIR)/testMinHash.cu $(INC_DIR)/testMinHash.cuh $(INC_DIR)/NanoporeReads.cuh
+$(OBJ_DIR)/testMinHash.o: $(SRC_DIR)/testMinHash.cu $(INC_DIR)/NanoporeReads.cuh
 	$(NVCC) $(NVCC_FLAGS) -c $< -o $@ $(NVCC_LIBS)
 
-$(OBJ_DIR)/testContigGenerator.o: $(SRC_DIR)/testContigGenerator.cu $(INC_DIR)/testContigGenerator.cuh $(INC_DIR)/NanoporeReads.cuh $(INC_DIR)/ReadAligner.cuh $(INC_DIR)/Contig.cuh
+$(OBJ_DIR)/testContigGenerator.o: $(SRC_DIR)/testContigGenerator.cu $(INC_DIR)/NanoporeReads.cuh $(INC_DIR)/ReadAligner.cuh $(INC_DIR)/Contig.cuh
+	$(NVCC) $(NVCC_FLAGS) -c $< -o $@ $(NVCC_LIBS)
+
+$(OBJ_DIR)/testConsensus.o: $(SRC_DIR)/testConsensus.cu $(INC_DIR)/Consensus.cuh
+	$(NVCC) $(NVCC_FLAGS) -c $< -o $@ $(NVCC_LIBS)
+
+$(OBJ_DIR)/testMyers.o: $(SRC_DIR)/testMyers.cpp $(INC_DIR)/myers.h $(INC_DIR)/Edits.h
 	$(NVCC) $(NVCC_FLAGS) -c $< -o $@ $(NVCC_LIBS)
 
 $(OBJ_DIR)/NanoporeReads.o : $(SRC_DIR)/NanoporeReads.cu $(INC_DIR)/NanoporeReads.cuh
@@ -97,6 +109,15 @@ $(OBJ_DIR)/ReadAligner.o : $(SRC_DIR)/ReadAligner.cu $(INC_DIR)/ReadAligner.cuh 
 	$(NVCC) $(NVCC_FLAGS) -c $< -o $@ $(NVCC_LIBS)
 
 $(OBJ_DIR)/Contig.o : $(SRC_DIR)/Contig.cu $(INC_DIR)/Contig.cuh $(INC_DIR)/NanoporeReads.cuh $(INC_DIR)/ReadAligner.cuh
+	$(NVCC) $(NVCC_FLAGS) -c $< -o $@ $(NVCC_LIBS)
+
+$(OBJ_DIR)/Consensus.o : $(SRC_DIR)/Consensus.cu $(INC_DIR)/Consensus.cuh
+	$(NVCC) $(NVCC_FLAGS) -c $< -o $@ $(NVCC_LIBS)
+
+$(OBJ_DIR)/myers.o : $(SRC_DIR)/myers.cpp $(INC_DIR)/myers.h $(INC_DIR)/Edits.h
+	$(NVCC) $(NVCC_FLAGS) -c $< -o $@ $(NVCC_LIBS)
+
+$(OBJ_DIR)/Edits.o : $(SRC_DIR)/Edits.cpp $(INC_DIR)/Edits.h
 	$(NVCC) $(NVCC_FLAGS) -c $< -o $@ $(NVCC_LIBS)
 
 # Clean objects in object directory.
