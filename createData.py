@@ -98,5 +98,5 @@ def generateReads(fileName = "test", coverage = 25, readLen = 10000, pIn =
             f.write('\n');
 
 if __name__ == '__main__':
-    createRandomGenome()
-    generateReads()
+    createRandomGenome(length=100000)
+    generateReads(readLen=10000)

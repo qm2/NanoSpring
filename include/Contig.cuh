@@ -20,6 +20,10 @@ public:
 
 class ContigGenerator {
 public:
+
+    std::set<Contig *> contigs;
+    NanoporeReads &nR;
+
     ContigGenerator(ReadAligner *rA, NanoporeReads &nR, ReadFilter *rF);
 
     ~ContigGenerator();
@@ -36,9 +40,8 @@ private:
      * This is the read aligner used to align the reads as they are being added to the Contig
      */
     ReadAligner *rA;
-    NanoporeReads &nR;
+
     ReadFilter *rF;
-    std::set<Contig *> contigs;
     // We maintain a list of all reads that have not been treated and a map from reads to contigs
     std::unordered_map<read_t, std::pair<Contig *, long>> readsInContig;
     std::unordered_set<read_t> reads2Contig;

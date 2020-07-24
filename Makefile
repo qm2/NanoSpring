@@ -71,7 +71,7 @@ testAligner : $(OBJ_DIR)/testAligner.o $(OBJ_DIR)/NanoporeReads.o $(OBJ_DIR)/Rea
 testContig : $(OBJ_DIR)/testContigGenerator.o $(OBJ_DIR)/NanoporeReads.o $(OBJ_DIR)/ReadAligner.o $(OBJ_DIR)/Contig.o
 	$(NVCC) $(NVCC_FLAGS) $(NVCC_LD_FLAGS) $^ -o $@
 
-testConsensus : $(OBJ_DIR)/testConsensus.o $(OBJ_DIR)/Consensus.o
+testConsensus : $(OBJ_DIR)/testConsensus.o $(OBJ_DIR)/Consensus.o $(OBJ_DIR)/Contig.o $(OBJ_DIR)/NanoporeReads.o $(OBJ_DIR)/ReadAligner.o
 	$(NVCC) $(NVCC_FLAGS) $(NVCC_LD_FLAGS) $^ -o $@
 
 testMyers : $(OBJ_DIR)/testMyers.o $(OBJ_DIR)/myers.o $(OBJ_DIR)/Edits.o
@@ -96,7 +96,7 @@ $(OBJ_DIR)/testMinHash.o: $(SRC_DIR)/testMinHash.cu $(INC_DIR)/NanoporeReads.cuh
 $(OBJ_DIR)/testContigGenerator.o: $(SRC_DIR)/testContigGenerator.cu $(INC_DIR)/NanoporeReads.cuh $(INC_DIR)/ReadAligner.cuh $(INC_DIR)/Contig.cuh
 	$(NVCC) $(NVCC_FLAGS) -c $< -o $@ $(NVCC_LIBS)
 
-$(OBJ_DIR)/testConsensus.o: $(SRC_DIR)/testConsensus.cu $(INC_DIR)/Consensus.cuh
+$(OBJ_DIR)/testConsensus.o: $(SRC_DIR)/testConsensus.cu $(INC_DIR)/Consensus.cuh $(INC_DIR)/NanoporeReads.cuh $(INC_DIR)/ReadAligner.cuh $(INC_DIR)/Contig.cuh
 	$(NVCC) $(NVCC_FLAGS) -c $< -o $@ $(NVCC_LIBS)
 
 $(OBJ_DIR)/testMyers.o: $(SRC_DIR)/testMyers.cpp $(INC_DIR)/myers.h $(INC_DIR)/Edits.h

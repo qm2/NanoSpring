@@ -161,7 +161,8 @@ std::ostream &operator<<(std::ostream &out, const ContigGenerator &o) {
         double averageShift = 0;
         size_t j = 0;
 
-        const long genomeLen = 5000000;
+        const long genomeLen = 100000;
+//        const long genomeLen = 5000000;
         for (const auto r : contig->reads) {
             long dif = r.first - (long) o.nR.readPos[r.second];
             dif += 2 * genomeLen;
