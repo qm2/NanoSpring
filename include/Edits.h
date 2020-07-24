@@ -2,6 +2,8 @@
 #define EXPERIMENTS_EDITS_H
 
 #include <ostream>
+#include <vector>
+#include <string>
 
 typedef enum {
     SAME, INSERT, DELETE
@@ -28,6 +30,20 @@ public:
     Edit(EDIT_TYPE editType, unsigned int num);
 
     friend std::ostream &operator<<(std::ostream &out, const Edit &o);
+};
+
+
+class StringAligner {
+public:
+    /***
+     * Calculates a good edit script from string s1 to string s2 and returns it in
+     * a vector of edits
+     * @param s1 The first string (the original string)
+     * @param s2 The second string (the target string)
+     * @return a vector of edits that will transform the first string into the second.
+     * The user is responsible for freeing the vector
+     */
+    virtual std::vector<Edit> *align(const std::string &s1, const std::string &s2) = 0;
 };
 
 #endif //EXPERIMENTS_EDITS_H

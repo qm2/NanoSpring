@@ -11,6 +11,7 @@
 
 #endif //Z_CONSENSUS_CUH
 
+#include "Edits.h"
 #include <vector>
 #include <map>
 #include <string>
@@ -97,21 +98,63 @@ public:
 class Path {
 public:
     std::vector<Edge *> edges;
+    std::string path;
 
     /***
      * Returns the average weight of the edges on path
      * @return the average weight of the edges on path
      */
     double getAverageWeight();
+
+    /***
+     * Clears the main path
+     */
+    void clear();
 };
 
 class ConsensusGraph {
 public:
+    class Read {
+    public:
+        /***
+         * Relative position of read in contig
+         */
+        long pos;
+        /***
+         * Starting node of read
+         */
+        Node *start;
+        /***
+         * Length of read
+         */
+        size_t len;
+
+        /***
+         *
+         * @param pos Relative position of read in contig
+         * @param start Starting node of read
+         * @param len Length of read
+         */
+        Read(long pos, Node *start, size_t len);
+    };
+
+    ConsensusGraph(StringAligner *aligner);
+
     /***
      * Initializes the graph from a seeding read
      * @param seed
+     * @param readId id of the seeding read
+     * @param pos Relative position in contig
      */
-    void initialize(const std::string &seed, size_t readId);
+    void initialize(const std::string &seed, size_t readId, long pos);
+
+    /***
+     * Adds a read to the consensus graph. Does not update mainPath.
+     * @param s String of read to add
+     * @param readId id of the read to add
+     * @param pos RElative position of read in contig
+     */
+    void addRead(const std::string &s, size_t readId, long pos);
 
     Path &calculateMainPath();
 
@@ -128,9 +171,12 @@ private:
     Node *startingNode;
     std::vector<Node *> nodes;
     std::vector<Edge *> edges;
-    // Maps ID of read to beginning node of the read
-    std::map<size_t, Node *> reads;
+    // Maps ID of read to (relative position of read in contig, beginning node of the read)
+    std::map<size_t, Read> reads;
     Path mainPath;
+    // Starting and ending positions of mainPath in contig
+    long startPos, endPos;
+    StringAligner *aligner;
 
     Node *createNode(char base);
 

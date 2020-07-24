@@ -1,6 +1,7 @@
 #include "myers.h"
 #include <map>
 #include <iostream>
+#include <algorithm>
 
 /***
  * An edit path in the myers algorithm consists of a starting point (from another furthest reaching path),
@@ -32,9 +33,9 @@ std::vector<Edit> *myers(const std::string &s1, const std::string &s2) {
     unsigned const int max = len1 + len2;
     bool foundEdit = false;
 
-    unsigned int VTemp[2 * max + 1];
+    int VTemp[2 * max + 1];
 
-    unsigned int *V = VTemp + max;
+    int *V = VTemp + max;
 
     V[1] = 0;
 
@@ -78,7 +79,7 @@ std::vector<Edit> *myers(const std::string &s1, const std::string &s2) {
 
             // whether we have found an edit
             if (xEnd >= len1 && yEnd >= len2) {
-//                std::cout << "Minimum edits required to convert string A into B is: " << d << std::endl;
+                std::cout << "Minimum edits required to convert string A into B is: " << d << std::endl;
                 foundEdit = true;
                 break;
             }
@@ -113,5 +114,11 @@ std::vector<Edit> *myers(const std::string &s1, const std::string &s2) {
     }
 
     editScript->shrink_to_fit();
+    return editScript;
+}
+
+std::vector<Edit> *MyersAligner::align(const std::string &s1, const std::string &s2) {
+    std::vector<Edit> *editScript = myers(s1, s2);
+    std::reverse(editScript->begin(), editScript->end());
     return editScript;
 }
