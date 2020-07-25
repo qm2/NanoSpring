@@ -4,7 +4,7 @@
 #include <set>
 #include <unordered_set>
 #include <unordered_map>
-#include "ReadAligner.cuh"
+#include "ReadAligner.h"
 
 // We use the indices of the reads to represent them
 typedef size_t read_t;

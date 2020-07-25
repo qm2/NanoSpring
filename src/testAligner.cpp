@@ -1,5 +1,5 @@
-#include "../include/testAligner.cuh"
-#include "../include/ReadAligner.cuh"
+#include "../include/testAligner.h"
+#include "../include/ReadAligner.h"
 #include <iomanip>
 #include <ctime>
 #include <gperftools/profiler.h>

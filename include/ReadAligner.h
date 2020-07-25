@@ -1,7 +1,7 @@
 #ifndef EXPERIMENTS_READALIGNER_CUH
 #define EXPERIMENTS_READALIGNER_CUH
 
-#include "NanoporeReads.cuh"
+#include "NanoporeReads.h"
 
 class ReadAligner {
 public:

@@ -1,7 +1,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <gperftools/profiler.h>
-#include "NanoporeReads.cuh"
+#include "NanoporeReads.h"
 
 int main(int argc, char **argv) {
     if (argc < 4) {

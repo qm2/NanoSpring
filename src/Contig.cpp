@@ -1,4 +1,4 @@
-#include "../include/Contig.cuh"
+#include "../include/Contig.h"
 #include <omp.h>
 #include <algorithm>
 #include <stdexcept>

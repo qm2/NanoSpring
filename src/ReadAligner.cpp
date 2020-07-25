@@ -1,4 +1,4 @@
-#include "../include/ReadAligner.cuh"
+#include "../include/ReadAligner.h"
 #include <algorithm>
 
 MergeSortReadAligner::MergeSortReadAligner(size_t k, size_t kMerNumTh)

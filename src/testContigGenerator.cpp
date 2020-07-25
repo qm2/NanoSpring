@@ -1,8 +1,4 @@
-#include "Contig.cuh"
-#include "NanoporeReads.cuh"
-#include "ReadAligner.cuh"
-#include "Consensus.cuh"
-#include "myers.h"
+#include "../include/Contig.h"
 #include <gperftools/profiler.h>
 #include <iostream>
 #include <ctime>
@@ -10,9 +6,9 @@
 
 int main(int argc, char **argv) {
     std::srand(unsigned(std::time(0)));
-    ProfilerStart("testConsensus.prof");
+    ProfilerStart("testContig.prof");
     if (argc < 2) {
-        std::cout << "Usage ./testConsensus filename" << std::endl;
+        std::cout << "Usage ./testContig filename" << std::endl;
         return 1;
     }
     {
@@ -41,29 +37,6 @@ int main(int argc, char **argv) {
             std::cout << "Generating contigs took " << duration.count() << " milliseconds" << std::endl;
         }
         std::cout << cG << std::endl;
-
-        for (Contig *c : cG.contigs) {
-            std::set<std::pair<long, read_t>> &readsInContig = c->reads;
-            auto currentRead = readsInContig.begin();
-            ConsensusGraph consensusGraph(new MyersAligner());
-            consensusGraph.initialize(*cG.nR.readData[currentRead->second],
-                                      currentRead->second, currentRead->first);
-            consensusGraph.calculateMainPath();
-            auto end = readsInContig.end();
-            size_t count = 0;
-            for (currentRead++; currentRead != end; currentRead++) {
-                consensusGraph.addRead(*cG.nR.readData[currentRead->second],
-                                       currentRead->second, currentRead->first);
-                consensusGraph.calculateMainPath();
-                if (count % 2 == 0)
-                    std::cout << "Added read " << count << std::endl;
-                count++;
-            }
-            consensusGraph.calculateMainPath();
-            consensusGraph.printStatus();
-        }
     }
-
-
     ProfilerStop();
 }

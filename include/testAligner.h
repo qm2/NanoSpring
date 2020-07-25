@@ -1,7 +1,7 @@
 #ifndef EXPERIMENTS_TESTALIGNER_CUH
 #define EXPERIMENTS_TESTALIGNER_CUH
 
-#include "NanoporeReads.cuh"
+#include "NanoporeReads.h"
 
 class TestAligner {
 public:

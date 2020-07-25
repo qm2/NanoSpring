@@ -1,5 +1,5 @@
 #include <iostream>
-#include "../include/Consensus.cuh"
+#include "../include/Consensus.h"
 
 Edge::Edge(Node *source, Node *sink, unsigned int read) : source(source), sink(sink) {
     count = 1;

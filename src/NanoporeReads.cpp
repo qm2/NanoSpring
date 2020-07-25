@@ -1,4 +1,4 @@
-#include "NanoporeReads.cuh"
+#include "NanoporeReads.h"
 #include <fstream>
 #include <cstdint>
 #include <functional>
@@ -49,7 +49,8 @@ void NanoporeReads::calculateMinHashSketches() {
     const size_t blockSize = 1024;
     std::cout << "numKMers " << numKMers << std::endl;
 
-    cudaMallocManaged(&(sketches), n * numReads * sizeof(kMer_t));
+//    cudaMallocManaged(&(sketches), n * numReads * sizeof(kMer_t));
+    sketches = (kMer_t *) malloc(n * numReads * sizeof(kMer_t));
 
     std::random_device rd;
     std::mt19937_64 gen(rd());
@@ -58,7 +59,8 @@ void NanoporeReads::calculateMinHashSketches() {
     std::uniform_int_distribution<unsigned long long> dis;
 
     kMer_t *randNumbers;
-    cudaMallocManaged(&randNumbers, n * sizeof(kMer_t));
+//    cudaMallocManaged(&randNumbers, n * sizeof(kMer_t));
+    randNumbers = (kMer_t *) malloc(n * sizeof(kMer_t));
     for (size_t i = 0; i < n; ++i) {
         randNumbers[i] = dis(gen);
     }
@@ -69,8 +71,8 @@ void NanoporeReads::calculateMinHashSketches() {
         const size_t currentBlockSize = readsLeft > blockSize ? blockSize : readsLeft;
 
         auto generateKMers = [&]() {
-            cudaMallocManaged(&kMers, currentBlockSize * numKMers * sizeof(kMer_t));
-
+//            cudaMallocManaged(&kMers, currentBlockSize * numKMers * sizeof(kMer_t));
+            kMers = (kMer_t *) malloc(currentBlockSize * numKMers * sizeof(kMer_t));
             for (size_t i = 0; i < currentBlockSize; i++) {
                 size_t baseIndex = i * numKMers;
 #pragma omp parallel for
@@ -91,7 +93,8 @@ void NanoporeReads::calculateMinHashSketches() {
         // Now we generate all hashes
         // hashes is indexed by (read number, k-mer number, hash number)
         kMer_t *hashes;
-        cudaMallocManaged(&hashes, n * currentBlockSize * numKMers * sizeof(kMer_t));
+//        cudaMallocManaged(&hashes, n * currentBlockSize * numKMers * sizeof(kMer_t));
+        hashes = (kMer_t *) malloc(n * currentBlockSize * numKMers * sizeof(kMer_t));
 #ifdef _GPU
         const size_t blockSize = 512;
         const size_t numBlocks = 512;
@@ -134,10 +137,13 @@ void NanoporeReads::calculateMinHashSketches() {
             std::cout << duration.count() << " milliseconds passed" << std::endl;
         }
 #endif
-        cudaFree(kMers);
-        cudaFree(hashes);
+//        cudaFree(kMers);
+//        cudaFree(hashes);
+        free(kMers);
+        free(hashes);
     }
-    cudaFree(randNumbers);
+//    cudaFree(randNumbers);
+    free(randNumbers);
     populateHashTables();
 }
 
@@ -195,6 +201,7 @@ NanoporeReads::hashKMer(const size_t numReads, const size_t numKMers, const size
     }
 }
 
+#ifdef _GPU
 __global__ void hashKMer_GPU(const size_t totalKMers, const size_t n,
                              kMer_t *kMers, kMer_t
                              *hashes,
@@ -227,6 +234,7 @@ __global__ void hashKMer_GPU(const size_t totalKMers, const size_t n,
         }
     }
 }
+#endif
 
 void NanoporeReads::calcSketch(const size_t numReads, const size_t currentRead,
                                const size_t numKMers, const size_t n,
@@ -255,6 +263,7 @@ void NanoporeReads::calcSketch(const size_t numReads, const size_t currentRead,
     }
 }
 
+#ifdef _GPU
 __global__ void calcSketch_GPU(const size_t numReads, const size_t currentRead,
                                const size_t numKMers, const size_t n,
                                kMer_t *hashes, kMer_t *sketches, kMer_t *kMers) {
@@ -284,9 +293,11 @@ __global__ void calcSketch_GPU(const size_t numReads, const size_t currentRead,
         }
     }
 }
+#endif
 
 NanoporeReads::~NanoporeReads() {
-    cudaFree(sketches);
+//    cudaFree(sketches);
+    free(sketches);
 }
 
 void NanoporeReads::printHashes() {
