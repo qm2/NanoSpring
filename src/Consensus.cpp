@@ -73,8 +73,8 @@ void ConsensusGraph::addRead(const std::string &s, size_t readId, long pos) {
               << " current read startPos " << pos
               << std::endl;
     std::string &originalString = mainPath.path;
-    std::vector<Edit> *editScript = aligner->align(originalString, s);
-    delete editScript;
+    std::vector<Edit> editScript;
+    aligner->align(originalString, s, editScript);
 }
 
 Path &ConsensusGraph::calculateMainPath() {

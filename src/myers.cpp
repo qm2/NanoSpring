@@ -27,7 +27,8 @@ public:
 EditPath::EditPath(int xStart, int yStart, int xMid, int yMid, unsigned int snakeLen)
         : xStart(xStart), yStart(yStart), xMid(xMid), yMid(yMid), snakeLen(snakeLen) {}
 
-std::vector<Edit> *myers(const std::string &s1, const std::string &s2) {
+void MyersAligner::myers(const std::string &s1, const std::string &s2,
+                         std::vector<Edit> &editScript, size_t &editDis) {
     unsigned const int len1 = s1.length();
     unsigned const int len2 = s2.length();
     unsigned const int max = len1 + len2;
@@ -38,6 +39,8 @@ std::vector<Edit> *myers(const std::string &s1, const std::string &s2) {
     int *V = VTemp + max;
 
     V[1] = 0;
+
+    editScript.clear();
 
     // Each member maps end point to a portion of the path leading to that end point
     std::map<std::pair<int, int>, EditPath> editInfo;
@@ -53,6 +56,10 @@ std::vector<Edit> *myers(const std::string &s1, const std::string &s2) {
             // starting point
             int xStart = V[kPrev];
             int yStart = xStart - kPrev;
+            // In the first iteration the starting point calculated would be 0, -1.
+            // We want to make it 0, 0
+            if (yStart < 0)
+                yStart = 0;
 
             // middle point
             int xMid = down ? xStart : xStart + 1;
@@ -79,7 +86,8 @@ std::vector<Edit> *myers(const std::string &s1, const std::string &s2) {
 
             // whether we have found an edit
             if (xEnd >= len1 && yEnd >= len2) {
-                std::cout << "Minimum edits required to convert string A into B is: " << d << std::endl;
+//                std::cout << "Minimum edits required to convert string A into B is: " << d << std::endl;
+                editDis = d;
                 foundEdit = true;
                 break;
             }
@@ -93,32 +101,42 @@ std::vector<Edit> *myers(const std::string &s1, const std::string &s2) {
 
     int currentX = len1;
     int currentY = len2;
-    std::vector<Edit> *editScript = new std::vector<Edit>;
-    editScript->reserve(max);
+    editScript.reserve(max);
     while (currentX > 0 || currentY > 0) {
 //        std::cout << currentX << " " << currentY << std::endl;
         EditPath &e = editInfo.at(std::make_pair(currentX, currentY));
         if (e.snakeLen > 0) {
             // If there is a snake (a series of diagonals)
-            editScript->push_back(Edit(SAME, e.snakeLen));
+            editScript.push_back(Edit(SAME, e.snakeLen));
         }
         if (e.xMid > e.xStart) {
             // If we moved right, then this is a deletion
-            editScript->push_back(Edit(DELETE, s1[e.xStart]));
+            editScript.push_back(Edit(DELETE, s1[e.xStart]));
         } else if (e.yMid > e.yStart) {
             // If we moved down and there is an insertion
-            editScript->push_back(Edit(INSERT, s2[e.yStart]));
+            editScript.push_back(Edit(INSERT, s2[e.yStart]));
         }
         currentX = e.xStart;
         currentY = e.yStart;
     }
 
-    editScript->shrink_to_fit();
-    return editScript;
+    editScript.shrink_to_fit();
 }
 
-std::vector<Edit> *MyersAligner::align(const std::string &s1, const std::string &s2) {
-    std::vector<Edit> *editScript = myers(s1, s2);
-    std::reverse(editScript->begin(), editScript->end());
-    return editScript;
+bool MyersAligner::align(const std::string &s1, const std::string &s2,
+                         std::vector<Edit> &editScript, size_t &editDis) {
+    myers(s1, s2, editScript, editDis);
+    std::reverse(editScript.begin(), editScript.end());
+    return true;
 }
+
+bool MyersAligner::align(const std::string &s1, const std::string &s2,
+                         std::vector<Edit> &editScript) {
+    size_t editDis;
+    return align(s1, s2, editScript, editDis);
+}
+
+MyersAligner::MyersAligner() : StringAligner("Myers Algorithm") {}
+
+PiecewiseMyers::PiecewiseMyers(const size_t len) :
+        StringAligner("Piecewise Myers Len " + len), len(len) {}

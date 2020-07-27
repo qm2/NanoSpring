@@ -28,3 +28,4 @@ std::ostream &operator<<(std::ostream &out, const Edit &o) {
 }
 
 
+StringAligner::StringAligner(const std::string &name) : name(name) {}

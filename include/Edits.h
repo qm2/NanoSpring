@@ -36,14 +36,36 @@ public:
 class StringAligner {
 public:
     /***
-     * Calculates a good edit script from string s1 to string s2 and returns it in
-     * a vector of edits
+     * Name of the alignment algorithm
+     */
+    const std::string name;
+
+    /***
+     * Calculates a good edit script from string s1 to string s2 and stores it in
+     * a vector of edits. Returns whether the alignment succeeded
      * @param s1 The first string (the original string)
      * @param s2 The second string (the target string)
-     * @return a vector of edits that will transform the first string into the second.
-     * The user is responsible for freeing the vector
+     * @param editScript stores a vector of edits that will transform the first
+     * string into the second.
+     * @return whether alignment succeeded
      */
-    virtual std::vector<Edit> *align(const std::string &s1, const std::string &s2) = 0;
+    virtual bool align(const std::string &s1, const std::string &s2,
+                       std::vector<Edit> &editScript) = 0;
+
+    /***
+     * Calculates a good edit script from string s1 to string s2 and stores it in
+     * a vector of edits. Returns whether the alignment succeeded
+     * @param s1 The first string (the original string)
+     * @param s2 The second string (the target string)
+     * @param editScript stores a vector of edits that will transform the first
+     * string into the second.
+     * @param editDis the edit distance obtained by this algorithm
+     * @return whether alignment succeeded
+     */
+    virtual bool align(const std::string &s1, const std::string &s2,
+                       std::vector<Edit> &editScript, size_t &editDis) = 0;
+
+    StringAligner(const std::string &name);
 };
 
 #endif //EXPERIMENTS_EDITS_H
