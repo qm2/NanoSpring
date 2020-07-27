@@ -29,3 +29,8 @@ std::ostream &operator<<(std::ostream &out, const Edit &o) {
 
 
 StringAligner::StringAligner(const std::string &name) : name(name) {}
+
+bool StringAligner::align(const std::string &s1, const std::string &s2, std::vector<Edit> &editScript) {
+    size_t editDis;
+    return align(s1, s2, editScript, editDis);
+}

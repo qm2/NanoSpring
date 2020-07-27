@@ -88,7 +88,8 @@ void AlignerTester::profile(StringAligner *aligner, double &duration, double &su
     }
 
     auto end = std::chrono::high_resolution_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / numReads;
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count()
+               / 1000000000.0 / (double) numReads;
     successRate = numSuccess / (double) numReads;
     avgEditDis = totalEditDis / (double) numSuccess;
 }

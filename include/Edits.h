@@ -49,8 +49,8 @@ public:
      * string into the second.
      * @return whether alignment succeeded
      */
-    virtual bool align(const std::string &s1, const std::string &s2,
-                       std::vector<Edit> &editScript) = 0;
+    bool align(const std::string &s1, const std::string &s2,
+               std::vector<Edit> &editScript);
 
     /***
      * Calculates a good edit script from string s1 to string s2 and stores it in

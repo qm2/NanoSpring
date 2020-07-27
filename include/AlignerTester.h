@@ -25,7 +25,7 @@ public:
     /***
      * Runs the algorithm contained in aligner on the data generatad
      * @param aligner
-     * @param duration Will store the average time taken in milliseconds
+     * @param duration Will store the average time taken in seconds
      * @param successRate Will store probability that the aligner succeeds
      * @param avgEditDis the average edit distance returned by the aligner
      */
