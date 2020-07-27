@@ -239,10 +239,10 @@ __global__ void hashKMer_GPU(const size_t totalKMers, const size_t n,
 void NanoporeReads::calcSketch(const size_t numReads, const size_t currentRead,
                                const size_t numKMers, const size_t n,
                                kMer_t *hashes, kMer_t *sketches, kMer_t *kMers) {
-//#pragma omp parallel for
-    for (size_t i = 0; i < numReads; i++) {
-        size_t sketchIndex = (i + currentRead) * n;
 #pragma omp parallel for
+    for (size_t i = 0; i  < numReads; i++) {
+        size_t sketchIndex = (i + currentRead) * n;
+//#pragma omp parallel for
         for (size_t j = 0; j < n; ++j) {
             size_t hashIndex = i * n * numKMers + j;
             kMer_t currentMin = ~(kMer_t) 0;

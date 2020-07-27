@@ -49,8 +49,8 @@ public:
      * string into the second.
      * @return whether alignment succeeded
      */
-    bool align(const std::string &s1, const std::string &s2,
-               std::vector<Edit> &editScript);
+    virtual bool align(const std::string &s1, const std::string &s2,
+                       std::vector<Edit> &editScript);
 
     /***
      * Calculates a good edit script from string s1 to string s2 and stores it in
@@ -64,6 +64,32 @@ public:
      */
     virtual bool align(const std::string &s1, const std::string &s2,
                        std::vector<Edit> &editScript, size_t &editDis) = 0;
+
+    /***
+     * Calculates a good edit script from string s1 to string s2 and stores it in
+     * a vector of edits. Here the edit script only transforms the overlapping
+     * portion of s1 to the overlapping portion of s2. The tail and head that are
+     * not aligned are stored as beginOffset and endOffset.
+     * Returns whether the alignment succeeded.
+     * @param s1 The first string (the original string)
+     * @param s2 The second string (the target string)
+     * @param offsetGuess An initial guess of beginOffset
+     * @param beginOffset The alignment of the left most ends of the two reads.
+     * Positive means the second read goes after the first, and negative means the
+     * second read goes before the first.
+     * @param endOffset The alignment of the right most ends of the two reads.
+     * Positive means the second read goes after the first, and negative means the
+     * second read goes before the first.
+     * @param editScript stores a vector of edits that will transform the
+     * overlapping portion of the first string into the second.
+     * @param editDis the edit distance obtained by this algorithm
+     * (this edit distance is only of the overlapping portions)s
+     * @return whether alignment succeeded
+     */
+    virtual bool align(const std::string &s1, const std::string &s2,
+                       const ssize_t offsetGuess,
+                       ssize_t &beginOffset, ssize_t &endOffset,
+                       std::vector<Edit> &editScript, size_t &editDis);
 
     StringAligner(const std::string &name);
 };

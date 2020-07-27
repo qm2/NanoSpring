@@ -17,7 +17,7 @@ public:
      * @param pDel deletion error rate
      * @param pS substitution error rate
      */
-    void generateData(size_t readLen, size_t offset, size_t num, double pIns = 0.03,
+    void generateData(size_t readLen, ssize_t offset, size_t num, double pIns = 0.03,
                       double pDel = 0.03,
                       double pS = 0.04
     );
@@ -30,6 +30,19 @@ public:
      * @param avgEditDis the average edit distance returned by the aligner
      */
     void profile(StringAligner *aligner, double &duration, double &successRate,
+                 double &avgEditDis);
+
+    /***
+     * Runs the algorithm contained in aligner on the data generatad
+     * @param aligner
+     * @param duration Will store the average time taken in seconds
+     * @param successRate Will store probability that the aligner succeeds
+     * @param avgBeginOffset the average beginOffset
+     * @param avgEndOffset the average endOffset
+     * @param avgEditDis the average edit distance returned by the aligner
+     */
+    void profile(StringAligner *aligner, double &duration, double &successRate,
+                 double &avgBeginOffset, double &avgEndOffset,
                  double &avgEditDis);
 
     /***

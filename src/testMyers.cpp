@@ -30,7 +30,7 @@ int main() {
     {
         std::vector<Edit> editScript;
         size_t editDis;
-        PiecewiseMyers pM(2);
+        LocalMyers pM(2);
         pM.align(s1, s2, editScript, editDis);
         std::stringstream result;
         for (auto e = editScript.begin(); e < editScript.end(); e++) {

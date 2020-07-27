@@ -4,7 +4,7 @@
 #include <chrono>
 #include "AlignerTester.h"
 
-void AlignerTester::generateData(size_t readLen, size_t offset, size_t num, double pIns, double pDel, double pS) {
+void AlignerTester::generateData(size_t readLen, ssize_t offset, size_t num, double pIns, double pDel, double pS) {
     readsA.clear();
     readsB.clear();
 
@@ -23,9 +23,9 @@ void AlignerTester::generateData(size_t readLen, size_t offset, size_t num, doub
 
         // The function for generating the read and adding it to reads
         auto generateRead = [&origSeq, origSeqLen, readLen, pIns, pDel, pS, &generator, &baseDis, &BASES]
-                (size_t offset, std::vector<std::string> &reads) {
+                (ssize_t offset, std::vector<std::string> &reads) {
             char *origSeqEnd = origSeq + origSeqLen;
-            char *currPos = origSeq + offset;
+            char *currPos = offset >= 0 ? origSeq + offset : origSeqEnd + offset;
             std::string read;
             size_t k = 0;
             std::uniform_real_distribution<> realDis(0, 1);
@@ -71,6 +71,42 @@ void AlignerTester::generateData(size_t readLen, size_t offset, size_t num, doub
 }
 
 void AlignerTester::profile(StringAligner *aligner, double &duration, double &successRate,
+                            double &avgBeginOffset, double &avgEndOffset,
+                            double &avgEditDis) {
+    size_t numSuccess = 0;
+    size_t totalEditDis = 0;
+    ssize_t totalBeginOffset = 0;
+    ssize_t totalEndOffset = 0;
+    auto start = std::chrono::high_resolution_clock::now();
+
+    size_t numReads = readsA.size();
+    for (size_t i = 0; i < numReads; ++i) {
+        std::vector<Edit> editScript;
+        size_t editDis;
+        ssize_t beginOffset, endOffset;
+
+        bool success = aligner->align(readsA[i], readsB[i],
+                                      0,
+                                      beginOffset, endOffset,
+                                      editScript, editDis);
+        if (success) {
+            numSuccess++;
+            totalEditDis += editDis;
+            totalBeginOffset += beginOffset;
+            totalEndOffset += endOffset;
+        }
+    }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count()
+               / 1000000000.0 / (double) numReads;
+    successRate = numSuccess / (double) numReads;
+    avgEditDis = totalEditDis / (double) numSuccess;
+    avgBeginOffset = totalBeginOffset / (double) numSuccess;
+    avgEndOffset = totalEndOffset / (double) numSuccess;
+}
+
+void AlignerTester::profile(StringAligner *aligner, double &duration, double &successRate,
                             double &avgEditDis) {
     size_t numSuccess = 0;
     size_t totalEditDis = 0;
@@ -99,12 +135,29 @@ bool AlignerTester::validate(StringAligner *aligner) {
     for (size_t i = 0; i < numReads; ++i) {
         std::vector<Edit> editScript;
         size_t editDis;
-        bool success = aligner->align(readsA[i], readsB[i], editScript, editDis);
+        ssize_t beginOffset, endOffset;
+        bool success = aligner->align(readsA[i], readsB[i],
+                                      0,
+                                      beginOffset, endOffset,
+                                      editScript, editDis);
         if (!success)
             return false;
         std::string result;
-        applyEditsToString(readsA[i], editScript, result);
-        if (readsB[i].compare(result)) {
+        std::string origString = readsA[i].substr(
+                beginOffset > 0 ? beginOffset : 0,
+                readsA[i].length()
+                - (beginOffset > 0 ? beginOffset : 0)
+                + (endOffset > 0 ? 0 : endOffset)
+        );
+        std::string targetString = readsB[i].substr(
+                beginOffset > 0 ? 0 : -beginOffset,
+                readsB[i].length()
+                - (beginOffset > 0 ? 0 : -beginOffset)
+                - (endOffset > 0 ? endOffset : 0)
+        );
+
+        applyEditsToString(origString, editScript, result);
+        if (result.compare(targetString)) {
             std::cout << readsA[i] << std::endl;
             std::cout << readsB[i].length() << readsB[i] << std::endl;
             std::cout << result.length() << result << std::endl;

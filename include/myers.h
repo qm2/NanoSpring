@@ -19,8 +19,8 @@ public:
     * @param editDis the edit distance obtained by this algorithm
     * @return whether alignment succeeded
     */
-    bool align(const std::string &s1, const std::string &s2,
-               std::vector<Edit> &editScript, size_t &editDis);
+    virtual bool align(const std::string &s1, const std::string &s2,
+                       std::vector<Edit> &editScript, size_t &editDis) override;
 
     MyersAligner();
 
@@ -44,7 +44,7 @@ public:
  * Run myers on a0 and b0 until at least one of them is fully aligned.
  * Advance a0 and b0 to new substrings of length len and repeat.
  */
-class PiecewiseMyers : public StringAligner {
+class LocalMyers : public StringAligner {
 public:
     /***
      * The length of substrings to run myers algorithm on
@@ -52,14 +52,14 @@ public:
     const size_t lenA;
     const size_t lenB;
 
-    PiecewiseMyers(const size_t len);
+    LocalMyers(const size_t len);
 
-    PiecewiseMyers(const size_t lenA, const size_t lenB);
+    LocalMyers(const size_t lenA, const size_t lenB);
 
-    bool align(const std::string &s1, const std::string &s2,
-               std::vector<Edit> &editScript, size_t &editDis);
+    virtual bool align(const std::string &s1, const std::string &s2,
+                       std::vector<Edit> &editScript, size_t &editDis) override;
 
-private:
+protected:
 
     /***
      * Performs alignment via myers algorithm on two strings and returns when
@@ -69,7 +69,7 @@ private:
      * @param Bbegin The start of the second string. Will be updated to reflect alignment
      * @param Bend The end of the second string.
      * @param max Maximum number of edits to search
-     * @param editScript The vector to store the edits
+     * @param editScript The vector to store the edits. The edits will be stored backwards
      * @param editDis The edit distance
      * @return Whether alignment succeeded within max steps
      */
@@ -77,6 +77,39 @@ private:
                            const char *&Bbegin, const char *const Bend,
                            const size_t max,
                            std::vector<Edit> &editScript, size_t &editDis);
+
+    LocalMyers(const std::string &name, const size_t lenA, const size_t lenB);
+};
+
+/***
+ * This class basically runs the local myers algorithm from left the right to obtain a good
+ * alignment at the right most end, and then uses that alignment to run the local myers
+ * algorithm from right to left.
+ */
+class LocalMyersRollBack : public LocalMyers {
+public:
+    /***
+     * The maximum edit distance to search for among the overlapping portions
+     */
+    const size_t maxEditDis;
+
+    const double errorRate = 0.25;
+
+    virtual bool align(const std::string &s1, const std::string &s2,
+                       std::vector<Edit> &editScript, size_t &editDis) override;
+
+    virtual bool align(const std::string &s1, const std::string &s2,
+                       const ssize_t offsetGuess,
+                       ssize_t &beginOffset, ssize_t &endOffset,
+                       std::vector<Edit> &editScript, size_t &editDis) override;
+
+    LocalMyersRollBack(const size_t lenA, const size_t lenB, const size_t maxEditDis);
+
+private:
+    bool align(const std::string &s1, const std::string &s2,
+               const ssize_t offsetGuess,
+               ssize_t &beginOffset, ssize_t &endOffset,
+               bool storeEditScript, std::vector<Edit> &editScript, size_t &editDis);
 };
 
 #endif //Z_MYERS_H

@@ -34,3 +34,12 @@ bool StringAligner::align(const std::string &s1, const std::string &s2, std::vec
     size_t editDis;
     return align(s1, s2, editScript, editDis);
 }
+
+bool StringAligner::align(const std::string &s1, const std::string &s2,
+                          const ssize_t offsetGuess,
+                          ssize_t &beginOffset, ssize_t &endOffset,
+                          std::vector<Edit> &editScript, size_t &editDis) {
+    beginOffset = 0;
+    endOffset = 0;
+    return align(s1, s2, editScript, editDis);
+}

@@ -83,7 +83,7 @@ bool ContigGenerator::addRelatedReads(const std::pair<long, read_t> r) {
 
     omp_lock_t lock;
     omp_init_lock(&lock);
-#pragma omp parallel for default(none) shared(lock, results, addedRead, merged, contig2MergeWith, relPosInMerge)
+#pragma omp parallel for shared(lock, results, addedRead, merged, contig2MergeWith, relPosInMerge)
     for (size_t i = 0; i < resultLen; i++) {
         size_t it = results[i];
         long relPos;
