@@ -46,6 +46,14 @@ public:
     Edge *getEdgeTo(Node *n);
 
     /***
+     * Returns an edge to a node that is not on mainPath with given base.
+     * Returns NULL if not found.
+     * @param base
+     * @return
+     */
+    Edge *getEdgeToSide(char base);
+
+    /***
      * Returns the edge with the most weight going out of this node.
      * @return the edge with the most weight going out of this node. null if no
      * edge goes out of this node.
@@ -107,7 +115,8 @@ public:
     double getAverageWeight();
 
     /***
-     * Clears the main path
+     * Clears the main path. This means setting onMainPath to false for
+     * every node on this path.
      */
     void clear();
 };
@@ -152,10 +161,14 @@ public:
      * Adds a read to the consensus graph. Does not update mainPath.
      * @param s String of read to add
      * @param readId id of the read to add
-     * @param pos RElative position of read in contig
+     * @param pos Relative position of read in contig
      */
     void addRead(const std::string &s, size_t readId, long pos);
 
+    /***
+     * Clears the old mainPath, calculates the new mainPath and adds it.
+     * @return the new mainPath
+     */
     Path &calculateMainPath();
 
     Path &getMainPath();
@@ -181,4 +194,6 @@ private:
     Node *createNode(char base);
 
     Edge *createEdge(Node *source, Node *sink, unsigned int read);
+
+    void updateGraph(std::vector<Edit> &editScript, ssize_t beginOffset, ssize_t endOffset);
 };

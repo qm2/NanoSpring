@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
         for (Contig *c : cG.contigs) {
             std::set<std::pair<long, read_t>> &readsInContig = c->reads;
             auto currentRead = readsInContig.begin();
-            ConsensusGraph consensusGraph(new MyersAligner());
+            ConsensusGraph consensusGraph(new LocalMyersRollBack(100, 200, 3200));
             consensusGraph.initialize(*cG.nR.readData[currentRead->second],
                                       currentRead->second, currentRead->first);
             consensusGraph.calculateMainPath();
@@ -55,8 +55,9 @@ int main(int argc, char **argv) {
                 consensusGraph.addRead(*cG.nR.readData[currentRead->second],
                                        currentRead->second, currentRead->first);
                 consensusGraph.calculateMainPath();
-                if (count % 2 == 0)
-                    std::cout << "Added read " << count << std::endl;
+//                consensusGraph.printStatus();
+//                if (count % 2 == 0)
+//                    std::cout << "Added read " << count << std::endl;
                 count++;
             }
             consensusGraph.calculateMainPath();

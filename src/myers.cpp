@@ -151,7 +151,7 @@ bool LocalMyers::align(const std::string &s1, const std::string &s2,
     const char *const Bend = Bbegin + s2.length();
     editDis = 0;
     editScript.clear();
-    while (Abegin != Aend && Bbegin != Bend) {
+    while (Abegin < Aend && Bbegin < Bend) {
         const size_t max = lenA < lenB ? lenA : lenB;
         const char *const ALocalEnd = Abegin + lenA < Aend ? Abegin + lenA : Aend;
         const char *const BLocalEnd = Bbegin + lenB < Bend ? Bbegin + lenB : Bend;
@@ -313,11 +313,16 @@ bool LocalMyersRollBack::align(const std::string &s1, const std::string &s2,
     editDis = 0;
     if (storeEditScript)
         editScript.clear();
-    if (offsetGuess > 0)
+    if (offsetGuess > 0) {
         Abegin += offsetGuess;
-    else
+        if (Abegin >= Aend)
+            return false;
+    } else {
         Bbegin += (-offsetGuess);
-    while (Abegin != Aend && Bbegin != Bend) {
+        if (Bbegin > Bend)
+            return false;
+    }
+    while (Abegin < Aend && Bbegin < Bend) {
         const size_t max = lenA < lenB ? lenA : lenB;
         const char *const ALocalEnd = Abegin + lenA < Aend ? Abegin + lenA : Aend;
         const char *const BLocalEnd = Bbegin + lenB < Bend ? Bbegin + lenB : Bend;
@@ -391,5 +396,8 @@ bool LocalMyersRollBack::align(const std::string &s1, const std::string &s2,
 
 bool LocalMyersRollBack::align(const std::string &s1, const std::string &s2,
                                std::vector<Edit> &editScript, size_t &editDis) {
-    return true;
+    const ssize_t offsetGuess = 0;
+    ssize_t beginOffset;
+    ssize_t endOffset;
+    return align(s1, s2, offsetGuess, beginOffset, endOffset, editScript, editDis);
 }
