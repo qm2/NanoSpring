@@ -2,6 +2,7 @@
 #include <iostream>
 #include <algorithm>
 #include <chrono>
+#include <sstream>
 #include "AlignerTester.h"
 
 void AlignerTester::generateData(size_t readLen, ssize_t offset, size_t num, double pIns, double pDel, double pS) {
@@ -183,6 +184,37 @@ void AlignerTester::applyEditsToString(const std::string &origString,
             case DELETE:
                 pos++;
                 break;
+        }
+    }
+}
+
+void AlignerTester::applyEditsToString(const std::string &origString,
+                                       const std::string &editScript, std::string &result) {
+    result.clear();
+    std::stringstream ss(editScript);
+    auto pos = origString.begin();
+    char c;
+    while (true) {
+        ss >> c;
+        if (ss.eof())
+            break;
+        switch (c) {
+            case 'u':
+                size_t num;
+                ss >> num;
+                result.append(pos, pos + num);
+                pos += num;
+                break;
+            case 'i':
+                char b;
+                ss >> b;
+                result.push_back(b);
+                break;
+            case 'd':
+                pos++;
+                break;
+            default:
+                std::cerr << "Error in applyEditsToString" << std::endl;
         }
     }
 }

@@ -59,7 +59,7 @@ LINK.c = $(CC) $(CC_FLAGS) $(CC_LD_FLAGS)
 SRCS = $(notdir $(wildcard $(SRC_DIR)/*.cpp))
 
 # Target executable name:
-EXE = testMinHash testAligner testContig testConsensus testMyers testAlignAlgs
+EXE = testMinHash testAligner testContig testConsensus testMyers testAlignAlgs validateResult
 
 ##########################################################
 
@@ -74,6 +74,7 @@ testContig : $(addprefix $(OBJ_DIR)/,testContigGenerator.o NanoporeReads.o ReadA
 testConsensus : $(addprefix $(OBJ_DIR)/,testConsensus.o Consensus.o Contig.o NanoporeReads.o ReadAligner.o myers.o Edits.o)
 testMyers : $(addprefix $(OBJ_DIR)/,testMyers.o myers.o Edits.o)
 testAlignAlgs : $(addprefix $(OBJ_DIR)/,testAlignAlgs.o AlignerTester.o myers.o Edits.o)
+validateResult : $(addprefix $(OBJ_DIR)/,validateResult.o AlignerTester.o)
 
 $(EXE) :
 	$(LINK.c) $^ -o $@
