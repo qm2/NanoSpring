@@ -1,33 +1,37 @@
 #include <iostream>
+#include <algorithm>
+#include <iterator>
+#include <deque>
 #include "../include/Consensus.h"
 
-Edge::Edge(Node *source, Node *sink, unsigned int read) : source(source), sink(sink) {
+Edge::Edge(Node *source, Node *sink, size_t read) : source(source), sink(sink) {
     count = 1;
-    reads.push_back(read);
+    reads.insert(read);
 }
 
-void Edge::addRead(unsigned int read) {
+void Edge::addRead(size_t read) {
     count++;
-    reads.push_back(read);
+    reads.insert(read);
 }
 
 Node::Node(const char base) : base(base) {}
 
-void Node::addEdge(Edge *e) {
-    edgesFrom[e->sink] = e;
-}
+//void Node::addEdge(Edge *e) {
+//    edgesOut[e->sink] = e;
+//}
 
 Edge *Node::getEdgeTo(Node *n) {
-    try {
-        return edgesFrom.at(n);
-    } catch (std::out_of_range &e) {
+    const auto &it = edgesOut.find(n);
+    if (it == edgesOut.end()) {
         return NULL;
+    } else {
+        return it->second;
     }
 }
 
 Edge *Node::getEdgeToSide(char base) {
-    auto end = edgesFrom.end();
-    for (auto it = edgesFrom.begin(); it != end; it++) {
+    const auto &end = edgesOut.end();
+    for (auto it = edgesOut.begin(); it != end; it++) {
         Edge *e = it->second;
         Node *n = e->sink;
         if (!n->onMainPath && n->base == base)
@@ -39,8 +43,8 @@ Edge *Node::getEdgeToSide(char base) {
 Edge *Node::getBestEdge() {
     Edge *bestEdge = NULL;
     size_t bestCount = 0;
-    auto end = edgesFrom.end();
-    for (auto it = edgesFrom.begin(); it != end; ++it) {
+    const auto &end = edgesOut.end();
+    for (auto it = edgesOut.begin(); it != end; ++it) {
         Edge *e = it->second;
         if (e->count > bestCount) {
             bestCount = e->count;
@@ -107,7 +111,7 @@ void ConsensusGraph::addRead(const std::string &s, size_t readId, long pos) {
     }
 
     auto edgeInPath = mainPath.edges.begin();
-    const auto edgeInPathEnd = mainPath.edges.end();
+    const auto &edgeInPathEnd = mainPath.edges.end();
     Node *nodeInPath = (*edgeInPath)->source;
     Node *currentNode = NULL;
     Node *initialNode = NULL;
@@ -226,10 +230,108 @@ void ConsensusGraph::addRead(const std::string &s, size_t readId, long pos) {
 }
 
 Path &ConsensusGraph::calculateMainPath() {
-//    std::cout << "Calculating Main Path" << std::endl;
     mainPath.clear();
+
+    std::deque<Node *> unfinishedNodes;
+    unfinishedNodes.push_back(startingNode);
+    // First we set all the hasReached fields to false
+    while (!unfinishedNodes.empty()) {
+        Node *currentNode = unfinishedNodes.front();
+        if (!currentNode->hasReached) {
+            unfinishedNodes.pop_front();
+            continue;
+        }
+
+        currentNode->hasReached = false;
+        unfinishedNodes.pop_front();
+
+        for (auto edgeIt : currentNode->edgesOut) {
+            Node *n = edgeIt.second->sink;
+            if (n->hasReached) {
+                unfinishedNodes.push_front(n);
+            }
+        }
+
+        for (auto edgeIt : currentNode->edgesIn) {
+            if (edgeIt->source->hasReached)
+                unfinishedNodes.push_back(edgeIt->source);
+        }
+    }
+
+    size_t globalMaxWeight = 0;
+    Node *globalMaxWeightNode = NULL;
+    unfinishedNodes.push_back(startingNode);
+    while (!unfinishedNodes.empty()) {
+        Node *currentNode = unfinishedNodes.front();
+        if (currentNode->hasReached) {
+            unfinishedNodes.pop_front();
+            continue;
+        }
+        size_t maxWeight = 0;
+        bool hasPreviousWeights = true;
+        for (auto edgeIt : currentNode->edgesOut) {
+            Node *n = edgeIt.second->sink;
+            if (!edgeIt.second->sink->hasReached) {
+                unfinishedNodes.push_front(n);
+                hasPreviousWeights = false;
+                break;
+            }
+            size_t prevWeight = edgeIt.second->sink->cumulativeWeight;
+            size_t curWeight = prevWeight + edgeIt.second->count;
+            maxWeight = std::max(maxWeight, curWeight);
+        }
+        if (!hasPreviousWeights)
+            continue;
+        globalMaxWeightNode = maxWeight >= globalMaxWeight ? currentNode : globalMaxWeightNode;
+        globalMaxWeight = std::max(maxWeight, globalMaxWeight);
+        unfinishedNodes.pop_front();
+        for (auto edgeIt : currentNode->edgesIn) {
+            unfinishedNodes.push_back(edgeIt->source);
+        }
+        currentNode->cumulativeWeight = maxWeight;
+        currentNode->hasReached = true;
+    }
+
+    startingNode = globalMaxWeightNode;
+
     std::vector<Edge *> &edgesInPath = mainPath.edges;
     std::string &stringPath = mainPath.path;
+
+    stringPath.push_back(globalMaxWeightNode->base);
+    globalMaxWeightNode->onMainPath = true;
+//    std::cout << "max weight" << globalMaxWeight << std::endl;
+//    std::cout << "here" << std::endl;
+    while (globalMaxWeight > 0) {
+//        std::cout << "max weight" << globalMaxWeight << " "
+//                  << edgesInPath.size() << std::endl;
+        for (auto e : globalMaxWeightNode->edgesOut) {
+            if (e.second->count + e.first->cumulativeWeight == globalMaxWeight) {
+                edgesInPath.push_back(e.second);
+                globalMaxWeight -= e.second->count;
+                globalMaxWeightNode = e.first;
+                stringPath.push_back(globalMaxWeightNode->base);
+                e.first->onMainPath = true;
+                break;
+            };
+        }
+    }
+
+    size_t startingReadId = *edgesInPath.front()->reads.begin();
+    startPos = reads.at(startingReadId).pos;
+    size_t endingReadId = *edgesInPath.back()->reads.begin();
+    Read &endingRead = reads.at(endingReadId);
+    endPos = endingRead.pos + endingRead.len;
+    printStatus();
+    removeCycles();
+    return mainPath;
+}
+
+Path &ConsensusGraph::calculateMainPathGreedy() {
+    mainPath.clear();
+
+    std::vector<Edge *> &edgesInPath = mainPath.edges;
+    std::string &stringPath = mainPath.path;
+
     Node *currentNode = startingNode;
     currentNode->onMainPath = true;
     // Updating string
@@ -241,19 +343,84 @@ Path &ConsensusGraph::calculateMainPath() {
         currentNode->onMainPath = true;
         stringPath.push_back(currentNode->base);
     }
-    size_t startingReadId = edgesInPath.front()->reads[0];
+    size_t startingReadId = *edgesInPath.front()->reads.begin();
     startPos = reads.at(startingReadId).pos;
-    size_t endingReadId = edgesInPath.back()->reads[0];
+    size_t endingReadId = *edgesInPath.back()->reads.begin();
     Read &endingRead = reads.at(endingReadId);
     endPos = endingRead.pos + endingRead.len;
-//    std::cout << "Finished Calculating Main Path" << std::endl;
+    printStatus();
+    removeCycles();
     return mainPath;
 }
 
+void ConsensusGraph::removeCycles() {
+    auto edgeOnPath = mainPath.edges.begin();
+    auto edgeOnPathEnd = mainPath.edges.end();
+    if (edgeOnPath == edgeOnPathEnd)
+        return;
+    Node *nodeOnPath = (*edgeOnPath)->source;
+    // We first iterate over all nodes on mainPath
+    while (true) {
+        // Then we iterate over all edges pointing to side nodes that have other edges in
+        for (auto &edgeIt : nodeOnPath->edgesOut) {
+            Node *sideNode = edgeIt.first;
+            if (sideNode->onMainPath || sideNode->edgesIn.size() == 1)
+                continue;
+            splitPath(nodeOnPath, nodeOnPath, edgeIt.second, edgeIt.second->reads);
+        }
+        if (edgeOnPath == edgeOnPathEnd)
+            break;
+        nodeOnPath = (*edgeOnPath)->sink;
+        ++edgeOnPath;
+    }
+}
+
+void ConsensusGraph::splitPath(Node *oldPre, Node *newPre, Edge *e,
+                               std::set<size_t> const &reads2Split) {
+    // The reads that need to be split going down this path
+    std::set<size_t> readsInPath2Split;
+    std::set_intersection(reads2Split.begin(), reads2Split.end(),
+                          e->reads.begin(), e->reads.end(),
+                          std::inserter(readsInPath2Split, readsInPath2Split.begin()));
+    if (readsInPath2Split.empty())
+        return;
+
+    // Remove the reads from the node edge
+    std::set<size_t> updatedReadsInOldEdge;
+    std::set_difference(e->reads.begin(), e->reads.end(),
+                        readsInPath2Split.begin(), readsInPath2Split.end(),
+                        std::inserter(updatedReadsInOldEdge, updatedReadsInOldEdge.begin()));
+    e->reads.swap(updatedReadsInOldEdge);
+    e->count = e->reads.size();
+    if (e->count == 0) {
+        e->sink->edgesIn.erase(e);
+        e->source->edgesOut.erase(e->sink);
+    }
+
+    Node *oldCur = e->sink;
+    // just create a new edge and return if we are arriving at a node in mainPath
+    if (oldCur->onMainPath) {
+        Edge *newEdge = createEdge(newPre, oldCur, 0);
+        newEdge->reads = readsInPath2Split;
+        newEdge->count = newEdge->reads.size();
+        return;
+    }
+
+    // Otherwise create a new node
+    Node *newCur = createNode(oldCur->base);
+    // Add an edge to this new node
+    Edge *newEdge = createEdge(newPre, newCur, 0);
+    newEdge->reads = readsInPath2Split;
+    newEdge->count = newEdge->reads.size();
+    for (auto subEdge : oldCur->edgesOut) {
+        splitPath(oldCur, newCur, subEdge.second, readsInPath2Split);
+    }
+}
+
 ConsensusGraph::~ConsensusGraph() {
-    for (auto n : nodes)
+    for (auto &n : nodes)
         delete n;
-    for (auto e : edges)
+    for (auto &e : edges)
         delete e;
     delete aligner;
 }
@@ -264,10 +431,11 @@ Node *ConsensusGraph::createNode(char base) {
     return n;
 }
 
-Edge *ConsensusGraph::createEdge(Node *source, Node *sink, unsigned int read) {
+Edge *ConsensusGraph::createEdge(Node *source, Node *sink, size_t read) {
     Edge *e = new Edge(source, sink, read);
     edges.push_back(e);
-    source->addEdge(e);
+    source->edgesOut.insert(std::make_pair(sink, e));
+    sink->edgesIn.insert(e);
     return e;
 }
 
@@ -281,6 +449,11 @@ void ConsensusGraph::printStatus() {
               << " starts at " << startPos
               << " ends at " << endPos
               << " len in Contig " << endPos - startPos
+              << std::endl;
+    double stat = mainPath.edges.size() * mainPath.getAverageWeight() / (reads.size() * 9999);
+    std::cout << stat / (1 - 0.17) << " "
+              << stat / (1 - 0.17 * 1.05) << " "
+              << stat / (1 - 0.17 * 1.1) << " "
               << std::endl;
 }
 

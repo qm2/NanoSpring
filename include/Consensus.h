@@ -14,6 +14,7 @@
 #include "Edits.h"
 #include <vector>
 #include <map>
+#include <set>
 #include <string>
 
 class Node;
@@ -64,11 +65,17 @@ public:
      * Adds an edge starting from this node
      * @param e The edge to add.
      */
-    void addEdge(Edge *e);
+//    void addEdge(Edge *e);
 
-private:
     // The edges with this node as source
-    std::map<Node *, Edge *> edgesFrom;
+    std::map<Node *, Edge *> edgesOut;
+
+    std::set<Edge *> edgesIn;
+
+    size_t cumulativeWeight = 0;
+    bool hasReached = false;
+private:
+
 };
 
 /***
@@ -80,8 +87,8 @@ class Edge {
 public:
     Node *source;
     Node *sink;
-    unsigned int count;
-    std::vector<unsigned int> reads;
+    size_t count;
+    std::set<size_t> reads;
 
     /***
      * Initializes the Edge from a source, a sink, and a single read.
@@ -89,14 +96,14 @@ public:
      * @param sink
      * @param read
      */
-    Edge(Node *source, Node *sink, unsigned int read);
+    Edge(Node *source, Node *sink, size_t read);
 
     /***
      * Adds a read to the edge. Basically just increases count by 1 and add read
      * to the internal vector.
      * @param read
      */
-    void addRead(unsigned int read);
+    void addRead(size_t read);
 };
 
 /***
@@ -171,6 +178,12 @@ public:
      */
     Path &calculateMainPath();
 
+    /***
+     * Clears the old mainPath, calculates the new mainPath and adds it.
+     * @return the new mainPath
+     */
+    Path &calculateMainPathGreedy();
+
     Path &getMainPath();
 
     /***
@@ -193,7 +206,16 @@ private:
 
     Node *createNode(char base);
 
-    Edge *createEdge(Node *source, Node *sink, unsigned int read);
+    Edge *createEdge(Node *source, Node *sink, size_t read);
 
     void updateGraph(std::vector<Edit> &editScript, ssize_t beginOffset, ssize_t endOffset);
+
+    /***
+     * Remove possible cycles from mainPath. Should be called internally
+     * every time the mainPath is updated. Cycles are avoided by ensuring
+     * that every side path only has one edge in from the main path.
+     */
+    void removeCycles();
+
+    void splitPath(Node *oldPre, Node *newPre, Edge *e, std::set<size_t> const &reads2Split);
 };

@@ -4,6 +4,7 @@
 #include "Consensus.h"
 #include "myers.h"
 #include <gperftools/profiler.h>
+#include <gperftools/heap-profiler.h>
 #include <iostream>
 #include <ctime>
 #include <chrono>
@@ -55,9 +56,9 @@ int main(int argc, char **argv) {
                 consensusGraph.addRead(*cG.nR.readData[currentRead->second],
                                        currentRead->second, currentRead->first);
                 consensusGraph.calculateMainPath();
-//                consensusGraph.printStatus();
-//                if (count % 2 == 0)
-//                    std::cout << "Added read " << count << std::endl;
+                consensusGraph.printStatus();
+                if (count % 100 == 0)
+                    std::cout << "Added read " << count << std::endl;
                 count++;
             }
             consensusGraph.calculateMainPath();

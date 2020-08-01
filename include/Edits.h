@@ -92,6 +92,8 @@ public:
                        std::vector<Edit> &editScript, size_t &editDis);
 
     StringAligner(const std::string &name);
+
+    virtual ~StringAligner();
 };
 
 #endif //EXPERIMENTS_EDITS_H

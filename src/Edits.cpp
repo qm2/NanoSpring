@@ -43,3 +43,5 @@ bool StringAligner::align(const std::string &s1, const std::string &s2,
     endOffset = 0;
     return align(s1, s2, editScript, editDis);
 }
+
+StringAligner::~StringAligner() {}
