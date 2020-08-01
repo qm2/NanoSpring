@@ -174,17 +174,23 @@ public:
 
     /***
      * Clears the old mainPath, calculates the new mainPath and adds it.
+     * Uses dynamic programming.
      * @return the new mainPath
      */
     Path &calculateMainPath();
 
     /***
      * Clears the old mainPath, calculates the new mainPath and adds it.
+     * Uses greedy algorithm.
      * @return the new mainPath
      */
     Path &calculateMainPathGreedy();
 
     Path &getMainPath();
+
+    void writeMainPath(std::ofstream &f);
+
+    void writeReads(std::ofstream &f);
 
     /***
      * Prints the info of the ConsensusGraph. For debugging purposes
@@ -218,4 +224,13 @@ private:
     void removeCycles();
 
     void splitPath(Node *oldPre, Node *newPre, Edge *e, std::set<size_t> const &reads2Split);
+
+    /***
+     *
+     * @param f
+     * @param r
+     * @param id
+     * @return Edit distance
+     */
+    size_t writeRead(std::ofstream &f, Read &r, size_t id);
 };

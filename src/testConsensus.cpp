@@ -6,6 +6,7 @@
 #include <gperftools/profiler.h>
 #include <gperftools/heap-profiler.h>
 #include <iostream>
+#include <fstream>
 #include <ctime>
 #include <chrono>
 
@@ -43,26 +44,36 @@ int main(int argc, char **argv) {
         }
         std::cout << cG << std::endl;
 
+        size_t i = 0;
         for (Contig *c : cG.contigs) {
             std::set<std::pair<long, read_t>> &readsInContig = c->reads;
             auto currentRead = readsInContig.begin();
             ConsensusGraph consensusGraph(new LocalMyersRollBack(100, 200, 3200));
             consensusGraph.initialize(*cG.nR.readData[currentRead->second],
                                       currentRead->second, currentRead->first);
-            consensusGraph.calculateMainPath();
+            consensusGraph.calculateMainPathGreedy();
             auto end = readsInContig.end();
             size_t count = 0;
             for (currentRead++; currentRead != end; currentRead++) {
                 consensusGraph.addRead(*cG.nR.readData[currentRead->second],
                                        currentRead->second, currentRead->first);
-                consensusGraph.calculateMainPath();
+                consensusGraph.calculateMainPathGreedy();
                 consensusGraph.printStatus();
                 if (count % 100 == 0)
                     std::cout << "Added read " << count << std::endl;
                 count++;
             }
-            consensusGraph.calculateMainPath();
+            consensusGraph.calculateMainPathGreedy();
             consensusGraph.printStatus();
+            std::ofstream f;
+            f.open("testContig" + std::to_string(i) + ".genome");
+            consensusGraph.writeMainPath(f);
+            f.close();
+
+            f.open("testContig" + std::to_string(i) + ".reads");
+            consensusGraph.writeReads(f);
+            f.close();
+            ++i;
         }
     }
 

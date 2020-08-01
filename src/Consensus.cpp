@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <iterator>
 #include <deque>
+#include <fstream>
 #include "../include/Consensus.h"
 
 Edge::Edge(Node *source, Node *sink, size_t read) : source(source), sink(sink) {
@@ -101,7 +102,7 @@ void ConsensusGraph::addRead(const std::string &s, size_t readId, long pos) {
                                   beginOffset, endOffset, editScript, editDis);
 //    std::cout << "success ? " << success << std::endl;
     if (!success) {
-        std::cout << "Failed to add" << std::endl;
+        std::cout << "Failed to add" << "\n";
         std::cout << "mainPath startPos " << startPos
                   << " mainPath endPos " << endPos
                   << " current read startPos " << pos
@@ -443,18 +444,88 @@ void ConsensusGraph::printStatus() {
     std::cout << reads.size() << " reads, "
               << nodes.size() << " nodes, and "
               << edges.size() << " edges."
-              << std::endl;
+              << "\n";
     std::cout << "mainPath len " << mainPath.edges.size() + 1
               << " avg weight " << mainPath.getAverageWeight()
               << " starts at " << startPos
               << " ends at " << endPos
               << " len in Contig " << endPos - startPos
-              << std::endl;
+              << "\n";
     double stat = mainPath.edges.size() * mainPath.getAverageWeight() / (reads.size() * 9999);
     std::cout << stat / (1 - 0.17) << " "
               << stat / (1 - 0.17 * 1.05) << " "
               << stat / (1 - 0.17 * 1.1) << " "
               << std::endl;
+}
+
+void ConsensusGraph::writeMainPath(std::ofstream &f) {
+    f << mainPath.path << std::endl;
+}
+
+void ConsensusGraph::writeReads(std::ofstream &f) {
+    // First we write the index of each character into the cumulativeWeight
+    // field of the nodes on mainPath
+    mainPath.edges.front()->source->cumulativeWeight = 0;
+    size_t i = 0;
+    for (auto e : mainPath.edges) {
+        e->sink->cumulativeWeight = ++i;
+    }
+    size_t totalEditDis = 0;
+    for (auto it : reads) {
+        totalEditDis += writeRead(f, it.second, it.first);
+    }
+    std::cout << "AvgEditDis " << totalEditDis / (double) reads.size() << std::endl;
+}
+
+size_t ConsensusGraph::writeRead(std::ofstream &f, Read &r, size_t id) {
+    // First we write the read id and initial position
+    Node *curNode = r.start;
+    auto advanceInRead = [id](Node *n) -> Node * {
+        for (auto e : n->edgesOut) {
+            if (e.second->reads.find(id) != e.second->reads.end()) {
+                return e.first;
+            }
+        }
+        return NULL;
+    };
+    while (!curNode->onMainPath)
+        curNode = advanceInRead(curNode);
+
+    f << std::to_string(id) << ":" << std::to_string(curNode->cumulativeWeight) << "\n";
+
+    size_t editDis = 0;
+    size_t posInMainPath = curNode->cumulativeWeight;
+    curNode = r.start;
+    size_t unchangedCount = 0;
+    auto dealWithUnchanged = [&f, &unchangedCount]() {
+        if (unchangedCount > 0) {
+            f << 'u' << std::to_string(unchangedCount);
+            unchangedCount = 0;
+        }
+    };
+    do {
+        if (curNode->onMainPath) {
+            size_t curPos = curNode->cumulativeWeight;
+            if (curPos > posInMainPath)
+                dealWithUnchanged();
+            for (; posInMainPath < curPos; posInMainPath++) {
+                f << 'd';
+                editDis++;
+            }
+            unchangedCount++;
+            posInMainPath++;
+        } else {
+            dealWithUnchanged();
+            // Else we have an insertion
+            f << 'i' << curNode->base;
+            editDis++;
+        }
+    } while (curNode = advanceInRead(curNode));
+
+    dealWithUnchanged();
+
+    f << std::endl;
+    return editDis;
 }
 
 ConsensusGraph::ConsensusGraph(StringAligner *aligner) : aligner(aligner) {}
