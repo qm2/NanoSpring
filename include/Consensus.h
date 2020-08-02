@@ -171,7 +171,9 @@ public:
      * @param readId id of the read to add
      * @param pos Relative position of read in contig
      */
-    void addRead(const std::string &s, size_t readId, long pos);
+    void addRead(const std::string &s, size_t readId, long pos,
+                 std::vector<Edit> &editScript, ssize_t &beginOffset,
+                 ssize_t &endOffset);
 
     void addReads(const std::set<std::pair<long, read_t>> &reads,
                   std::vector<std::unique_ptr<std::string>> &readData);

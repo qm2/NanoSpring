@@ -1,14 +1,14 @@
+#include "Consensus.h"
 #include "Contig.h"
 #include "NanoporeReads.h"
 #include "ReadAligner.h"
-#include "Consensus.h"
 #include "myers.h"
-#include <gperftools/profiler.h>
-#include <gperftools/heap-profiler.h>
-#include <iostream>
-#include <fstream>
-#include <ctime>
 #include <chrono>
+#include <ctime>
+#include <fstream>
+#include <gperftools/heap-profiler.h>
+#include <gperftools/profiler.h>
+#include <iostream>
 
 int main(int argc, char **argv) {
     std::srand(unsigned(std::time(0)));
@@ -24,23 +24,29 @@ int main(int argc, char **argv) {
         if (k == 0)
             return 0;
         MergeSortReadAligner rA(21, 10);
-//        MergeSortReadAligner rA(10, 1);
+        //        MergeSortReadAligner rA(10, 1);
         NanoporeReads nR(argv[1], k, n);
         MinHashReadFilter rF(overlapSketchThreshold, nR);
         {
             auto start = std::chrono::high_resolution_clock::now();
             nR.calculateMinHashSketches();
             auto end = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-            std::cout << "Calculating MinHashes took " << duration.count() << " milliseconds" << std::endl;
+            auto duration =
+                std::chrono::duration_cast<std::chrono::milliseconds>(end -
+                                                                      start);
+            std::cout << "Calculating MinHashes took " << duration.count()
+                      << " milliseconds" << std::endl;
         }
         ContigGenerator cG(&rA, nR, &rF);
         {
             auto start = std::chrono::high_resolution_clock::now();
             cG.generateContigs();
             auto end = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-            std::cout << "Generating contigs took " << duration.count() << " milliseconds" << std::endl;
+            auto duration =
+                std::chrono::duration_cast<std::chrono::milliseconds>(end -
+                                                                      start);
+            std::cout << "Generating contigs took " << duration.count()
+                      << " milliseconds" << std::endl;
         }
         std::cout << cG << std::endl;
 
@@ -48,7 +54,8 @@ int main(int argc, char **argv) {
         for (Contig *c : cG.contigs) {
             std::set<std::pair<long, read_t>> &readsInContig = c->reads;
             auto currentRead = readsInContig.begin();
-            ConsensusGraph consensusGraph(new LocalMyersRollBack(100, 200, 3200));
+            ConsensusGraph consensusGraph(
+                new LocalMyersRollBack(100, 200, 3200));
 
             consensusGraph.addReads(readsInContig, cG.nR.readData);
 
@@ -65,7 +72,6 @@ int main(int argc, char **argv) {
             ++i;
         }
     }
-
 
     ProfilerStop();
 }

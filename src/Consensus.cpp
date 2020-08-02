@@ -91,13 +91,12 @@ void ConsensusGraph::initialize(const std::string &seed, size_t readId,
     }
 }
 
-void ConsensusGraph::addRead(const std::string &s, size_t readId, long pos) {
+void ConsensusGraph::addRead(const std::string &s, size_t readId, long pos,
+                             std::vector<Edit> &editScript,
+                             ssize_t &beginOffset, ssize_t &endOffset) {
     std::string &originalString = mainPath.path;
-    std::vector<Edit> editScript;
     const ssize_t offsetGuess = originalString.length() - endPos + pos;
     size_t editDis;
-    ssize_t beginOffset;
-    ssize_t endOffset;
 
     bool success = aligner->align(originalString, s, offsetGuess, beginOffset,
                                   endOffset, editScript, editDis);
@@ -111,7 +110,7 @@ void ConsensusGraph::addRead(const std::string &s, size_t readId, long pos) {
         return;
     }
 
-    updateGraph(s, editScript, beginOffset, endOffset, readId, pos);
+    // updateGraph(s, editScript, beginOffset, endOffset, readId, pos);
 }
 
 void ConsensusGraph::addReads(
@@ -133,17 +132,39 @@ void ConsensusGraph::addReads(
         if (read2Lengthen != readsInContig.begin()) {
             read2Lengthen--;
         }
-        addRead(*readData[read2Lengthen->second], read2Lengthen->second,
-                read2Lengthen->first);
-        calculateMainPathGreedy();
-        readsInContig.erase(read2Lengthen);
+        {
+            std::vector<Edit> editScript;
+            ssize_t beginOffset, endOffset;
+            read_t readId = read2Lengthen->second;
+            ssize_t pos = read2Lengthen->first;
+            std::string &s = *readData[readId];
+            addRead(s, readId, pos, editScript, beginOffset, endOffset);
+            updateGraph(s, editScript, beginOffset, endOffset, readId, pos);
+            calculateMainPathGreedy();
+            readsInContig.erase(read2Lengthen);
+        }
 
         auto endRead2Add =
             readsInContig.lower_bound(std::make_pair(endPos - len - 100, 0));
-        for (auto read2Add = readsInContig.begin(); read2Add != endRead2Add;
-             read2Add++) {
-            addRead(*readData[read2Add->second], read2Add->second,
-                    read2Add->first);
+        size_t count = 0;
+        std::vector<std::pair<long, read_t>> reads2Add(readsInContig.begin(),
+                                                       endRead2Add);
+        size_t num = reads2Add.size();
+#pragma omp parallel for
+        for (size_t i = 0; i < num; ++i) {
+            auto read2Add = reads2Add[i];
+            std::vector<Edit> editScript;
+            ssize_t beginOffset, endOffset;
+            read_t readId = read2Add.second;
+            ssize_t pos = read2Add.first;
+            std::string &s = *readData[readId];
+            addRead(s, readId, pos, editScript, beginOffset, endOffset);
+#pragma omp critical
+            updateGraph(s, editScript, beginOffset, endOffset, readId, pos);
+
+            // count++;
+            // if (count % 4 == 0)
+            //     calculateMainPathGreedy();
         }
         calculateMainPathGreedy();
         readsInContig.erase(readsInContig.begin(), endRead2Add);
@@ -425,12 +446,14 @@ void ConsensusGraph::removeCycles() {
     while (true) {
         // Then we iterate over all edges pointing to side nodes that have other
         // edges in
-        for (auto &edgeIt : nodeOnPath->edgesOut) {
-            Node *sideNode = edgeIt.first;
+        auto end = nodeOnPath->edgesOut.end();
+        for (auto edgeIt = nodeOnPath->edgesOut.begin(); edgeIt != end;) {
+            Node *sideNode = edgeIt->first;
+            Edge *e = edgeIt->second;
+            edgeIt++;
             if (sideNode->onMainPath || sideNode->edgesIn.size() == 1)
                 continue;
-            splitPath(nodeOnPath, nodeOnPath, edgeIt.second,
-                      edgeIt.second->reads);
+            splitPath(nodeOnPath, nodeOnPath, e, e->reads);
         }
         if (edgeOnPath == edgeOnPathEnd)
             break;
@@ -479,8 +502,13 @@ void ConsensusGraph::splitPath(Node *oldPre, Node *newPre, Edge *e,
     Edge *newEdge = createEdge(newPre, newCur, 0);
     newEdge->reads = readsInPath2Split;
     newEdge->count = newEdge->reads.size();
-    for (auto subEdge : oldCur->edgesOut) {
-        splitPath(oldCur, newCur, subEdge.second, readsInPath2Split);
+    // std::map<Node *, Edge *> edgesOut(oldCur->edgesOut);
+    // for (auto subEdge : edgesOut) {
+    //     splitPath(oldCur, newCur, subEdge.second, readsInPath2Split);
+    // }
+    auto end = oldCur->edgesOut.end();
+    for (auto subEdge = oldCur->edgesOut.begin(); subEdge != end;) {
+        splitPath(oldCur, newCur, subEdge++->second, readsInPath2Split);
     }
 }
 

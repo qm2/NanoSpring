@@ -28,8 +28,9 @@ DEP_FLAGS = -MT $@ -MMD -MP -MF $(DEP_DIR)/$*.d
 # CC compiler options:
 CC=g++
 #-static-libasan -fsanitize=address -fno-omit-frame-pointer -ltcmalloc
-CC_FLAGS=-fopenmp -g -O3 -Iinclude -static-libasan -fsanitize=address -fno-omit-frame-pointer
-CC_LD_FLAGS=-Wl,--no-as-needed -lprofiler  -Wl,--as-needed
+CC_FLAGS=-fopenmp -g -O3 -Iinclude
+#-Wl,--no-as-needed -lprofiler
+CC_LD_FLAGS= -Wl,--no-as-needed -lprofiler -Wl,--as-needed
 CC_LIBS=
 
 ##########################################################
