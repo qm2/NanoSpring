@@ -49,20 +49,9 @@ int main(int argc, char **argv) {
             std::set<std::pair<long, read_t>> &readsInContig = c->reads;
             auto currentRead = readsInContig.begin();
             ConsensusGraph consensusGraph(new LocalMyersRollBack(100, 200, 3200));
-            consensusGraph.initialize(*cG.nR.readData[currentRead->second],
-                                      currentRead->second, currentRead->first);
-            consensusGraph.calculateMainPathGreedy();
-            auto end = readsInContig.end();
-            size_t count = 0;
-            for (currentRead++; currentRead != end; currentRead++) {
-                consensusGraph.addRead(*cG.nR.readData[currentRead->second],
-                                       currentRead->second, currentRead->first);
-                consensusGraph.calculateMainPathGreedy();
-                consensusGraph.printStatus();
-                if (count % 100 == 0)
-                    std::cout << "Added read " << count << std::endl;
-                count++;
-            }
+
+            consensusGraph.addReads(readsInContig, cG.nR.readData);
+
             consensusGraph.calculateMainPathGreedy();
             consensusGraph.printStatus();
             std::ofstream f;

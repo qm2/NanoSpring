@@ -1,7 +1,7 @@
 /***
- * We store the current reads along with their relations as a directly acyclic graph.
- * The nodes represent different bases, and each each edge means there is at least
- * one read where the base in the next node follows the current node.
+ * We store the current reads along with their relations as a directly acyclic
+ * graph. The nodes represent different bases, and each each edge means there is
+ * at least one read where the base in the next node follows the current node.
  * The nodes contain the base, and the edges going in and the edges going out.
  * The edges contain
  */
@@ -9,13 +9,14 @@
 #ifndef Z_CONSENSUS_CUH
 #define Z_CONSENSUS_CUH
 
-#endif //Z_CONSENSUS_CUH
+#endif // Z_CONSENSUS_CUH
 
+#include "Contig.h"
 #include "Edits.h"
-#include <vector>
 #include <map>
 #include <set>
 #include <string>
+#include <vector>
 
 class Node;
 
@@ -65,7 +66,7 @@ public:
      * Adds an edge starting from this node
      * @param e The edge to add.
      */
-//    void addEdge(Edge *e);
+    //    void addEdge(Edge *e);
 
     // The edges with this node as source
     std::map<Node *, Edge *> edgesOut;
@@ -74,14 +75,14 @@ public:
 
     size_t cumulativeWeight = 0;
     bool hasReached = false;
-private:
 
+private:
 };
 
 /***
  * Each directed edge has a source Node and a sink Node. The field count denotes
- * the number of reads going down that edge. An Edge also stores all the reads going down
- * that path in a vector.
+ * the number of reads going down that edge. An Edge also stores all the reads
+ * going down that path in a vector.
  */
 class Edge {
 public:
@@ -172,6 +173,9 @@ public:
      */
     void addRead(const std::string &s, size_t readId, long pos);
 
+    void addReads(const std::set<std::pair<long, read_t>> &reads,
+                  std::vector<std::unique_ptr<std::string>> &readData);
+
     /***
      * Clears the old mainPath, calculates the new mainPath and adds it.
      * Uses dynamic programming.
@@ -203,7 +207,8 @@ private:
     Node *startingNode;
     std::vector<Node *> nodes;
     std::vector<Edge *> edges;
-    // Maps ID of read to (relative position of read in contig, beginning node of the read)
+    // Maps ID of read to (relative position of read in contig, beginning node
+    // of the read)
     std::map<size_t, Read> reads;
     Path mainPath;
     // Starting and ending positions of mainPath in contig
@@ -214,7 +219,9 @@ private:
 
     Edge *createEdge(Node *source, Node *sink, size_t read);
 
-    void updateGraph(std::vector<Edit> &editScript, ssize_t beginOffset, ssize_t endOffset);
+    void updateGraph(const std::string &s, std::vector<Edit> &editScript,
+                     ssize_t beginOffset, ssize_t endOffset, size_t readId,
+                     long pos);
 
     /***
      * Remove possible cycles from mainPath. Should be called internally
@@ -223,7 +230,8 @@ private:
      */
     void removeCycles();
 
-    void splitPath(Node *oldPre, Node *newPre, Edge *e, std::set<size_t> const &reads2Split);
+    void splitPath(Node *oldPre, Node *newPre, Edge *e,
+                   std::set<size_t> const &reads2Split);
 
     /***
      *
