@@ -21,11 +21,11 @@ int main(int argc, char **argv) {
     size_t maxEditDis = 3200;
     //    aligners.push_back(new LocalMyers(32, 64));
     //    aligners.push_back(new LocalMyersRollBack(32, 64, maxEditDis));
-    aligners.push_back(new LocalMyers(50, 100));
-    aligners.push_back(new LocalMyersRollBack(50, 100, maxEditDis));
-    aligners.push_back(new LocalMyersRollBack(50, 100, maxEditDis * 2));
+    // aligners.push_back(new LocalMyers(50, 100));
+    // aligners.push_back(new LocalMyersRollBack(50, 100, maxEditDis));
+    // aligners.push_back(new LocalMyersRollBack(50, 100, maxEditDis * 2));
     aligners.push_back(new LocalMyersRollBack(100, 200, maxEditDis));
-    aligners.push_back(new LocalMyersRollBack(100, 200, maxEditDis * 2));
+    // aligners.push_back(new LocalMyersRollBack(100, 200, maxEditDis * 2));
 
     //    aligners.push_back(new LocalMyersRollBack(100, 50, maxEditDis));
     //    aligners.push_back(new LocalMyers(100, 200));
@@ -41,7 +41,7 @@ void testAlg(std::vector<StringAligner *> aligners) {
     AlignerTester aT;
     // ssize_t offsets2Test[] = {0,    100, -100, 200,  -200, 400,
     //                           -400, 800, -800, 1600, -1600};
-    ssize_t offsets2Test[] = {0, 100, -100, 200, -200, 400, -400};
+    ssize_t offsets2Test[] = {0, -5, 5, -10, 10, -20, 20, -40, 40};
     //    size_t offsets2Test[] = {0, 100};
 
     aT.generateData(10000, 200, 1, 0.03, 0.03, 0.04);
