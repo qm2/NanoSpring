@@ -93,7 +93,7 @@ public:
      */
     const size_t maxEditDis;
 
-    const double errorRate = 0.3;
+    const double errorRate = 0.2;
 
     virtual bool align(const std::string &s1, const std::string &s2,
                        std::vector<Edit> &editScript, size_t &editDis) override;

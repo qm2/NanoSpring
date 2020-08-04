@@ -1,5 +1,6 @@
 #include "../include/Consensus.h"
 #include <algorithm>
+#include <csignal>
 #include <deque>
 #include <fstream>
 #include <iostream>
@@ -81,7 +82,7 @@ void ConsensusGraph::initialize(const std::string &seed, size_t readId,
     size_t len = seed.length();
     Node *currentNode = createNode(seed[0]);
     // We create a read that points to this node
-    reads.insert(std::make_pair(
+    readsInGraph.insert(std::make_pair(
         readId, ConsensusGraph::Read(pos, currentNode, seed.length())));
     startingNode = currentNode;
     for (size_t i = 1; i < len; ++i) {
@@ -91,7 +92,7 @@ void ConsensusGraph::initialize(const std::string &seed, size_t readId,
     }
 }
 
-void ConsensusGraph::addRead(const std::string &s, size_t readId, long pos,
+bool ConsensusGraph::addRead(const std::string &s, size_t readId, long pos,
                              std::vector<Edit> &editScript,
                              ssize_t &beginOffset, ssize_t &endOffset) {
     std::string &originalString = mainPath.path;
@@ -107,9 +108,9 @@ void ConsensusGraph::addRead(const std::string &s, size_t readId, long pos,
         std::cout << "mainPath startPos " << startPos << " mainPath endPos "
                   << endPos << " current read startPos " << pos
                   << " OffsetGuess " << offsetGuess << std::endl;
-        return;
+        return false;
     }
-
+    return true;
     // updateGraph(s, editScript, beginOffset, endOffset, readId, pos);
 }
 
@@ -123,7 +124,7 @@ void ConsensusGraph::addReads(
                currentRead->first);
     size_t len = (*readData[currentRead->second]).length();
     readsInContig.erase(currentRead);
-    calculateMainPathGreedy();
+    calculateMainPath();
 
     size_t count = 0;
     while (!readsInContig.empty()) {
@@ -138,9 +139,12 @@ void ConsensusGraph::addReads(
             read_t readId = read2Lengthen->second;
             ssize_t pos = read2Lengthen->first;
             std::string &s = *readData[readId];
-            addRead(s, readId, pos, editScript, beginOffset, endOffset);
-            updateGraph(s, editScript, beginOffset, endOffset, readId, pos);
-            calculateMainPathGreedy();
+            bool success =
+                addRead(s, readId, pos, editScript, beginOffset, endOffset);
+            if (success) {
+                updateGraph(s, editScript, beginOffset, endOffset, readId, pos);
+                calculateMainPath();
+            }
             readsInContig.erase(read2Lengthen);
         }
 
@@ -150,7 +154,7 @@ void ConsensusGraph::addReads(
         std::vector<std::pair<long, read_t>> reads2Add(readsInContig.begin(),
                                                        endRead2Add);
         size_t num = reads2Add.size();
-        // #pragma omp parallel for
+#pragma omp parallel for
         for (size_t i = 0; i < num; ++i) {
             auto read2Add = reads2Add[i];
             std::vector<Edit> editScript;
@@ -158,15 +162,20 @@ void ConsensusGraph::addReads(
             read_t readId = read2Add.second;
             ssize_t pos = read2Add.first;
             std::string &s = *readData[readId];
-            addRead(s, readId, pos, editScript, beginOffset, endOffset);
-            // #pragma omp critical
-            updateGraph(s, editScript, beginOffset, endOffset, readId, pos);
+            bool success =
+                addRead(s, readId, pos, editScript, beginOffset, endOffset);
+#pragma omp critical
+            {
+                if (success)
+                    updateGraph(s, editScript, beginOffset, endOffset, readId,
+                                pos);
+            }
 
             // count++;
             // if (count % 4 == 0)
-            calculateMainPathGreedy();
+            // calculateMainPath();
         }
-        calculateMainPathGreedy();
+        calculateMainPath();
         readsInContig.erase(readsInContig.begin(), endRead2Add);
 
         printStatus();
@@ -220,6 +229,7 @@ void ConsensusGraph::updateGraph(const std::string &s,
             // We need to insert the initial parts of the read
             // This number must be positive
             size_t numOfNodes2Insert = -beginOffset;
+            // std::cout << numOfNodes2Insert << " ";
             size_t i = 0;
             // We create an initial node
             currentNode = createNode(s[i++]);
@@ -307,7 +317,38 @@ void ConsensusGraph::updateGraph(const std::string &s,
     }
 
     // Don't forget to add the read!
-    reads.insert(std::make_pair(readId, Read(pos, initialNode, s.length())));
+    readsInGraph.insert(
+        std::make_pair(readId, Read(pos, initialNode, s.length())));
+
+    // {
+    //     std::ofstream f;
+    //     f.open("graph" + std::to_string(readsInGraph.size()) + ".dot");
+    //     writeGraph(f);
+    //     f.close();
+    // }
+}
+
+void ConsensusGraph::writeGraph(std::ofstream &f) {
+    f << "digraph g {\n";
+    // f << "splins=line;\n";
+    f << "maxiter=1;\n";
+    // f << "fixedsize=true;\n";
+    // f << "fontsize=2;\n";
+    // f << "labelfontsize=2;\n";
+    size_t count = 0;
+    for (Node *n : nodes) {
+        f << std::to_string((size_t)n) << " [label=\"" << n->base << "\" pos=\""
+          << "0," << std::to_string(count * 100) << "!\"];\n";
+        count++;
+    }
+    for (Node *n : nodes) {
+        for (auto edgeIt : n->edgesOut) {
+            Edge *e = edgeIt.second;
+            f << std::to_string((size_t)n) << " -> "
+              << std::to_string((size_t)e->sink) << "\n";
+        }
+    }
+    f << "}\n";
 }
 
 Path &ConsensusGraph::calculateMainPath() {
@@ -318,11 +359,15 @@ Path &ConsensusGraph::calculateMainPath() {
     // First we set all the hasReached fields to false
     while (!unfinishedNodes.empty()) {
         Node *currentNode = unfinishedNodes.front();
+        // We don't do anything if it has already been set to false
         if (!currentNode->hasReached) {
             unfinishedNodes.pop_front();
             continue;
         }
-
+        if (unfinishedNodes.size() > 1000000) {
+            std::cout << unfinishedNodes.size() << ' ';
+            std::raise(SIGINT);
+        }
         currentNode->hasReached = false;
         unfinishedNodes.pop_front();
 
@@ -348,11 +393,25 @@ Path &ConsensusGraph::calculateMainPath() {
             unfinishedNodes.pop_front();
             continue;
         }
+
         size_t maxWeight = 0;
         bool hasPreviousWeights = true;
         for (auto edgeIt : currentNode->edgesOut) {
             Node *n = edgeIt.second->sink;
-            if (!edgeIt.second->sink->hasReached) {
+            if (!n->hasReached) {
+                // std::deque<Node *>::iterator temp = std::find(
+                //     unfinishedNodes.begin(), unfinishedNodes.end(), n);
+                // if (temp != unfinishedNodes.end()) {
+                //     std::cout << std::distance(unfinishedNodes.begin(),
+                //     temp)
+                //               << std::endl;
+                //     std::cout << unfinishedNodes.size() << std::endl;
+                //     std::raise(SIGINT);
+                // }
+                if (unfinishedNodes.size() > 1000000) {
+                    std::cout << unfinishedNodes.size() << ' ';
+                    std::raise(SIGINT);
+                }
                 unfinishedNodes.push_front(n);
                 hasPreviousWeights = false;
                 break;
@@ -400,9 +459,9 @@ Path &ConsensusGraph::calculateMainPath() {
     }
 
     size_t startingReadId = *edgesInPath.front()->reads.begin();
-    startPos = reads.at(startingReadId).pos;
+    startPos = readsInGraph.at(startingReadId).pos;
     size_t endingReadId = *edgesInPath.back()->reads.begin();
-    Read &endingRead = reads.at(endingReadId);
+    Read &endingRead = readsInGraph.at(endingReadId);
     endPos = endingRead.pos + endingRead.len;
     //    printStatus();
     removeCycles();
@@ -427,9 +486,9 @@ Path &ConsensusGraph::calculateMainPathGreedy() {
         stringPath.push_back(currentNode->base);
     }
     size_t startingReadId = *edgesInPath.front()->reads.begin();
-    startPos = reads.at(startingReadId).pos;
+    startPos = readsInGraph.at(startingReadId).pos;
     size_t endingReadId = *edgesInPath.back()->reads.begin();
-    Read &endingRead = reads.at(endingReadId);
+    Read &endingRead = readsInGraph.at(endingReadId);
     endPos = endingRead.pos + endingRead.len;
     //    printStatus();
     removeCycles();
@@ -444,8 +503,8 @@ void ConsensusGraph::removeCycles() {
     Node *nodeOnPath = (*edgeOnPath)->source;
     // We first iterate over all nodes on mainPath
     while (true) {
-        // Then we iterate over all edges pointing to side nodes that have other
-        // edges in
+        // Then we iterate over all edges pointing to side nodes that have
+        // other edges in
         auto end = nodeOnPath->edgesOut.end();
         for (auto edgeIt = nodeOnPath->edgesOut.begin(); edgeIt != end;) {
             Node *sideNode = edgeIt->first;
@@ -508,7 +567,9 @@ void ConsensusGraph::splitPath(Node *oldPre, Node *newPre, Edge *e,
     // }
     auto end = oldCur->edgesOut.end();
     for (auto subEdge = oldCur->edgesOut.begin(); subEdge != end;) {
-        splitPath(oldCur, newCur, subEdge++->second, readsInPath2Split);
+        Edge *edge2WorkOn = subEdge->second;
+        subEdge++;
+        splitPath(oldCur, newCur, edge2WorkOn, readsInPath2Split);
     }
 }
 
@@ -535,15 +596,15 @@ Edge *ConsensusGraph::createEdge(Node *source, Node *sink, size_t read) {
 }
 
 void ConsensusGraph::printStatus() {
-    std::cout << reads.size() << " reads, " << nodes.size() << " nodes, and "
-              << edges.size() << " edges."
+    std::cout << readsInGraph.size() << " reads, " << nodes.size()
+              << " nodes, and " << edges.size() << " edges."
               << "\n";
     std::cout << "mainPath len " << mainPath.edges.size() + 1 << " avg weight "
               << mainPath.getAverageWeight() << " starts at " << startPos
               << " ends at " << endPos << " len in Contig " << endPos - startPos
               << "\n";
     double stat = mainPath.edges.size() * mainPath.getAverageWeight() /
-                  (reads.size() * 9999);
+                  (readsInGraph.size() * 9999);
     std::cout << stat / (1 - 0.17) << " " << stat / (1 - 0.17 * 1.05) << " "
               << stat / (1 - 0.17 * 1.1) << " " << std::endl;
 }
@@ -561,10 +622,10 @@ void ConsensusGraph::writeReads(std::ofstream &f) {
         e->sink->cumulativeWeight = ++i;
     }
     size_t totalEditDis = 0;
-    for (auto it : reads) {
+    for (auto it : readsInGraph) {
         totalEditDis += writeRead(f, it.second, it.first);
     }
-    std::cout << "AvgEditDis " << totalEditDis / (double)reads.size()
+    std::cout << "AvgEditDis " << totalEditDis / (double)readsInGraph.size()
               << std::endl;
 }
 

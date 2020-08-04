@@ -9,10 +9,15 @@
 #include <gperftools/heap-profiler.h>
 #include <gperftools/profiler.h>
 #include <iostream>
+#include <omp.h>
+#include <unistd.h>
 
 int main(int argc, char **argv) {
+    // omp_set_num_threads(1);
+    // if (!fork())
+    //     return -1;
     std::srand(unsigned(std::time(0)));
-    ProfilerStart("testConsensus.prof");
+    // ProfilerStart("testConsensus.prof");
     if (argc < 2) {
         std::cout << "Usage ./testConsensus filename" << std::endl;
         return 1;
@@ -55,7 +60,7 @@ int main(int argc, char **argv) {
             std::set<std::pair<long, read_t>> &readsInContig = c->reads;
             auto currentRead = readsInContig.begin();
             ConsensusGraph consensusGraph(
-                new LocalMyersRollBack(100, 200, 3200));
+                new LocalMyersRollBack(100, 200, 6400));
 
             consensusGraph.addReads(readsInContig, cG.nR.readData);
 
@@ -73,5 +78,5 @@ int main(int argc, char **argv) {
         }
     }
 
-    ProfilerStop();
+    // ProfilerStop();
 }

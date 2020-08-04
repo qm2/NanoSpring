@@ -546,8 +546,10 @@ bool LocalMyersRollBack::align(const std::string &s1, const std::string &s2,
                     editDis2);
         }
     }
-    if (!dir1Success && !dir2Success)
+    if (!dir1Success && !dir2Success) {
+        std::cerr << "initial alignment failed\n";
         return false;
+    }
     ssize_t forwardPassEndOffset = 0;
     if (Abegin1 == Aend || Bbegin1 == Bend) {
         // std::cout << "Left\n";
@@ -578,6 +580,7 @@ bool LocalMyersRollBack::align(const std::string &s1, const std::string &s2,
         std::reverse(editScript.begin(), editScript.end());
         return true;
     }
+    std::cerr << "Backword alignment failed\n";
     return false;
     // firstPassSuccess = align(s2, s1, -offsetGuess,
     // forwardPassBeginOffset,

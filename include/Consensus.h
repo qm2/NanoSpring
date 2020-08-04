@@ -171,7 +171,7 @@ public:
      * @param readId id of the read to add
      * @param pos Relative position of read in contig
      */
-    void addRead(const std::string &s, size_t readId, long pos,
+    bool addRead(const std::string &s, size_t readId, long pos,
                  std::vector<Edit> &editScript, ssize_t &beginOffset,
                  ssize_t &endOffset);
 
@@ -211,7 +211,7 @@ private:
     std::vector<Edge *> edges;
     // Maps ID of read to (relative position of read in contig, beginning node
     // of the read)
-    std::map<size_t, Read> reads;
+    std::map<size_t, Read> readsInGraph;
     Path mainPath;
     // Starting and ending positions of mainPath in contig
     long startPos, endPos;
@@ -243,4 +243,6 @@ private:
      * @return Edit distance
      */
     size_t writeRead(std::ofstream &f, Read &r, size_t id);
+
+    void writeGraph(std::ofstream &f);
 };
