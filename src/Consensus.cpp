@@ -150,7 +150,7 @@ void ConsensusGraph::addReads(
         std::vector<std::pair<long, read_t>> reads2Add(readsInContig.begin(),
                                                        endRead2Add);
         size_t num = reads2Add.size();
-#pragma omp parallel for
+        // #pragma omp parallel for
         for (size_t i = 0; i < num; ++i) {
             auto read2Add = reads2Add[i];
             std::vector<Edit> editScript;
@@ -159,12 +159,12 @@ void ConsensusGraph::addReads(
             ssize_t pos = read2Add.first;
             std::string &s = *readData[readId];
             addRead(s, readId, pos, editScript, beginOffset, endOffset);
-#pragma omp critical
+            // #pragma omp critical
             updateGraph(s, editScript, beginOffset, endOffset, readId, pos);
 
             // count++;
             // if (count % 4 == 0)
-            //     calculateMainPathGreedy();
+            calculateMainPathGreedy();
         }
         calculateMainPathGreedy();
         readsInContig.erase(readsInContig.begin(), endRead2Add);
