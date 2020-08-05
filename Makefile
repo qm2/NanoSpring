@@ -21,6 +21,8 @@ INC_DIR = include
 # directory for placing .d dependency files
 DEP_DIR := $(OBJ_DIR)/.deps
 
+SUBDIRS := libbsc
+
 ##########################################################
 DEP_FLAGS = -MT $@ -MMD -MP -MF $(DEP_DIR)/$*.d
 ## CC COMPILER OPTIONS ##
@@ -28,7 +30,7 @@ DEP_FLAGS = -MT $@ -MMD -MP -MF $(DEP_DIR)/$*.d
 # CC compiler options:
 CC=g++
 #-static-libasan -fsanitize=address -fno-omit-frame-pointer -ltcmalloc
-CC_FLAGS=-fopenmp -g -O3 -Iinclude
+CC_FLAGS=-fopenmp -g -O3 -Iinclude -static-libasan -fsanitize=address -fno-omit-frame-pointer
 #-Wl,--no-as-needed -lprofiler
 CC_LD_FLAGS= -Wl,--no-as-needed -lprofiler -Wl,--as-needed
 CC_LIBS=
@@ -67,7 +69,7 @@ EXE = testMinHash testAligner testContig testConsensus testMyers testAlignAlgs v
 ## Compile ##
 
 # Link c++ and CUDA compiled object files to target executable:
-all: $(EXE)
+all: $(EXE) $(SUBDIRS)
 
 testMinHash : $(addprefix $(OBJ_DIR)/,testMinHash.o NanoporeReads.o)
 testAligner : $(addprefix $(OBJ_DIR)/,testAligner.o NanoporeReads.o ReadAligner.o)
@@ -90,11 +92,15 @@ DEP_FILES := $(SRCS:%.cpp=$(DEP_DIR)/%.d)
 $(DEP_FILES):
 include $(wildcard $(DEP_FILES))
 
+$(SUBDIRS):
+	$(MAKE) -C $@
+
 # Clean objects in object directory.
 clean:
 	$(RM) bin/* *.o $(EXE) bin/.deps/*
+	$(MAKE) clean -C $(SUBDIRS)
 
-.PHONY: clean all
+.PHONY: clean all $(SUBDIRS)
 
 
 

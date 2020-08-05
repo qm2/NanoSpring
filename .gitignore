@@ -2,6 +2,8 @@
 */
 !src/
 !include/
+!include/*
+!libbsc/
 !**/.gitignore
 !**/*.py
 !Makefile
