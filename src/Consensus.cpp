@@ -507,17 +507,30 @@ void ConsensusGraph::removeCycles() {
         // other edges in
         auto end = nodeOnPath->edgesOut.end();
         for (auto edgeIt = nodeOnPath->edgesOut.begin(); edgeIt != end;) {
-            Node *sideNode = edgeIt->first;
+            // Node *sideNode = edgeIt->first;
             Edge *e = edgeIt->second;
             edgeIt++;
-            if (sideNode->onMainPath || sideNode->edgesIn.size() == 1)
-                continue;
-            splitPath(nodeOnPath, nodeOnPath, e, e->reads);
+            walkAndPrune(e);
         }
         if (edgeOnPath == edgeOnPathEnd)
             break;
         nodeOnPath = (*edgeOnPath)->sink;
         ++edgeOnPath;
+    }
+}
+
+void ConsensusGraph::walkAndPrune(Edge *e) {
+    Node *sink = e->sink;
+    Node *source = e->source;
+    if (sink->onMainPath)
+        return;
+    if (sink->edgesIn.size() > 1)
+        splitPath(source, source, e, e->reads);
+    auto end = sink->edgesOut.end();
+    for (auto subEdge = sink->edgesOut.begin(); subEdge != end;) {
+        Edge *edge2WorkOn = subEdge->second;
+        subEdge++;
+        walkAndPrune(edge2WorkOn);
     }
 }
 

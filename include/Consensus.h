@@ -232,6 +232,13 @@ private:
      */
     void removeCycles();
 
+    void walkAndPrune(Edge *e);
+
+    /***
+     * Move everything below oldPre->e to newPre->e (everything means all
+     * the reads in reads2Split until the mainPath or a leaf node is
+     * reached)
+     */
     void splitPath(Node *oldPre, Node *newPre, Edge *e,
                    std::set<size_t> const &reads2Split);
 
