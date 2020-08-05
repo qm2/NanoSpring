@@ -207,8 +207,8 @@ public:
 
 private:
     Node *startingNode;
-    std::vector<Node *> nodes;
-    std::vector<Edge *> edges;
+    size_t numNodes = 0;
+    size_t numEdges = 0;
     // Maps ID of read to (relative position of read in contig, beginning node
     // of the read)
     std::map<size_t, Read> readsInGraph;
@@ -221,9 +221,26 @@ private:
 
     Edge *createEdge(Node *source, Node *sink, size_t read);
 
+    void removeReadsFromEdge(Edge *e, std::set<size_t> const &reads);
+
+    /***
+     * Removes an edge from the graph
+     */
+    void removeEdge(Edge *e);
+
+    void removeNode(Node *n);
+
+    void removeBelow(Node *n);
+
+    void removeAbove(Node *n);
+
+    void removeConnectedNodes(Node *n);
+
     void updateGraph(const std::string &s, std::vector<Edit> &editScript,
                      ssize_t beginOffset, ssize_t endOffset, size_t readId,
                      long pos);
+
+    void clearHasReached(Node *n);
 
     /***
      * Remove possible cycles from mainPath. Should be called internally
@@ -251,5 +268,5 @@ private:
      */
     size_t writeRead(std::ofstream &f, Read &r, size_t id);
 
-    void writeGraph(std::ofstream &f);
+    // void writeGraph(std::ofstream &f);
 };

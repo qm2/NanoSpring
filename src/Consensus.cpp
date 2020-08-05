@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <stack>
 
 Edge::Edge(Node *source, Node *sink, size_t read) : source(source), sink(sink) {
     count = 1;
@@ -328,62 +329,37 @@ void ConsensusGraph::updateGraph(const std::string &s,
     // }
 }
 
-void ConsensusGraph::writeGraph(std::ofstream &f) {
-    f << "digraph g {\n";
-    // f << "splins=line;\n";
-    f << "maxiter=1;\n";
-    // f << "fixedsize=true;\n";
-    // f << "fontsize=2;\n";
-    // f << "labelfontsize=2;\n";
-    size_t count = 0;
-    for (Node *n : nodes) {
-        f << std::to_string((size_t)n) << " [label=\"" << n->base << "\" pos=\""
-          << "0," << std::to_string(count * 100) << "!\"];\n";
-        count++;
-    }
-    for (Node *n : nodes) {
-        for (auto edgeIt : n->edgesOut) {
-            Edge *e = edgeIt.second;
-            f << std::to_string((size_t)n) << " -> "
-              << std::to_string((size_t)e->sink) << "\n";
-        }
-    }
-    f << "}\n";
-}
+// void ConsensusGraph::writeGraph(std::ofstream &f) {
+//     f << "digraph g {\n";
+//     // f << "splins=line;\n";
+//     f << "maxiter=1;\n";
+//     // f << "fixedsize=true;\n";
+//     // f << "fontsize=2;\n";
+//     // f << "labelfontsize=2;\n";
+//     size_t count = 0;
+//     for (Node *n : nodes) {
+//         f << std::to_string((size_t)n) << " [label=\"" << n->base << "\"
+//         pos=\""
+//           << "0," << std::to_string(count * 100) << "!\"];\n";
+//         count++;
+//     }
+//     for (Node *n : nodes) {
+//         for (auto edgeIt : n->edgesOut) {
+//             Edge *e = edgeIt.second;
+//             f << std::to_string((size_t)n) << " -> "
+//               << std::to_string((size_t)e->sink) << "\n";
+//         }
+//     }
+//     f << "}\n";
+// }
 
 Path &ConsensusGraph::calculateMainPath() {
     mainPath.clear();
 
-    std::deque<Node *> unfinishedNodes;
-    unfinishedNodes.push_back(startingNode);
     // First we set all the hasReached fields to false
-    while (!unfinishedNodes.empty()) {
-        Node *currentNode = unfinishedNodes.front();
-        // We don't do anything if it has already been set to false
-        if (!currentNode->hasReached) {
-            unfinishedNodes.pop_front();
-            continue;
-        }
-        if (unfinishedNodes.size() > 1000000) {
-            std::cout << unfinishedNodes.size() << ' ';
-            std::raise(SIGINT);
-        }
-        currentNode->hasReached = false;
-        unfinishedNodes.pop_front();
+    clearHasReached(startingNode);
 
-        for (auto edgeIt : currentNode->edgesOut) {
-            Node *n = edgeIt.second->sink;
-            if (n->hasReached) {
-                unfinishedNodes.push_front(n);
-            }
-        }
-
-        for (auto edgeIt : currentNode->edgesIn) {
-            if (edgeIt->source->hasReached)
-                unfinishedNodes.push_back(edgeIt->source);
-        }
-    }
-
+    std::deque<Node *> unfinishedNodes;
     size_t globalMaxWeight = 0;
     Node *globalMaxWeightNode = NULL;
     unfinishedNodes.push_back(startingNode);
@@ -468,6 +444,37 @@ Path &ConsensusGraph::calculateMainPath() {
     return mainPath;
 }
 
+void ConsensusGraph::clearHasReached(Node *n) {
+    std::deque<Node *> unfinishedNodes;
+    unfinishedNodes.push_back(n);
+    while (!unfinishedNodes.empty()) {
+        Node *currentNode = unfinishedNodes.front();
+        // We don't do anything if it has already been set to false
+        if (!currentNode->hasReached) {
+            unfinishedNodes.pop_front();
+            continue;
+        }
+        if (unfinishedNodes.size() > 1000000) {
+            std::cout << unfinishedNodes.size() << ' ';
+            std::raise(SIGINT);
+        }
+        currentNode->hasReached = false;
+        unfinishedNodes.pop_front();
+
+        for (auto edgeIt : currentNode->edgesOut) {
+            Node *n = edgeIt.second->sink;
+            if (n->hasReached) {
+                unfinishedNodes.push_front(n);
+            }
+        }
+
+        for (auto edgeIt : currentNode->edgesIn) {
+            if (edgeIt->source->hasReached)
+                unfinishedNodes.push_back(edgeIt->source);
+        }
+    }
+}
+
 Path &ConsensusGraph::calculateMainPathGreedy() {
     mainPath.clear();
 
@@ -545,20 +552,11 @@ void ConsensusGraph::splitPath(Node *oldPre, Node *newPre, Edge *e,
     if (readsInPath2Split.empty())
         return;
 
-    // Remove the reads from the node edge
-    std::set<size_t> updatedReadsInOldEdge;
-    std::set_difference(
-        e->reads.begin(), e->reads.end(), readsInPath2Split.begin(),
-        readsInPath2Split.end(),
-        std::inserter(updatedReadsInOldEdge, updatedReadsInOldEdge.begin()));
-    e->reads.swap(updatedReadsInOldEdge);
-    e->count = e->reads.size();
-    if (e->count == 0) {
-        e->sink->edgesIn.erase(e);
-        e->source->edgesOut.erase(e->sink);
-    }
-
     Node *oldCur = e->sink;
+
+    // Remove the reads from the node edge
+    removeReadsFromEdge(e, readsInPath2Split);
+
     // just create a new edge and return if we are arriving at a node in
     // mainPath
     if (oldCur->onMainPath) {
@@ -574,43 +572,129 @@ void ConsensusGraph::splitPath(Node *oldPre, Node *newPre, Edge *e,
     Edge *newEdge = createEdge(newPre, newCur, 0);
     newEdge->reads = readsInPath2Split;
     newEdge->count = newEdge->reads.size();
-    // std::map<Node *, Edge *> edgesOut(oldCur->edgesOut);
-    // for (auto subEdge : edgesOut) {
-    //     splitPath(oldCur, newCur, subEdge.second, readsInPath2Split);
-    // }
+
     auto end = oldCur->edgesOut.end();
     for (auto subEdge = oldCur->edgesOut.begin(); subEdge != end;) {
         Edge *edge2WorkOn = subEdge->second;
         subEdge++;
         splitPath(oldCur, newCur, edge2WorkOn, readsInPath2Split);
     }
+    if (oldCur->edgesIn.empty() && oldCur->edgesOut.empty())
+        removeNode(oldCur);
 }
 
 ConsensusGraph::~ConsensusGraph() {
-    for (auto &n : nodes)
-        delete n;
-    for (auto &e : edges)
-        delete e;
     delete aligner;
+    if (!startingNode)
+        return;
+    std::cerr << "Removing" << std::endl;
+
+    removeConnectedNodes(startingNode);
+    std::cerr << std::to_string(numEdges) << " edges "
+              << std::to_string(numNodes) << " nodes left\n";
 }
 
 Node *ConsensusGraph::createNode(char base) {
     Node *n = new Node(base);
-    nodes.push_back(n);
+    numNodes++;
     return n;
 }
 
 Edge *ConsensusGraph::createEdge(Node *source, Node *sink, size_t read) {
     Edge *e = new Edge(source, sink, read);
-    edges.push_back(e);
     source->edgesOut.insert(std::make_pair(sink, e));
     sink->edgesIn.insert(e);
+    numEdges++;
     return e;
 }
 
+void ConsensusGraph::removeReadsFromEdge(Edge *e,
+                                         std::set<size_t> const &reads) {
+    std::set<size_t> updatedReadsInOldEdge;
+    std::set_difference(
+        e->reads.begin(), e->reads.end(), reads.begin(), reads.end(),
+        std::inserter(updatedReadsInOldEdge, updatedReadsInOldEdge.begin()));
+    e->reads.swap(updatedReadsInOldEdge);
+    e->count = e->reads.size();
+    if (e->count == 0) {
+        Node *source = e->source;
+        Node *sink = e->sink;
+        removeEdge(e);
+    }
+}
+
+void ConsensusGraph::removeEdge(Edge *e) {
+    e->source->edgesOut.erase(e->sink);
+    e->sink->edgesIn.erase(e);
+    delete e;
+    numEdges--;
+}
+
+void ConsensusGraph::removeNode(Node *n) {
+    for (auto edgeIt : n->edgesIn)
+        removeEdge(edgeIt);
+    for (auto edgeIt : n->edgesOut)
+        removeEdge(edgeIt.second);
+    delete n;
+    numNodes--;
+}
+
+void ConsensusGraph::removeBelow(Node *n) {
+    std::stack<Node *> nodesToRemove;
+    nodesToRemove.push(n);
+    while (!nodesToRemove.empty()) {
+        Node *curNode = nodesToRemove.top();
+        if (curNode->edgesOut.empty()) {
+            nodesToRemove.pop();
+            removeNode(curNode);
+        } else {
+            nodesToRemove.push(curNode->edgesOut.begin()->first);
+        }
+    }
+}
+
+void ConsensusGraph::removeAbove(Node *n) {
+    std::stack<Node *> nodesToRemove;
+    nodesToRemove.push(n);
+    while (!nodesToRemove.empty()) {
+        Node *curNode = nodesToRemove.top();
+        if (curNode->edgesIn.empty()) {
+            nodesToRemove.pop();
+            removeNode(curNode);
+        } else {
+            nodesToRemove.push((*curNode->edgesIn.begin())->source);
+        }
+    }
+}
+
+void ConsensusGraph::removeConnectedNodes(Node *n) {
+    clearHasReached(n);
+    std::stack<Node *> nodesToRemove;
+    nodesToRemove.push(n);
+    n->hasReached = true;
+    while (!nodesToRemove.empty()) {
+        Node *curNode = nodesToRemove.top();
+        if (curNode->edgesOut.empty()) {
+            nodesToRemove.pop();
+            for (auto edgeIt : curNode->edgesIn) {
+                Node *source = edgeIt->source;
+                if (!source->hasReached && source->edgesOut.size() == 1) {
+                    nodesToRemove.push(source);
+                    source->hasReached = true;
+                }
+            }
+            removeNode(curNode);
+        } else {
+            Node *node2Add = curNode->edgesOut.begin()->first;
+            nodesToRemove.push(node2Add);
+            node2Add->hasReached = true;
+        }
+    }
+}
+
 void ConsensusGraph::printStatus() {
-    std::cout << readsInGraph.size() << " reads, " << nodes.size()
-              << " nodes, and " << edges.size() << " edges."
+    std::cout << readsInGraph.size() << " reads, " << numNodes << " nodes, and "
+              << numEdges << " edges."
               << "\n";
     std::cout << "mainPath len " << mainPath.edges.size() + 1 << " avg weight "
               << mainPath.getAverageWeight() << " starts at " << startPos
