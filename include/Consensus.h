@@ -194,9 +194,11 @@ public:
 
     Path &getMainPath();
 
-    void writeMainPath(std::ofstream &f);
+    void writeMainPath(const std::string &filename);
 
     void writeReads(std::ofstream &f);
+
+    void writeReads(const std::string &filename);
 
     /***
      * Prints the info of the ConsensusGraph. For debugging purposes
@@ -267,6 +269,9 @@ private:
      * @return Edit distance
      */
     size_t writeRead(std::ofstream &f, Read &r, size_t id);
+
+    size_t writeRead(std::ofstream &posFile, std::ofstream &editTypeFile,
+                     std::ofstream &editBaseFile, Read &r, size_t id);
 
     // void writeGraph(std::ofstream &f);
 };

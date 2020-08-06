@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
     // if (!fork())
     //     return -1;
     std::srand(unsigned(std::time(0)));
-    // ProfilerStart("testConsensus.prof");
+    ProfilerStart("testConsensus.prof");
     if (argc < 2) {
         std::cout << "Usage ./testConsensus filename" << std::endl;
         return 1;
@@ -66,17 +66,12 @@ int main(int argc, char **argv) {
 
             consensusGraph.calculateMainPathGreedy();
             consensusGraph.printStatus();
-            std::ofstream f;
-            f.open("testContig" + std::to_string(i) + ".genome");
-            consensusGraph.writeMainPath(f);
-            f.close();
-
-            f.open("testContig" + std::to_string(i) + ".reads");
-            consensusGraph.writeReads(f);
-            f.close();
+            std::string filename = "testContig" + std::to_string(i);
+            consensusGraph.writeMainPath(filename);
+            consensusGraph.writeReads(filename);
             ++i;
         }
     }
 
-    // ProfilerStop();
+    ProfilerStop();
 }

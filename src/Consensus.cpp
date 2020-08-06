@@ -1,5 +1,7 @@
-#include "../include/Consensus.h"
+#include "Consensus.h"
+#include "bsc_helper.h"
 #include <algorithm>
+#include <arpa/inet.h>
 #include <csignal>
 #include <deque>
 #include <fstream>
@@ -125,7 +127,7 @@ void ConsensusGraph::addReads(
                currentRead->first);
     size_t len = (*readData[currentRead->second]).length();
     readsInContig.erase(currentRead);
-    calculateMainPath();
+    calculateMainPathGreedy();
 
     size_t count = 0;
     while (!readsInContig.empty()) {
@@ -144,7 +146,7 @@ void ConsensusGraph::addReads(
                 addRead(s, readId, pos, editScript, beginOffset, endOffset);
             if (success) {
                 updateGraph(s, editScript, beginOffset, endOffset, readId, pos);
-                calculateMainPath();
+                calculateMainPathGreedy();
             }
             readsInContig.erase(read2Lengthen);
         }
@@ -176,7 +178,7 @@ void ConsensusGraph::addReads(
             // if (count % 4 == 0)
             // calculateMainPath();
         }
-        calculateMainPath();
+        calculateMainPathGreedy();
         readsInContig.erase(readsInContig.begin(), endRead2Add);
 
         printStatus();
@@ -384,10 +386,10 @@ Path &ConsensusGraph::calculateMainPath() {
                 //     std::cout << unfinishedNodes.size() << std::endl;
                 //     std::raise(SIGINT);
                 // }
-                if (unfinishedNodes.size() > 1000000) {
-                    std::cout << unfinishedNodes.size() << ' ';
-                    std::raise(SIGINT);
-                }
+                // if (unfinishedNodes.size() > 1000000) {
+                //     std::cout << unfinishedNodes.size() << ' ';
+                //     std::raise(SIGINT);
+                // }
                 unfinishedNodes.push_front(n);
                 hasPreviousWeights = false;
                 break;
@@ -454,10 +456,10 @@ void ConsensusGraph::clearHasReached(Node *n) {
             unfinishedNodes.pop_front();
             continue;
         }
-        if (unfinishedNodes.size() > 1000000) {
-            std::cout << unfinishedNodes.size() << ' ';
-            std::raise(SIGINT);
-        }
+        // if (unfinishedNodes.size() > 1000000) {
+        //     std::cout << unfinishedNodes.size() << ' ';
+        //     std::raise(SIGINT);
+        // }
         currentNode->hasReached = false;
         unfinishedNodes.pop_front();
 
@@ -706,8 +708,128 @@ void ConsensusGraph::printStatus() {
               << stat / (1 - 0.17 * 1.1) << " " << std::endl;
 }
 
-void ConsensusGraph::writeMainPath(std::ofstream &f) {
+void ConsensusGraph::writeMainPath(const std::string &filename) {
+    std::ofstream f;
+    std::string genomeFileName = filename + ".genome";
+    f.open(genomeFileName);
     f << mainPath.path << std::endl;
+    f.close();
+    std::string compressedGenomeFileName = filename + ".genomeCompressed";
+    bsc::BSC_compress(genomeFileName.c_str(), compressedGenomeFileName.c_str());
+}
+
+void ConsensusGraph::writeReads(const std::string &filename) {
+    // First we write the index of each character into the cumulativeWeight
+    // field of the nodes on mainPath
+    mainPath.edges.front()->source->cumulativeWeight = 0;
+    size_t i = 0;
+    for (auto e : mainPath.edges) {
+        e->sink->cumulativeWeight = ++i;
+    }
+    size_t totalEditDis = 0;
+    const std::string posFileName = filename + ".pos";
+    const std::string editTypeFileName = filename + ".type";
+    const std::string editBaseFileName = filename + ".base";
+    std::ofstream posFile, editTypeFile, editBaseFile;
+    posFile.open(posFileName);
+    editTypeFile.open(editTypeFileName);
+    editBaseFile.open(editBaseFileName);
+    for (auto it : readsInGraph) {
+        totalEditDis +=
+            writeRead(posFile, editTypeFile, editBaseFile, it.second, it.first);
+    }
+    posFile.close();
+    editTypeFile.close();
+    editBaseFile.close();
+    std::cout << "AvgEditDis " << totalEditDis / (double)readsInGraph.size()
+              << std::endl;
+    const std::string posFileCompressedName = posFileName + "Compressed";
+    const std::string editTypeFileCompressedName =
+        editTypeFileName + "Compressed";
+    const std::string editBaseFileCompressedName =
+        editBaseFileName + "Compressed";
+    bsc::BSC_compress(posFileName.c_str(), posFileCompressedName.c_str());
+    bsc::BSC_compress(editTypeFileName.c_str(),
+                      editTypeFileCompressedName.c_str());
+    bsc::BSC_compress(editBaseFileName.c_str(),
+                      editBaseFileCompressedName.c_str());
+}
+
+size_t ConsensusGraph::writeRead(std::ofstream &posFile,
+                                 std::ofstream &editTypeFile,
+                                 std::ofstream &editBaseFile, Read &r,
+                                 size_t id) {
+    typedef uint32_t POS_T;
+    // First we write the read id and initial position
+    Node *curNode = r.start;
+    auto advanceInRead = [id](Node *n) -> Node * {
+        for (auto e : n->edgesOut) {
+            if (e.second->reads.find(id) != e.second->reads.end()) {
+                return e.first;
+            }
+        }
+        return NULL;
+    };
+    while (!curNode->onMainPath)
+        curNode = advanceInRead(curNode);
+
+    POS_T initialPos = curNode->cumulativeWeight;
+    initialPos = htonl(initialPos);
+    posFile.write(reinterpret_cast<char *>(&initialPos), sizeof(POS_T));
+    // f << std::to_string(id) << ":" <<
+    // std::to_string(curNode->cumulativeWeight)
+    //   << "\n";
+
+    size_t editDis = 0;
+    size_t posInMainPath = curNode->cumulativeWeight;
+    curNode = r.start;
+    size_t unchangedCount = 0;
+    auto dealWithUnchanged = [&unchangedCount]() {
+        if (unchangedCount > 0) {
+            // f << 'u' << std::to_string(unchangedCount);
+            unchangedCount = 0;
+        }
+    };
+    do {
+        if (curNode->onMainPath) {
+            size_t curPos = curNode->cumulativeWeight;
+            if (curPos > posInMainPath) {
+                POS_T pos = unchangedCount;
+                unchangedCount = 0;
+                pos = htonl(pos);
+                for (; posInMainPath < curPos; posInMainPath++) {
+                    posFile.write(reinterpret_cast<char *>(&pos),
+                                  sizeof(POS_T));
+                    editTypeFile << 'd';
+                    pos = 0;
+                    editDis++;
+                }
+            }
+            unchangedCount++;
+            posInMainPath++;
+        } else {
+            // Else we have an insertion
+            POS_T pos = unchangedCount;
+            unchangedCount = 0;
+            pos = htonl(pos);
+            posFile.write(reinterpret_cast<char *>(&pos), sizeof(POS_T));
+            editTypeFile << 'i';
+            editBaseFile << curNode->base;
+            editDis++;
+        }
+    } while (curNode = advanceInRead(curNode));
+
+    POS_T pos = unchangedCount;
+    unchangedCount = 0;
+    pos = htonl(pos);
+    posFile.write(reinterpret_cast<char *>(&pos), sizeof(POS_T));
+
+    POS_T END_SYMBOL = ~(POS_T)0l;
+    posFile.write(reinterpret_cast<char *>(&initialPos), sizeof(POS_T));
+    editTypeFile << '\n';
+    editBaseFile << '\n';
+    // f << std::endl;
+    return editDis;
 }
 
 void ConsensusGraph::writeReads(std::ofstream &f) {

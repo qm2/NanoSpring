@@ -30,7 +30,7 @@ DEP_FLAGS = -MT $@ -MMD -MP -MF $(DEP_DIR)/$*.d
 # CC compiler options:
 CC=g++
 #-static-libasan -fsanitize=address -fno-omit-frame-pointer -ltcmalloc
-CC_FLAGS=-fopenmp -g -O3 -Iinclude -static-libasan -fsanitize=address -fno-omit-frame-pointer
+CC_FLAGS=-fopenmp -g -O3 -Iinclude -Ilibbsc
 #-Wl,--no-as-needed -lprofiler
 CC_LD_FLAGS= -Wl,--no-as-needed -lprofiler -Wl,--as-needed
 CC_LIBS=
@@ -41,7 +41,7 @@ CC_LIBS=
 
 # NVCC compiler options:
 NVCC=nvcc -ccbin g++
-NVCC_FLAGS=-g -Xcompiler -fopenmp -O3 -Iinclude
+NVCC_FLAGS=-g -Xcompiler -fopenmp -O3 -Iinclude -Ilibbsc
 NVCC_LD_FLAGS=-lprofiler
 NVCC_LIBS=
 
@@ -62,22 +62,26 @@ LINK.c = $(CC) $(CC_FLAGS) $(CC_LD_FLAGS)
 SRCS = $(notdir $(wildcard $(SRC_DIR)/*.cpp))
 
 # Target executable name:
-EXE = testMinHash testAligner testContig testConsensus testMyers testAlignAlgs validateResult
+EXE = testMinHash testAligner testContig testConsensus \
+	testMyers testAlignAlgs validateResult
 
 ##########################################################
 
 ## Compile ##
 
 # Link c++ and CUDA compiled object files to target executable:
-all: $(EXE) $(SUBDIRS)
+all: $(SUBDIRS) $(EXE)
 
 testMinHash : $(addprefix $(OBJ_DIR)/,testMinHash.o NanoporeReads.o)
 testAligner : $(addprefix $(OBJ_DIR)/,testAligner.o NanoporeReads.o ReadAligner.o)
 testContig : $(addprefix $(OBJ_DIR)/,testContigGenerator.o NanoporeReads.o ReadAligner.o Contig.o)
-testConsensus : $(addprefix $(OBJ_DIR)/,testConsensus.o Consensus.o Contig.o NanoporeReads.o ReadAligner.o myers.o Edits.o)
+testConsensus : $(addprefix $(OBJ_DIR)/,testConsensus.o Consensus.o Contig.o \
+	NanoporeReads.o ReadAligner.o myers.o Edits.o bsc.o) \
+	$(addprefix libbsc/, libbsc.a)
 testMyers : $(addprefix $(OBJ_DIR)/,testMyers.o myers.o Edits.o)
 testAlignAlgs : $(addprefix $(OBJ_DIR)/,testAlignAlgs.o AlignerTester.o myers.o Edits.o)
 validateResult : $(addprefix $(OBJ_DIR)/,validateResult.o AlignerTester.o)
+# test : $(addprefix $(OBJ_DIR)/, bsc.o) $(addprefix libbsc/, libbsc.a)
 
 $(EXE) :
 	$(LINK.c) $^ -o $@
