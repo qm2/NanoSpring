@@ -15,7 +15,7 @@ def createRandomGenome(fileName = "test", length = 5000000):
         f.write('\n')
 
 def generateReads(fileName = "test", coverage = 25, readLen = 10000, pIn =
-        0.03, pDel = 0.03, pS = 0.04):
+        0.00, pDel = 0.00, pS = 0.05):
     """
     Generate random reads of length readLen with given coverage from the genome
     in the file fileName.genome and stores the reads in fileName.reads. Each

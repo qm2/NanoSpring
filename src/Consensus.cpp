@@ -670,10 +670,18 @@ void ConsensusGraph::removeEdge(Edge *e) {
 }
 
 void ConsensusGraph::removeNode(Node *n) {
-    for (auto edgeIt : n->edgesIn)
-        removeEdge(edgeIt);
-    for (auto edgeIt : n->edgesOut)
-        removeEdge(edgeIt.second);
+    {
+        std::set<Edge *>::iterator edgeIt = n->edgesIn.begin();
+        std::set<Edge *>::iterator end = n->edgesIn.end();
+        while (edgeIt != end)
+            removeEdge(*(edgeIt++));
+    }
+    {
+        std::map<Node *, Edge *>::iterator edgeIt = n->edgesOut.begin();
+        std::map<Node *, Edge *>::iterator end = n->edgesOut.end();
+        while (edgeIt != end)
+            removeEdge(edgeIt++->second);
+    }
     delete n;
     numNodes--;
 }
@@ -793,12 +801,11 @@ void ConsensusGraph::writeReads(const std::string &filename) {
                       editBaseFileCompressedName.c_str());
 }
 
-size_t ConsensusGraph::writeRead(std::ofstream &posFile,
-                                 std::ofstream &editTypeFile,
-                                 std::ofstream &editBaseFile, Read &r,
-                                 size_t id) {
-    typedef uint32_t POS_T;
-    // First we write the read id and initial position
+size_t ConsensusGraph::read2EditScript(ConsensusGraph::Read &r, size_t id,
+                                       std::vector<Edit> &editScript,
+                                       size_t &pos) {
+    editScript.clear();
+    // First we store the initial position
     Node *curNode = r.start;
     auto advanceInRead = [id](Node *n) -> Node * {
         for (auto e : n->edgesOut) {
@@ -811,51 +818,92 @@ size_t ConsensusGraph::writeRead(std::ofstream &posFile,
     while (!curNode->onMainPath)
         curNode = advanceInRead(curNode);
 
-    POS_T initialPos = curNode->cumulativeWeight;
-    initialPos = htonl(initialPos);
-    posFile.write(reinterpret_cast<char *>(&initialPos), sizeof(POS_T));
-    // f << std::to_string(id) << ":" <<
-    // std::to_string(curNode->cumulativeWeight)
-    //   << "\n";
+    pos = curNode->cumulativeWeight;
 
     size_t editDis = 0;
     size_t posInMainPath = curNode->cumulativeWeight;
     curNode = r.start;
     size_t unchangedCount = 0;
-    auto dealWithUnchanged = [&unchangedCount]() {
+    auto dealWithUnchanged = [&unchangedCount, &editScript]() {
         if (unchangedCount > 0) {
-            // f << 'u' << std::to_string(unchangedCount);
+            editScript.push_back(Edit(SAME, unchangedCount));
             unchangedCount = 0;
         }
     };
     do {
         if (curNode->onMainPath) {
             size_t curPos = curNode->cumulativeWeight;
-            if (curPos > posInMainPath) {
-                POS_T pos = unchangedCount;
-                unchangedCount = 0;
-                pos = htonl(pos);
-                for (; posInMainPath < curPos; posInMainPath++) {
-                    posFile.write(reinterpret_cast<char *>(&pos),
-                                  sizeof(POS_T));
-                    editTypeFile << 'd';
-                    pos = 0;
-                    editDis++;
-                }
+            if (curPos > posInMainPath)
+                dealWithUnchanged();
+            for (; posInMainPath < curPos; posInMainPath++) {
+                editScript.push_back(Edit(DELETE, '-'));
+                editDis++;
             }
             unchangedCount++;
             posInMainPath++;
         } else {
+            dealWithUnchanged();
             // Else we have an insertion
+            editScript.push_back(Edit(INSERT, curNode->base));
+            editDis++;
+        }
+    } while (curNode = advanceInRead(curNode));
+
+    dealWithUnchanged();
+
+    return editDis;
+}
+
+size_t ConsensusGraph::writeRead(std::ofstream &posFile,
+                                 std::ofstream &editTypeFile,
+                                 std::ofstream &editBaseFile, Read &r,
+                                 size_t id) {
+    typedef uint32_t POS_T;
+
+    size_t offset;
+    std::vector<Edit> editScript;
+    size_t editDis = read2EditScript(r, id, editScript, offset);
+    POS_T initialPos = offset;
+    initialPos = htonl(initialPos);
+    posFile.write(reinterpret_cast<char *>(&initialPos), sizeof(POS_T));
+
+    std::vector<Edit> newEditScript;
+    editDis = Edit::optimizeEditScript(editScript, newEditScript);
+    size_t unchangedCount = 0;
+    for (Edit e : newEditScript) {
+        switch (e.editType) {
+        case SAME: {
+            unchangedCount += e.editInfo.num;
+            break;
+        }
+        case INSERT: {
             POS_T pos = unchangedCount;
             unchangedCount = 0;
             pos = htonl(pos);
             posFile.write(reinterpret_cast<char *>(&pos), sizeof(POS_T));
             editTypeFile << 'i';
-            editBaseFile << curNode->base;
-            editDis++;
+            editBaseFile << e.editInfo.ins;
+            break;
         }
-    } while (curNode = advanceInRead(curNode));
+        case DELETE: {
+            POS_T pos = unchangedCount;
+            unchangedCount = 0;
+            pos = htonl(pos);
+            posFile.write(reinterpret_cast<char *>(&pos), sizeof(POS_T));
+            editTypeFile << 'd';
+            break;
+        }
+        case SUBSTITUTION: {
+            POS_T pos = unchangedCount;
+            unchangedCount = 0;
+            pos = htonl(pos);
+            posFile.write(reinterpret_cast<char *>(&pos), sizeof(POS_T));
+            editTypeFile << 's';
+            editBaseFile << e.editInfo.sub;
+            break;
+        }
+        }
+    }
 
     POS_T pos = unchangedCount;
     unchangedCount = 0;
@@ -863,7 +911,7 @@ size_t ConsensusGraph::writeRead(std::ofstream &posFile,
     posFile.write(reinterpret_cast<char *>(&pos), sizeof(POS_T));
 
     POS_T END_SYMBOL = ~(POS_T)0l;
-    posFile.write(reinterpret_cast<char *>(&initialPos), sizeof(POS_T));
+    posFile.write(reinterpret_cast<char *>(&END_SYMBOL), sizeof(POS_T));
     editTypeFile << '\n';
     editBaseFile << '\n';
     // f << std::endl;
@@ -887,52 +935,32 @@ void ConsensusGraph::writeReads(std::ofstream &f) {
 }
 
 size_t ConsensusGraph::writeRead(std::ofstream &f, Read &r, size_t id) {
-    // First we write the read id and initial position
-    Node *curNode = r.start;
-    auto advanceInRead = [id](Node *n) -> Node * {
-        for (auto e : n->edgesOut) {
-            if (e.second->reads.find(id) != e.second->reads.end()) {
-                return e.first;
-            }
-        }
-        return NULL;
-    };
-    while (!curNode->onMainPath)
-        curNode = advanceInRead(curNode);
 
-    f << std::to_string(id) << ":" << std::to_string(curNode->cumulativeWeight)
-      << "\n";
+    std::vector<Edit> editScript;
+    size_t pos;
+    size_t editDis = read2EditScript(r, id, editScript, pos);
+    std::vector<Edit> newEditScript;
 
-    size_t editDis = 0;
-    size_t posInMainPath = curNode->cumulativeWeight;
-    curNode = r.start;
-    size_t unchangedCount = 0;
-    auto dealWithUnchanged = [&f, &unchangedCount]() {
-        if (unchangedCount > 0) {
-            f << 'u' << std::to_string(unchangedCount);
-            unchangedCount = 0;
-        }
-    };
-    do {
-        if (curNode->onMainPath) {
-            size_t curPos = curNode->cumulativeWeight;
-            if (curPos > posInMainPath)
-                dealWithUnchanged();
-            for (; posInMainPath < curPos; posInMainPath++) {
-                f << 'd';
-                editDis++;
-            }
-            unchangedCount++;
-            posInMainPath++;
-        } else {
-            dealWithUnchanged();
-            // Else we have an insertion
-            f << 'i' << curNode->base;
-            editDis++;
-        }
-    } while (curNode = advanceInRead(curNode));
+    editDis = Edit::optimizeEditScript(editScript, newEditScript);
 
-    dealWithUnchanged();
+    f << std::to_string(id) << ":" << std::to_string(pos) << "\n";
+
+    for (Edit e : newEditScript) {
+        switch (e.editType) {
+        case SAME:
+            f << 'u' << std::to_string(e.editInfo.num);
+            break;
+        case DELETE:
+            f << 'd';
+            break;
+        case INSERT:
+            f << 'i' << e.editInfo.ins;
+            break;
+        case SUBSTITUTION:
+            f << 's' << e.editInfo.sub;
+            break;
+        }
+    }
 
     f << std::endl;
     return editDis;

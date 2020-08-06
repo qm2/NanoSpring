@@ -196,6 +196,14 @@ public:
 
     void writeMainPath(const std::string &filename);
 
+    /***
+     * @param editScript outputs the editScript (consisting of insertions,
+     * deletions, and unchanged)
+     * @param pos outputs the relative position in mainPath
+     */
+    size_t read2EditScript(Read &r, size_t id, std::vector<Edit> &editScript,
+                           size_t &pos);
+
     void writeReads(std::ofstream &f);
 
     void writeReads(const std::string &filename);

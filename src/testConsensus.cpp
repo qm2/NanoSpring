@@ -69,6 +69,12 @@ int main(int argc, char **argv) {
             std::string filename = "testContig" + std::to_string(i);
             consensusGraph.writeMainPath(filename);
             consensusGraph.writeReads(filename);
+            // {
+            //     std::ofstream f;
+            //     f.open(filename + ".reads");
+            //     consensusGraph.writeReads(f);
+            //     f.close();
+            // }
             ++i;
         }
     }

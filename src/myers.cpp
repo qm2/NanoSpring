@@ -19,13 +19,12 @@ public:
     int yMid;
 
     // snake length
-    unsigned int snakeLen;
+    size_t snakeLen;
 
-    EditPath(int xStart, int yStart, int xMid, int yMid, unsigned int snakeLen);
+    EditPath(int xStart, int yStart, int xMid, int yMid, size_t snakeLen);
 };
 
-EditPath::EditPath(int xStart, int yStart, int xMid, int yMid,
-                   unsigned int snakeLen)
+EditPath::EditPath(int xStart, int yStart, int xMid, int yMid, size_t snakeLen)
     : xStart(xStart), yStart(yStart), xMid(xMid), yMid(yMid),
       snakeLen(snakeLen) {}
 
@@ -74,7 +73,7 @@ void MyersAligner::myers(const std::string &s1, const std::string &s2,
             int yEnd = yMid;
 
             // we go along the diagonal until we fail
-            unsigned int snakeLen = 0;
+            size_t snakeLen = 0;
             while (xEnd < len1 && yEnd < len2 && s1[xEnd] == s2[yEnd]) {
                 ++xEnd;
                 ++yEnd;
@@ -237,7 +236,7 @@ bool LocalMyers::localAlign(const char *&Abegin, const char *const Aend,
             int yEnd = yMid;
 
             // we go along the diagonal until we fail
-            unsigned int snakeLen = 0;
+            size_t snakeLen = 0;
             while (xEnd < lenA && yEnd < lenB && Abegin[xEnd] == Bbegin[yEnd]) {
                 ++xEnd;
                 ++yEnd;
@@ -353,7 +352,7 @@ bool LocalMyersRollBack::localAlign(const char *&Abegin, const char *const Aend,
             int yEnd = yMid;
 
             // we go along the diagonal until we fail
-            unsigned int snakeLen = 0;
+            size_t snakeLen = 0;
             while (xEnd < lenA && yEnd < lenB &&
                    ((forward && Abegin[xEnd] == Bbegin[yEnd]) ||
                     (!forward && Abegin[-xEnd] == Bbegin[-yEnd]))) {
@@ -578,59 +577,13 @@ bool LocalMyersRollBack::align(const std::string &s1, const std::string &s2,
         beginOffset = -backwardPassEndOffset;
         endOffset = -backwardPassBeginOffset;
         std::reverse(editScript.begin(), editScript.end());
+        // std::vector<Edit> newEditScript;
+        // editDis = Edit::optimizeEditScript(editScript, newEditScript);
+        // editScript.swap(newEditScript);
         return true;
     }
     std::cerr << "Backword alignment failed\n";
     return false;
-    // firstPassSuccess = align(s2, s1, -offsetGuess,
-    // forwardPassBeginOffset,
-    //                          forwardPassEndOffset, false, editScript,
-    //                          editDis);
-    // if (!firstPassSuccess)
-    //     return false;
-    // bool secondPassSuccess = align(
-    //     s1Reverse, s2Reverse, forwardPassEndOffset,
-    //     backwardPassBeginOffset, backwardPassEndOffset, true, editScript,
-    //     editDis);
-    // if (!secondPassSuccess)
-    //     return false;
-    // beginOffset = -backwardPassEndOffset;
-    // endOffset = -backwardPassBeginOffset;
-    // std::reverse(editScript.begin(), editScript.end());
-
-    // if (Abegin != Aend) {
-    //     // We still need to delete the rest
-    //     endOffset = Abegin - Aend;
-    // } else if (Bbegin != Bend) {
-    //     // We still need to insert the rest
-    //     endOffset = Bend - Bbegin;
-    // }
-    // std::string s1Reverse = s1;
-    // std::string s2Reverse = s2;
-    // std::reverse(s1Reverse.begin(), s1Reverse.end());
-    // std::reverse(s2Reverse.begin(), s2Reverse.end());
-    // ssize_t forwardPassBeginOffset, forwardPassEndOffset;
-    // ssize_t backwardPassBeginOffset, backwardPassEndOffset;
-
-    // bool firstPassSuccess =
-    //     align(s1, s2, offsetGuess, forwardPassBeginOffset,
-    //     forwardPassEndOffset,
-    //           false, editScript, editDis);
-
-    // if (firstPassSuccess) {
-    //     bool secondPassSuccess =
-    //         align(s1Reverse, s2Reverse, -forwardPassEndOffset,
-    //               backwardPassBeginOffset, backwardPassEndOffset, true,
-    //               editScript, editDis);
-    //     if (secondPassSuccess) {
-    //         beginOffset = -backwardPassEndOffset;
-    //         endOffset = -backwardPassBeginOffset;
-    //         std::reverse(editScript.begin(), editScript.end());
-    //         return true;
-    //     }
-    // }
-
-    return true;
 }
 
 bool LocalMyersRollBack::align(const std::string &s1, const std::string &s2,

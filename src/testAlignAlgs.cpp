@@ -41,10 +41,10 @@ void testAlg(std::vector<StringAligner *> aligners) {
     AlignerTester aT;
     // ssize_t offsets2Test[] = {0,    100, -100, 200,  -200, 400,
     //                           -400, 800, -800, 1600, -1600};
-    ssize_t offsets2Test[] = {0, -5, 5, -10, 10, -20, 20, -40, 40};
-    //    size_t offsets2Test[] = {0, 100};
+    // ssize_t offsets2Test[] = {0, -5, 5, -10, 10, -20, 20, -40, 40};
+    size_t offsets2Test[] = {0, 100};
 
-    aT.generateData(10000, 400, 10, 0.03, 0.03, 0.04);
+    aT.generateData(10000, 400, 10, 0.00, 0.00, 0.05);
     const size_t algW = 35;
     for (StringAligner *aligner : aligners) {
         if (aT.validate(aligner)) {
@@ -57,7 +57,7 @@ void testAlg(std::vector<StringAligner *> aligners) {
     }
     std::cout << std::endl;
     for (ssize_t offset : offsets2Test) {
-        aT.generateData(10000, offset, 4, 0.03, 0.03, 0.04);
+        aT.generateData(10000, offset, 4, 0.00, 0.00, 0.05);
         //        aT.generateData(10000, offset, 8, 0.01, 0.01, 0);
         std::cout << std::setw(algW) << "Algorithm"
                   << " " << std::setw(6) << "Offset"
