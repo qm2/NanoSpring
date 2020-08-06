@@ -88,6 +88,11 @@ void ConsensusGraph::initialize(const std::string &seed, size_t readId,
     readsInGraph.insert(std::make_pair(
         readId, ConsensusGraph::Read(pos, currentNode, seed.length())));
     startingNode = currentNode;
+    leftMostChangedNode = currentNode;
+    leftMostChangedNodeOffset = 0;
+    mainPath.path.push_back(currentNode->base);
+    currentNode->onMainPath = true;
+    currentNode->cumulativeWeight = 0;
     for (size_t i = 1; i < len; ++i) {
         Node *nextNode = createNode(seed[i]);
         Edge *e = createEdge(currentNode, nextNode, readId);
@@ -223,10 +228,18 @@ void ConsensusGraph::updateGraph(const std::string &s,
     // First we deal with beginOffset
     auto initialAdvance = [&] {
         //        std::cout << "initialAdvance" << std::endl;
-        if (beginOffset >= 0) {
+        if (beginOffset >= 1) {
             // We need to advance in the mainPath
-            for (size_t i = 0; i < beginOffset; i++) {
-                advanceNodeInPath();
+            // for (size_t i = 0; i < beginOffset; i++) {
+            //     advanceNodeInPath();
+            // }
+            edgeInPath += beginOffset - 1;
+            nodeInPath = (*edgeInPath)->sink;
+            edgeInPath++;
+
+            if (beginOffset < leftMostChangedNodeOffset) {
+                leftMostChangedNodeOffset = beginOffset;
+                leftMostChangedNode = nodeInPath;
             }
         } else {
             // We need to insert the initial parts of the read
@@ -242,6 +255,8 @@ void ConsensusGraph::updateGraph(const std::string &s,
                 Edge *edge = createEdge(currentNode, nextNode, readId);
                 currentNode = nextNode;
             }
+            leftMostChangedNodeOffset = 0;
+            leftMostChangedNode = nodeInPath;
         }
     };
 
@@ -355,6 +370,7 @@ void ConsensusGraph::updateGraph(const std::string &s,
 //     f << "}\n";
 // }
 
+// TODO: Optimize this to only update the portion of the graph that has changed
 Path &ConsensusGraph::calculateMainPath() {
     mainPath.clear();
 
@@ -478,20 +494,20 @@ void ConsensusGraph::clearHasReached(Node *n) {
 }
 
 Path &ConsensusGraph::calculateMainPathGreedy() {
-    mainPath.clear();
+    clearMainPath();
 
     std::vector<Edge *> &edgesInPath = mainPath.edges;
     std::string &stringPath = mainPath.path;
 
-    Node *currentNode = startingNode;
+    Node *currentNode = leftMostChangedNode;
     currentNode->onMainPath = true;
-    // Updating string
-    stringPath.push_back(currentNode->base);
+    size_t currentId = leftMostChangedNodeOffset;
     Edge *edgeToAdd;
     while (edgeToAdd = currentNode->getBestEdge()) {
         edgesInPath.push_back(edgeToAdd);
         currentNode = edgeToAdd->sink;
         currentNode->onMainPath = true;
+        currentNode->cumulativeWeight = ++currentId;
         stringPath.push_back(currentNode->base);
     }
     size_t startingReadId = *edgesInPath.front()->reads.begin();
@@ -499,13 +515,34 @@ Path &ConsensusGraph::calculateMainPathGreedy() {
     size_t endingReadId = *edgesInPath.back()->reads.begin();
     Read &endingRead = readsInGraph.at(endingReadId);
     endPos = endingRead.pos + endingRead.len;
-    //    printStatus();
+
+    // leftMostChangedNodeOffset = 0;
+    // leftMostChangedNode = edgesInPath.front()->source;
+    // printStatus();
     removeCycles();
+    leftMostChangedNode = currentNode;
+    leftMostChangedNodeOffset = leftMostChangedNode->cumulativeWeight;
     return mainPath;
 }
 
+void ConsensusGraph::clearMainPath() {
+    // printStatus();
+    // std::cout << "clearing\n";
+    size_t l = mainPath.edges.size();
+    for (size_t i = leftMostChangedNodeOffset; i < l; ++i) {
+        Node *currentNode = mainPath.edges[i]->sink;
+        currentNode->onMainPath = false;
+    }
+    mainPath.edges.erase(mainPath.edges.begin() + leftMostChangedNodeOffset,
+                         mainPath.edges.end());
+    if (mainPath.path.size() > leftMostChangedNodeOffset + 1)
+        mainPath.path.erase(leftMostChangedNodeOffset + 1);
+    // printStatus();
+}
+
 void ConsensusGraph::removeCycles() {
-    auto edgeOnPath = mainPath.edges.begin();
+    auto edgeOnPath = mainPath.edges.begin() + leftMostChangedNodeOffset;
+    // auto edgeOnPath = mainPath.edges.begin();
     auto edgeOnPathEnd = mainPath.edges.end();
     if (edgeOnPath == edgeOnPathEnd)
         return;
@@ -698,7 +735,8 @@ void ConsensusGraph::printStatus() {
     std::cout << readsInGraph.size() << " reads, " << numNodes << " nodes, and "
               << numEdges << " edges."
               << "\n";
-    std::cout << "mainPath len " << mainPath.edges.size() + 1 << " avg weight "
+    std::cout << "mainPath len " << mainPath.edges.size() + 1 << " "
+              << mainPath.path.size() << " avg weight "
               << mainPath.getAverageWeight() << " starts at " << startPos
               << " ends at " << endPos << " len in Contig " << endPos - startPos
               << "\n";

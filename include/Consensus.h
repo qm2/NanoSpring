@@ -209,6 +209,8 @@ public:
 
 private:
     Node *startingNode;
+    Node *leftMostChangedNode;
+    size_t leftMostChangedNodeOffset = 0;
     size_t numNodes = 0;
     size_t numEdges = 0;
     // Maps ID of read to (relative position of read in contig, beginning node
@@ -272,6 +274,8 @@ private:
 
     size_t writeRead(std::ofstream &posFile, std::ofstream &editTypeFile,
                      std::ofstream &editBaseFile, Read &r, size_t id);
+
+    void clearMainPath();
 
     // void writeGraph(std::ofstream &f);
 };
