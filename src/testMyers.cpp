@@ -1,7 +1,9 @@
 #include "Edits.h"
+#include "LocalMyers.h"
+#include "LocalMyersRollBack.h"
+#include "LocalMyersRollBackOld.h"
 #include <iostream>
 #include <map>
-#include <myers.h>
 #include <sstream>
 #include <stack>
 #include <string>

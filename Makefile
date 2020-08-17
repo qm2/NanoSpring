@@ -77,10 +77,14 @@ testMinHash : $(addprefix $(OBJ_DIR)/,testMinHash.o NanoporeReads.o)
 testAligner : $(addprefix $(OBJ_DIR)/,testAligner.o NanoporeReads.o ReadAligner.o)
 testContig : $(addprefix $(OBJ_DIR)/,testContigGenerator.o NanoporeReads.o ReadAligner.o Contig.o)
 testConsensus : $(addprefix $(OBJ_DIR)/,testConsensus.o Consensus.o Contig.o \
-	NanoporeReads.o ReadAligner.o myers.o Edits.o bsc.o) \
+	NanoporeReads.o ReadAligner.o \
+	LocalMyersRollBack.o LocalMyersRollBackOld.o LocalMyers.o MyersAligner.o Edits.o\
+	bsc.o) \
 	$(addprefix libbsc/, libbsc.a)
-testMyers : $(addprefix $(OBJ_DIR)/,testMyers.o myers.o Edits.o)
-testAlignAlgs : $(addprefix $(OBJ_DIR)/,testAlignAlgs.o AlignerTester.o myers.o Edits.o)
+testMyers : $(addprefix $(OBJ_DIR)/,testMyers.o \
+	LocalMyersRollBack.o LocalMyersRollBackOld.o LocalMyers.o MyersAligner.o Edits.o)
+testAlignAlgs : $(addprefix $(OBJ_DIR)/,testAlignAlgs.o AlignerTester.o \
+	LocalMyersRollBack.o LocalMyersRollBackOld.o LocalMyers.o MyersAligner.o Edits.o)
 validateResult : $(addprefix $(OBJ_DIR)/,validateResult.o AlignerTester.o)
 # test : $(addprefix $(OBJ_DIR)/, bsc.o) $(addprefix libbsc/, libbsc.a)
 

@@ -1,8 +1,8 @@
 #include "Consensus.h"
 #include "Contig.h"
+#include "LocalMyersRollBack.h"
 #include "NanoporeReads.h"
 #include "ReadAligner.h"
-#include "myers.h"
 #include <chrono>
 #include <ctime>
 #include <fstream>
