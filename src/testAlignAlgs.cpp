@@ -20,12 +20,12 @@ int main(int argc, char **argv) {
     //    aligners.push_back(new LocalMyers(200));
     size_t maxEditDis = 3200;
     //    aligners.push_back(new LocalMyers(32, 64));
-    aligners.push_back(new LocalMyersRollBack(32, 64, maxEditDis));
+    // aligners.push_back(new LocalMyersRollBack(32, 64, maxEditDis));
     aligners.push_back(new LocalMyers(50, 100));
     aligners.push_back(new LocalMyersRollBack(50, 100, maxEditDis));
     aligners.push_back(new LocalMyersRollBack(50, 100, maxEditDis * 2));
     aligners.push_back(new LocalMyersRollBack(100, 200, maxEditDis));
-    // aligners.push_back(new LocalMyersRollBack(100, 200, maxEditDis * 2));
+    aligners.push_back(new LocalMyersRollBack(100, 200, maxEditDis * 2));
 
     //    aligners.push_back(new LocalMyersRollBack(100, 50, maxEditDis));
     //    aligners.push_back(new LocalMyers(100, 200));
@@ -44,7 +44,7 @@ void testAlg(std::vector<StringAligner *> aligners) {
     // ssize_t offsets2Test[] = {0, -5, 5, -10, 10, -20, 20, -40, 40};
     size_t offsets2Test[] = {0, 100};
 
-    aT.generateData(10000, 400, 10, 0.00, 0.00, 0.05);
+    aT.generateData(10000, 0, 1, 0.03, 0.03, 0.04);
     const size_t algW = 35;
     for (StringAligner *aligner : aligners) {
         if (aT.validate(aligner)) {
@@ -57,7 +57,7 @@ void testAlg(std::vector<StringAligner *> aligners) {
     }
     std::cout << std::endl;
     for (ssize_t offset : offsets2Test) {
-        aT.generateData(10000, offset, 4, 0.00, 0.00, 0.05);
+        aT.generateData(10000, offset, 16, 0.03, 0.03, 0.04);
         //        aT.generateData(10000, offset, 8, 0.01, 0.01, 0);
         std::cout << std::setw(algW) << "Algorithm"
                   << " " << std::setw(6) << "Offset"

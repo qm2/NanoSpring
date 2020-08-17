@@ -67,6 +67,9 @@ std::ostream &operator<<(std::ostream &out, const Edit &o) {
     case DELETE:
         out << 'd' << o.editInfo.del;
         break;
+    case SUBSTITUTION:
+        out << 's' << o.editInfo.sub;
+        break;
     }
     return out;
 }

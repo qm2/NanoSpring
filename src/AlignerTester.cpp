@@ -165,6 +165,8 @@ bool AlignerTester::validate(StringAligner *aligner) {
 
         applyEditsToString(origString, editScript, result);
         if (result.compare(targetString)) {
+            std::cout << "Begin Offset " << beginOffset << " EndOffset "
+                      << endOffset << '\n';
             std::cout << readsA[i] << std::endl;
             std::cout << readsB[i].length() << readsB[i] << std::endl;
             std::cout << result.length() << result << std::endl;
@@ -189,6 +191,10 @@ void AlignerTester::applyEditsToString(const std::string &origString,
             result.push_back(e.editInfo.ins);
             break;
         case DELETE:
+            pos++;
+            break;
+        case SUBSTITUTION:
+            result.push_back(e.editInfo.sub);
             pos++;
             break;
         }
