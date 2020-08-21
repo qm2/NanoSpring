@@ -1,21 +1,20 @@
 #include "../include/Contig.h"
-#include <omp.h>
 #include <algorithm>
-#include <stdexcept>
 #include <cmath>
+#include <omp.h>
+#include <stdexcept>
 
-ContigGenerator::ContigGenerator(ReadAligner *rA, NanoporeReads &nR, ReadFilter *rF) : rA(rA), nR(nR), rF(rF) {
-
-}
+ContigGenerator::ContigGenerator(ReadAligner *rA, NanoporeReads &nR,
+                                 ReadFilter *rF)
+    : rA(rA), nR(nR), rF(rF) {}
 
 void ContigGenerator::generateContigs() {
 
     initialize();
 
-    // We start with contig 0, lengthening it at both ends until it is impossible to lengthen it further
-    // Then we create a new contig and adds a random read to it
-    // If two contigs have overlaps, we merge them
-
+    // We start with contig 0, lengthening it at both ends until it is
+    // impossible to lengthen it further Then we create a new contig and adds a
+    // random read to it If two contigs have overlaps, we merge them
     while (!reads2Contig.empty()) {
         if (!hasActiveContig) {
             // Create a new contig
@@ -27,7 +26,8 @@ void ContigGenerator::generateContigs() {
             activeContig->reads.insert(std::make_pair(0, r2Add));
 
             readsInContig[r2Add] = std::make_pair(activeContig, 0);
-//            std::cout << "Created contig " << contigs.size() - 1 << std::endl;
+            //            std::cout << "Created contig " << contigs.size() - 1
+            //            << std::endl;
         }
 
         hasActiveContig = false;
@@ -35,13 +35,15 @@ void ContigGenerator::generateContigs() {
         {
             size_t l = reads2Contig.size();
             if (l % 20 == 0)
-                std::cout << l << " reads left to contig " << contigs.size() << std::endl;
+                std::cout << l << " reads left to contig " << contigs.size()
+                          << std::endl;
         }
 
         while (addRelatedReads(*activeContig->reads.begin())) {
             size_t l = reads2Contig.size();
             if (l % 20 == 0)
-                std::cout << l << " reads left to contig " << contigs.size() << std::endl;
+                std::cout << l << " reads left to contig " << contigs.size()
+                          << std::endl;
         }
 
         while (true) {
@@ -51,7 +53,8 @@ void ContigGenerator::generateContigs() {
                 break;
             size_t l = reads2Contig.size();
             if (l % 20 == 0)
-                std::cout << l << " reads left to contig " << contigs.size() << std::endl;
+                std::cout << l << " reads left to contig " << contigs.size()
+                          << std::endl;
         }
     }
 }
@@ -60,7 +63,7 @@ void ContigGenerator::initialize() {
     hasActiveContig = false;
     readsInContig.clear();
     reads2Contig.clear();
-    for (auto c: contigs)
+    for (auto c : contigs)
         delete c;
     contigs.clear();
     std::vector<read_t> temp;
@@ -72,7 +75,7 @@ void ContigGenerator::initialize() {
 }
 
 bool ContigGenerator::addRelatedReads(const std::pair<long, read_t> r) {
-//            std::cout << "Adding related reads" << std::endl;
+    //            std::cout << "Adding related reads" << std::endl;
     std::vector<size_t> results;
     rF->getFilteredReads(r.second, results);
     bool addedRead = false;
@@ -83,7 +86,8 @@ bool ContigGenerator::addRelatedReads(const std::pair<long, read_t> r) {
 
     omp_lock_t lock;
     omp_init_lock(&lock);
-#pragma omp parallel for shared(lock, results, addedRead, merged, contig2MergeWith, relPosInMerge)
+#pragma omp parallel for shared(lock, results, addedRead, merged,              \
+                                contig2MergeWith, relPosInMerge)
     for (size_t i = 0; i < resultLen; i++) {
         size_t it = results[i];
         long relPos;
@@ -128,7 +132,7 @@ bool ContigGenerator::addRelatedReads(const std::pair<long, read_t> r) {
 };
 
 void ContigGenerator::mergeContigs(Contig *c1, Contig *c2, long pos) {
-//                    std::cout << "Merging" << std::endl;
+    //                    std::cout << "Merging" << std::endl;
     long smallestPos = c1->reads.begin()->first;
     auto it = c1->reads.end();
     it--;
@@ -142,9 +146,9 @@ void ContigGenerator::mergeContigs(Contig *c1, Contig *c2, long pos) {
         c1->reads.insert(std::make_pair(pos2Add, r.second));
         // Update the map from reads to contigs
         readsInContig[r.second] = std::make_pair(c1, pos2Add);
-//                        std::cout << r.second << " ";
+        //                        std::cout << r.second << " ";
     }
-//                    std::cout << std::endl;
+    //                    std::cout << std::endl;
     activeContig = c1;
     hasActiveContig = true;
     contigs.erase(c2);
@@ -162,29 +166,31 @@ std::ostream &operator<<(std::ostream &out, const ContigGenerator &o) {
         size_t j = 0;
 
         const long genomeLen = 100000;
-//        const long genomeLen = 5000000;
+        //        const long genomeLen = 5000000;
         for (const auto r : contig->reads) {
-            long dif = r.first - (long) o.nR.readPos[r.second];
+            long dif = r.first - (long)o.nR.readPos[r.second];
             dif += 2 * genomeLen;
             dif %= genomeLen;
             if (dif > genomeLen / 2)
                 dif -= genomeLen;
             averageShift += dif;
-//            out << r.first << " " << (long) o.nR.readPos[r.second] << std::endl;
+            //            out << r.first << " " << (long) o.nR.readPos[r.second]
+            //            << std::endl;
         }
 
         averageShift /= contigSize;
 
         long difErrs[contigSize];
         for (const auto r : contig->reads) {
-            long dif = r.first - (long) o.nR.readPos[r.second];
+            long dif = r.first - (long)o.nR.readPos[r.second];
             dif += 2 * genomeLen;
             dif %= genomeLen;
             if (dif > genomeLen / 2)
                 dif -= genomeLen;
             difErrs[j++] = dif - averageShift;
-//            out << r.first << " " << (long) o.nR.readPos[r.second]
-//                << " " << dif - averageShift << " " << r.second << std::endl;
+            //            out << r.first << " " << (long) o.nR.readPos[r.second]
+            //                << " " << dif - averageShift << " " << r.second <<
+            //                std::endl;
         }
 
         std::sort(difErrs, difErrs + contigSize);
@@ -192,12 +198,13 @@ std::ostream &operator<<(std::ostream &out, const ContigGenerator &o) {
         out << "Average shift is " << averageShift << std::endl;
         out << "Shift Error median is " << difErrs[contigSize / 2] << std::endl;
         out << "Shift Error 25% is " << difErrs[contigSize / 4] << std::endl;
-        out << "Shift Error 75% is " << difErrs[(contigSize * 3) / 4] << std::endl;
+        out << "Shift Error 75% is " << difErrs[(contigSize * 3) / 4]
+            << std::endl;
     }
     return out;
 }
 
 ContigGenerator::~ContigGenerator() {
-    for (auto c: contigs)
+    for (auto c : contigs)
         delete c;
 }

@@ -1,11 +1,3 @@
-/***
- * We store the current reads along with their relations as a directly acyclic
- * graph. The nodes represent different bases, and each each edge means there is
- * at least one read where the base in the next node follows the current node.
- * The nodes contain the base, and the edges going in and the edges going out.
- * The edges contain
- */
-
 #ifndef Z_CONSENSUS_CUH
 #define Z_CONSENSUS_CUH
 
@@ -129,8 +121,27 @@ public:
     void clear();
 };
 
+/// TODO: finish the comments for this class
+/***
+ * We store the current reads along with their relations as a directly acyclic
+ * graph. The nodes represent different bases, and each each edge means there is
+ * at least one read where the base in the next node follows the current node.
+ * The nodes contain the base, and the edges going in and the edges going out.
+ * The edges contain
+ */
 class ConsensusGraph {
 public:
+    /**
+     * @brief Directory for storing the temp files (.genome, .pos, .type)
+     *
+     */
+    std::string tempDir = "tempRaw/";
+    /**
+     * @brief Directory for storing the compressed temp files
+     *
+     */
+    std::string compressedTempDir = "tempCompressed/";
+
     class Read {
     public:
         /***
@@ -168,7 +179,8 @@ public:
     /***
      * Adds a read to the consensus graph. Does not update mainPath.
      * @param s String of read to add
-     * @param readId id of the read to add
+     * @param readId id of the read to add (id right now just means the position
+     * in all the reads read)
      * @param pos Relative position of read in contig
      */
     bool addRead(const std::string &s, size_t readId, long pos,
@@ -194,6 +206,11 @@ public:
 
     Path &getMainPath();
 
+    /**
+     * @brief
+     *
+     * @param filename
+     */
     void writeMainPath(const std::string &filename);
 
     /***
@@ -204,8 +221,21 @@ public:
     size_t read2EditScript(Read &r, size_t id, std::vector<Edit> &editScript,
                            size_t &pos);
 
+    /**
+     * @brief Write the edit strings of the reads in a single file f
+     *
+     * @param f
+     */
     void writeReads(std::ofstream &f);
 
+    /**
+     * @brief Write the raw data into tempDir with file names .pos, .genome,
+     * .type, .base, .id, .unalignedReads, .unalignedIds; compresses them into
+     * tempCompressedDir;
+     * The .id file is delta encoded
+     *
+     * @param filename
+     */
     void writeReads(const std::string &filename);
 
     /***
@@ -228,6 +258,8 @@ private:
     // Starting and ending positions of mainPath in contig
     long startPos, endPos;
     StringAligner *aligner;
+    // Maps ID of reads that cannot be successfully aligned to actual strings
+    std::map<size_t, std::string> unalignedReads;
 
     Node *createNode(char base);
 
@@ -272,7 +304,7 @@ private:
                    std::set<size_t> const &reads2Split);
 
     /***
-     *
+     * Write the edits trings of the reads into a single file
      * @param f
      * @param r
      * @param id
@@ -280,8 +312,38 @@ private:
      */
     size_t writeRead(std::ofstream &f, Read &r, size_t id);
 
+    /**
+     * @brief
+     *
+     * @param posFile Here we store the number of unchanged bases before the
+     * current edit. For example, the (n+1)th position stores the number of
+     * uncahgned bases before the nth edit. The 0th position stores the initial
+     * position of the read. If there are num edits, then we store (num + 2)
+     * positions, where the last position is the number of unchanged bases after
+     * the last edit. The data between different reads are separated by
+     * END_SYMBOL.
+     * @param editTypeFile
+     * i[nsertion], d[eletion]. s[ubstitution]. Different reads are separated by
+     * '\n'
+     * @param editBaseFile
+     * ATCG.  Different reads are separated by '\n'
+     * @param r
+     * @param id
+     * @return size_t
+     */
     size_t writeRead(std::ofstream &posFile, std::ofstream &editTypeFile,
                      std::ofstream &editBaseFile, Read &r, size_t id);
+
+    /**
+     * @brief Stores the reads in filename.unalignedReads and the ids in
+     * filename.unalignedIds.
+     *
+     * filename.unalignedIds is delta coded.
+     * filename.unalignedReads is just one line per read
+     *
+     * @param filename
+     */
+    void writeUnalignedReads(const std::string &filename);
 
     void clearMainPath();
 

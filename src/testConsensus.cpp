@@ -5,6 +5,7 @@
 #include "ReadAligner.h"
 #include <chrono>
 #include <ctime>
+#include <filesystem>
 #include <fstream>
 #include <gperftools/heap-profiler.h>
 #include <gperftools/profiler.h>
@@ -54,6 +55,15 @@ int main(int argc, char **argv) {
                       << " milliseconds" << std::endl;
         }
         std::cout << cG << std::endl;
+
+        // We clear the temp directories and create them if they do not exist
+        std::string tempDir = "tempRaw";
+        std::string compressedTempDir = "tempCompressed";
+        std::error_code ec;
+        std::filesystem::remove_all(tempDir, ec);
+        std::filesystem::remove_all(compressedTempDir, ec);
+        std::filesystem::create_directory(tempDir, ec);
+        std::filesystem::create_directory(compressedTempDir, ec);
 
         size_t i = 0;
         for (Contig *c : cG.contigs) {

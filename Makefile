@@ -30,11 +30,11 @@ DEP_FLAGS = -MT $@ -MMD -MP -MF $(DEP_DIR)/$*.d
 # CC compiler options:
 CC=g++
 #-static-libasan -fsanitize=address -fno-omit-frame-pointer -ltcmalloc
-CC_FLAGS=-fopenmp -g -O3 -Iinclude -Ilibbsc \
+CC_FLAGS=--std=c++17 -fopenmp -g -O3 -Iinclude -Ilibbsc \
 #-static-libasan -fsanitize=address -fno-omit-frame-pointer
-CC_LD_FLAGS= -Wl,--no-as-needed -lprofiler -Wl,--as-needed
+CC_LD_FLAGS=
 #-Wl,--no-as-needed -lprofiler
-CC_LIBS=
+CC_LIBS=-Wl,--no-as-needed -lprofiler -Wl,--as-needed
 
 ##########################################################
 
@@ -53,8 +53,8 @@ CUDA_INC_DIR= -I$(CUDA_ROOT_DIR)/include
 # CUDA linking libraries:
 CUDA_LINK_LIBS= -lcudart
 
-COMPILE.c = $(CC) $(DEP_FLAGS) $(CC_FLAGS) $(CC_LD_FLAGS) -c
-LINK.c = $(CC) $(CC_FLAGS) $(CC_LD_FLAGS)
+COMPILE.c = $(CC) $(DEP_FLAGS) $(CC_FLAGS) -c
+LINK.c = $(CC) $(CC_FLAGS) $(CC_LD_FLAGS) $(CC_LIBS)
 
 ##########################################################
 

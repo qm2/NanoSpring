@@ -9,6 +9,8 @@
 #include <iterator>
 #include <stack>
 
+typedef uint32_t POS_T;
+
 Edge::Edge(Node *source, Node *sink, size_t read) : source(source), sink(sink) {
     count = 1;
     reads.insert(read);
@@ -82,6 +84,8 @@ void Path::clear() {
 
 void ConsensusGraph::initialize(const std::string &seed, size_t readId,
                                 long pos) {
+
+    unalignedReads.clear();
     size_t len = seed.length();
     Node *currentNode = createNode(seed[0]);
     // We create a read that points to this node
@@ -136,11 +140,15 @@ void ConsensusGraph::addReads(
 
     size_t count = 0;
     while (!readsInContig.empty()) {
+
+        // First we lengthen mainPath by len/2
         auto read2Lengthen = readsInContig.lower_bound(
             std::make_pair(endPos - len + len / 2, 0));
+
         if (read2Lengthen != readsInContig.begin()) {
             read2Lengthen--;
         }
+
         {
             std::vector<Edit> editScript;
             ssize_t beginOffset, endOffset;
@@ -152,10 +160,13 @@ void ConsensusGraph::addReads(
             if (success) {
                 updateGraph(s, editScript, beginOffset, endOffset, readId, pos);
                 calculateMainPathGreedy();
+            } else {
+                unalignedReads.insert(std::make_pair(readId, s));
             }
             readsInContig.erase(read2Lengthen);
         }
 
+        // Then we add all reads that should overlap with mainPath
         auto endRead2Add =
             readsInContig.lower_bound(std::make_pair(endPos - len - 100, 0));
         size_t count = 0;
@@ -177,6 +188,8 @@ void ConsensusGraph::addReads(
                 if (success)
                     updateGraph(s, editScript, beginOffset, endOffset, readId,
                                 pos);
+                else
+                    unalignedReads.insert(std::make_pair(readId, s));
             }
 
             // count++;
@@ -188,18 +201,6 @@ void ConsensusGraph::addReads(
 
         printStatus();
     }
-    // auto end = readsInContig.end();
-    // size_t count = 0;
-    // for (currentRead++; currentRead != end; currentRead++) {
-    //     addRead(*readData[currentRead->second],
-    //             currentRead->second, currentRead->first);
-    //     calculateMainPathGreedy();
-    //     if (count % 100 == 0) {
-    //         std::cout << "Added read " << count << std::endl;
-    //         printStatus();
-    //     }
-    //     count++;
-    // }
 }
 
 void ConsensusGraph::updateGraph(const std::string &s,
@@ -756,11 +757,12 @@ void ConsensusGraph::printStatus() {
 
 void ConsensusGraph::writeMainPath(const std::string &filename) {
     std::ofstream f;
-    std::string genomeFileName = filename + ".genome";
+    std::string genomeFileName = tempDir + filename + ".genome";
     f.open(genomeFileName);
     f << mainPath.path << std::endl;
     f.close();
-    std::string compressedGenomeFileName = filename + ".genomeCompressed";
+    std::string compressedGenomeFileName =
+        compressedTempDir + filename + ".genomeCompressed";
     bsc::BSC_compress(genomeFileName.c_str(), compressedGenomeFileName.c_str());
 }
 
@@ -773,32 +775,78 @@ void ConsensusGraph::writeReads(const std::string &filename) {
         e->sink->cumulativeWeight = ++i;
     }
     size_t totalEditDis = 0;
-    const std::string posFileName = filename + ".pos";
-    const std::string editTypeFileName = filename + ".type";
-    const std::string editBaseFileName = filename + ".base";
-    std::ofstream posFile, editTypeFile, editBaseFile;
+
+    const std::string posFileName = tempDir + filename + ".pos";
+    const std::string editTypeFileName = tempDir + filename + ".type";
+    const std::string editBaseFileName = tempDir + filename + ".base";
+    const std::string idFileName = tempDir + filename + ".id";
+    std::ofstream posFile, editTypeFile, editBaseFile, idFile;
     posFile.open(posFileName);
     editTypeFile.open(editTypeFileName);
     editBaseFile.open(editBaseFileName);
+    idFile.open(idFileName);
+    size_t pasId = 0;
     for (auto it : readsInGraph) {
+        {
+            POS_T id_pos_t = it.first - pasId;
+            pasId = it.first;
+            idFile.write(reinterpret_cast<char *>(&id_pos_t), sizeof(POS_T));
+        }
         totalEditDis +=
             writeRead(posFile, editTypeFile, editBaseFile, it.second, it.first);
     }
     posFile.close();
     editTypeFile.close();
     editBaseFile.close();
+    idFile.close();
     std::cout << "AvgEditDis " << totalEditDis / (double)readsInGraph.size()
               << std::endl;
-    const std::string posFileCompressedName = posFileName + "Compressed";
+    const std::string posFileCompressedName =
+        compressedTempDir + filename + ".pos" + "Compressed";
     const std::string editTypeFileCompressedName =
-        editTypeFileName + "Compressed";
+        compressedTempDir + filename + ".type" + "Compressed";
     const std::string editBaseFileCompressedName =
-        editBaseFileName + "Compressed";
+        compressedTempDir + filename + ".base" + "Compressed";
+    const std::string idFileCompressedName =
+        compressedTempDir + filename + ".id" + "Compressed";
     bsc::BSC_compress(posFileName.c_str(), posFileCompressedName.c_str());
     bsc::BSC_compress(editTypeFileName.c_str(),
                       editTypeFileCompressedName.c_str());
     bsc::BSC_compress(editBaseFileName.c_str(),
                       editBaseFileCompressedName.c_str());
+    bsc::BSC_compress(idFileName.c_str(), idFileCompressedName.c_str());
+
+    writeUnalignedReads(filename);
+}
+
+void ConsensusGraph::writeUnalignedReads(const std::string &filename) {
+    const std::string unalignedReadsFileName =
+        tempDir + filename + ".unalignedReads";
+    const std::string unalignedIdsFileName =
+        tempDir + filename + ".unalignedIds";
+    std::ofstream unalignedReadsFile, unalignedIdsFile;
+    unalignedReadsFile.open(unalignedReadsFileName);
+    unalignedIdsFile.open(unalignedIdsFileName);
+    size_t pastId = 0;
+    for (auto it : unalignedReads) {
+        {
+            POS_T id_pos_t = it.first - pastId;
+            pastId = it.first;
+            unalignedIdsFile.write(reinterpret_cast<char *>(&id_pos_t),
+                                   sizeof(POS_T));
+        }
+        unalignedReadsFile << it.second << '\n';
+    }
+    unalignedIdsFile.close();
+    unalignedReadsFile.close();
+    const std::string unalignedReadsFileCompressedName =
+        compressedTempDir + filename + ".unalignedReads" + "Compressed";
+    const std::string unalignedIdsFileCompressedName =
+        compressedTempDir + filename + ".unalignedIds" + "Compressed";
+    bsc::BSC_compress(unalignedReadsFileName.c_str(),
+                      unalignedReadsFileCompressedName.c_str());
+    bsc::BSC_compress(unalignedIdsFileName.c_str(),
+                      unalignedIdsFileCompressedName.c_str());
 }
 
 size_t ConsensusGraph::read2EditScript(ConsensusGraph::Read &r, size_t id,
@@ -858,7 +906,6 @@ size_t ConsensusGraph::writeRead(std::ofstream &posFile,
                                  std::ofstream &editTypeFile,
                                  std::ofstream &editBaseFile, Read &r,
                                  size_t id) {
-    typedef uint32_t POS_T;
 
     size_t offset;
     std::vector<Edit> editScript;
