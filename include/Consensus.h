@@ -1,14 +1,14 @@
 #ifndef Z_CONSENSUS_CUH
 #define Z_CONSENSUS_CUH
 
-#endif // Z_CONSENSUS_CUH
-
 #include "Contig.h"
 #include "Edits.h"
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
+
+typedef uint32_t POS_T;
 
 class Node;
 
@@ -131,6 +131,8 @@ public:
  */
 class ConsensusGraph {
 public:
+    const static POS_T END_SYMBOL = ~(POS_T)0l;
+
     /**
      * @brief Directory for storing the temp files (.genome, .pos, .type)
      *
@@ -349,3 +351,5 @@ private:
 
     // void writeGraph(std::ofstream &f);
 };
+
+#endif // Z_CONSENSUS_CUH

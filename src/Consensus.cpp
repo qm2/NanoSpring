@@ -9,8 +9,6 @@
 #include <iterator>
 #include <stack>
 
-typedef uint32_t POS_T;
-
 Edge::Edge(Node *source, Node *sink, size_t read) : source(source), sink(sink) {
     count = 1;
     reads.insert(read);
@@ -624,7 +622,6 @@ void ConsensusGraph::splitPath(Node *oldPre, Node *newPre, Edge *e,
 }
 
 ConsensusGraph::~ConsensusGraph() {
-    delete aligner;
     if (!startingNode)
         return;
     std::cerr << "Removing" << std::endl;
@@ -781,15 +778,16 @@ void ConsensusGraph::writeReads(const std::string &filename) {
     const std::string editBaseFileName = tempDir + filename + ".base";
     const std::string idFileName = tempDir + filename + ".id";
     std::ofstream posFile, editTypeFile, editBaseFile, idFile;
-    posFile.open(posFileName);
-    editTypeFile.open(editTypeFileName);
-    editBaseFile.open(editBaseFileName);
-    idFile.open(idFileName);
+    posFile.open(posFileName, std::ios::binary);
+    editTypeFile.open(editTypeFileName, std::ios::binary);
+    editBaseFile.open(editBaseFileName, std::ios::binary);
+    idFile.open(idFileName, std::ios::binary);
     size_t pasId = 0;
     for (auto it : readsInGraph) {
         {
             POS_T id_pos_t = it.first - pasId;
             pasId = it.first;
+            id_pos_t = htonl(id_pos_t);
             idFile.write(reinterpret_cast<char *>(&id_pos_t), sizeof(POS_T));
         }
         totalEditDis +=
@@ -825,13 +823,14 @@ void ConsensusGraph::writeUnalignedReads(const std::string &filename) {
     const std::string unalignedIdsFileName =
         tempDir + filename + ".unalignedIds";
     std::ofstream unalignedReadsFile, unalignedIdsFile;
-    unalignedReadsFile.open(unalignedReadsFileName);
-    unalignedIdsFile.open(unalignedIdsFileName);
+    unalignedReadsFile.open(unalignedReadsFileName, std::ios::binary);
+    unalignedIdsFile.open(unalignedIdsFileName, std::ios::binary);
     size_t pastId = 0;
     for (auto it : unalignedReads) {
         {
             POS_T id_pos_t = it.first - pastId;
             pastId = it.first;
+            id_pos_t = htonl(id_pos_t);
             unalignedIdsFile.write(reinterpret_cast<char *>(&id_pos_t),
                                    sizeof(POS_T));
         }
@@ -957,8 +956,8 @@ size_t ConsensusGraph::writeRead(std::ofstream &posFile,
     pos = htonl(pos);
     posFile.write(reinterpret_cast<char *>(&pos), sizeof(POS_T));
 
-    POS_T END_SYMBOL = ~(POS_T)0l;
-    posFile.write(reinterpret_cast<char *>(&END_SYMBOL), sizeof(POS_T));
+    POS_T t = END_SYMBOL;
+    posFile.write(reinterpret_cast<char *>(&t), sizeof(POS_T));
     editTypeFile << '\n';
     editBaseFile << '\n';
     // f << std::endl;

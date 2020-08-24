@@ -27,14 +27,14 @@ SUBDIRS := libbsc
 DEP_FLAGS = -MT $@ -MMD -MP -MF $(DEP_DIR)/$*.d
 ## CC COMPILER OPTIONS ##
 
-# CC compiler options:
+# CC compiler options: (we need g++ version >= 8)
 CC=g++
 #-static-libasan -fsanitize=address -fno-omit-frame-pointer -ltcmalloc
-CC_FLAGS=--std=c++17 -fopenmp -g -O3 -Iinclude -Ilibbsc \
+CC_FLAGS=-std=c++17 -fopenmp -g -O3 -Iinclude -Ilibbsc \
 #-static-libasan -fsanitize=address -fno-omit-frame-pointer
 CC_LD_FLAGS=
 #-Wl,--no-as-needed -lprofiler
-CC_LIBS=-Wl,--no-as-needed -lprofiler -Wl,--as-needed
+CC_LIBS=-lstdc++fs -Wl,--no-as-needed -lprofiler -Wl,--as-needed
 
 ##########################################################
 
@@ -54,7 +54,7 @@ CUDA_INC_DIR= -I$(CUDA_ROOT_DIR)/include
 CUDA_LINK_LIBS= -lcudart
 
 COMPILE.c = $(CC) $(DEP_FLAGS) $(CC_FLAGS) -c
-LINK.c = $(CC) $(CC_FLAGS) $(CC_LD_FLAGS) $(CC_LIBS)
+LINK.c = $(CC) $(CC_FLAGS) $(CC_LD_FLAGS)
 
 ##########################################################
 
@@ -63,8 +63,8 @@ LINK.c = $(CC) $(CC_FLAGS) $(CC_LD_FLAGS) $(CC_LIBS)
 SRCS = $(notdir $(wildcard $(SRC_DIR)/*.cpp))
 
 # Target executable name:
-EXE = testMinHash testAligner testContig testConsensus \
-	testMyers testAlignAlgs validateResult
+EXE = testMinHash testAligner testContig testCompressor \
+	testMyers testAlignAlgs validateResult testDecompressor
 
 ##########################################################
 
@@ -76,7 +76,7 @@ all: $(SUBDIRS) $(EXE)
 testMinHash : $(addprefix $(OBJ_DIR)/,testMinHash.o NanoporeReads.o)
 testAligner : $(addprefix $(OBJ_DIR)/,testAligner.o NanoporeReads.o ReadAligner.o)
 testContig : $(addprefix $(OBJ_DIR)/,testContigGenerator.o NanoporeReads.o ReadAligner.o Contig.o)
-testConsensus : $(addprefix $(OBJ_DIR)/,testConsensus.o Consensus.o Contig.o \
+testCompressor : $(addprefix $(OBJ_DIR)/,testCompressor.o Compressor.o Consensus.o Contig.o \
 	NanoporeReads.o ReadAligner.o \
 	LocalMyersRollBack.o LocalMyersRollBackOld.o LocalMyers.o MyersAligner.o Edits.o\
 	bsc.o) \
@@ -86,10 +86,12 @@ testMyers : $(addprefix $(OBJ_DIR)/,testMyers.o \
 testAlignAlgs : $(addprefix $(OBJ_DIR)/,testAlignAlgs.o AlignerTester.o \
 	LocalMyersRollBack.o LocalMyersRollBackOld.o LocalMyers.o MyersAligner.o Edits.o)
 validateResult : $(addprefix $(OBJ_DIR)/,validateResult.o AlignerTester.o)
+testDecompressor : $(addprefix $(OBJ_DIR)/,testDecompressor.o Decompressor.o bsc.o) \
+	$(addprefix libbsc/, libbsc.a)
 # test : $(addprefix $(OBJ_DIR)/, bsc.o) $(addprefix libbsc/, libbsc.a)
 
 $(EXE) :
-	$(LINK.c) $^ -o $@
+	$(LINK.c) $^ -o $@ $(CC_LIBS)
 
 $(OBJ_DIR)/%.o : $(SRC_DIR)/%.cpp $(DEP_DIR)/%.d | $(DEP_DIR)
 	$(COMPILE.c) $(OUTPUT_OPTION) $<
