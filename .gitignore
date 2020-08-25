@@ -6,7 +6,7 @@
 !libbsc/
 !**/.gitignore
 !**/*.py
-!Makefile
+!CMakeLists.txt
 !**/*.cu
 !**/*.cuh
 !**/*.cpp

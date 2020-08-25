@@ -77,7 +77,7 @@ bool LocalMyers::localAlign(const char *&Abegin, const char *const Aend,
 
     int Xreached = lenA;
     int Yreached = lenB;
-    for (int d = 0; d <= max; d++) {
+    for (int d = 0; d <= (int)max; d++) {
         for (int k = -d; k <= d; k += 2) {
             // we either choose to go down or go right
             // We choose to go down if 1. we have no choice or 2. going down is
@@ -104,7 +104,8 @@ bool LocalMyers::localAlign(const char *&Abegin, const char *const Aend,
 
             // we go along the diagonal until we fail
             size_t snakeLen = 0;
-            while (xEnd < lenA && yEnd < lenB && Abegin[xEnd] == Bbegin[yEnd]) {
+            while (xEnd < (int)lenA && yEnd < (int)lenB &&
+                   Abegin[xEnd] == Bbegin[yEnd]) {
                 ++xEnd;
                 ++yEnd;
                 ++snakeLen;
@@ -119,7 +120,7 @@ bool LocalMyers::localAlign(const char *&Abegin, const char *const Aend,
                                EditPath(xStart, yStart, xMid, yMid, snakeLen)));
 
             // whether we have found an edit
-            if (xEnd >= lenA || yEnd >= lenB) {
+            if (xEnd >= (int)lenA || yEnd >= (int)lenB) {
                 //                std::cout << "Minimum edits required to
                 //                convert string A into B is: " << d <<
                 //                std::endl;

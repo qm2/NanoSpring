@@ -6,7 +6,7 @@
 
 ContigGenerator::ContigGenerator(ReadAligner *rA, NanoporeReads &nR,
                                  ReadFilter *rF)
-    : rA(rA), nR(nR), rF(rF) {}
+    : nR(nR), rA(rA), rF(rF) {}
 
 void ContigGenerator::generateContigs() {
 

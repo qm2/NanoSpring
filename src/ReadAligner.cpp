@@ -2,11 +2,10 @@
 #include <algorithm>
 
 MergeSortReadAligner::MergeSortReadAligner(size_t k, size_t kMerNumTh)
-        : k(k), kMerNumTh(kMerNumTh) {
+    : k(k), kMerNumTh(kMerNumTh) {}
 
-}
-
-bool MergeSortReadAligner::align(const std::string &r1, const std::string &r2, ssize_t &relPos) {
+bool MergeSortReadAligner::align(const std::string &r1, const std::string &r2,
+                                 ssize_t &relPos) {
     std::vector<std::pair<kMer_t, size_t>> v1, v2;
     stringToSortedKMers(r1, v1);
     stringToSortedKMers(r2, v2);
@@ -27,7 +26,7 @@ bool MergeSortReadAligner::align(const std::string &r1, const std::string &r2, s
             k2 = std::upper_bound(k2, end2, *k2);
         else {
             numMatching++;
-            sum += (long) k1->second - (long) k2->second;
+            sum += (long)k1->second - (long)k2->second;
             k1 = std::upper_bound(k1, end1, *k1);
             k2 = std::upper_bound(k2, end2, *k2);
         }
@@ -37,7 +36,8 @@ bool MergeSortReadAligner::align(const std::string &r1, const std::string &r2, s
     return numMatching >= kMerNumTh;
 }
 
-void MergeSortReadAligner::stringToSortedKMers(const std::string &s, std::vector<std::pair<kMer_t, size_t>> &v) {
+void MergeSortReadAligner::stringToSortedKMers(
+    const std::string &s, std::vector<std::pair<kMer_t, size_t>> &v) {
     ssize_t maxI = s.length() - k + 1;
     if (maxI <= 0)
         return;
@@ -45,8 +45,10 @@ void MergeSortReadAligner::stringToSortedKMers(const std::string &s, std::vector
     kMer_t currentKMer = NanoporeReads::kMerToInt(s.substr(0, k));
     v[0] = (std::make_pair(currentKMer, 0));
     const unsigned long long mask = (1ull << (2 * k)) - 1;
-    for (size_t i = 1; i < maxI; ++i) {
-        currentKMer = ((currentKMer << 2) | NanoporeReads::baseToInt(s[i + k - 1])) & mask;
+    for (size_t i = 1; i < (size_t)maxI; ++i) {
+        currentKMer =
+            ((currentKMer << 2) | NanoporeReads::baseToInt(s[i + k - 1])) &
+            mask;
         v[i] = (std::make_pair(currentKMer, i));
     }
     std::sort(v.begin(), v.end());

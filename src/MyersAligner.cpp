@@ -26,7 +26,7 @@ void MyersAligner::myers(const std::string &s1, const std::string &s2,
     // point
     std::map<std::pair<int, int>, EditPath> editInfo;
 
-    for (int d = 0; d <= max; d++) {
+    for (int d = 0; d <= (int)max; d++) {
         for (int k = -d; k <= d; k += 2) {
             // we either choose to go down or go right
             // We choose to go down if 1. we have no choice or 2. going down is
@@ -53,7 +53,8 @@ void MyersAligner::myers(const std::string &s1, const std::string &s2,
 
             // we go along the diagonal until we fail
             size_t snakeLen = 0;
-            while (xEnd < len1 && yEnd < len2 && s1[xEnd] == s2[yEnd]) {
+            while (xEnd < (int)len1 && yEnd < (int)len2 &&
+                   s1[xEnd] == s2[yEnd]) {
                 ++xEnd;
                 ++yEnd;
                 ++snakeLen;
@@ -68,7 +69,7 @@ void MyersAligner::myers(const std::string &s1, const std::string &s2,
                                EditPath(xStart, yStart, xMid, yMid, snakeLen)));
 
             // whether we have found an edit
-            if (xEnd >= len1 && yEnd >= len2) {
+            if (xEnd >= (int)len1 && yEnd >= (int)len2) {
                 //                std::cout << "Minimum edits required to
                 //                convert string A into B is: " << d <<
                 //                std::endl;

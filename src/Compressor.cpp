@@ -45,7 +45,6 @@ void Compressor::compress(const char *inputFileName) const {
     for (size_t i = 0; i < numContigs; ++i) {
         Contig *c = contigs[i];
         std::set<std::pair<long, read_t>> &readsInContig = c->reads;
-        auto currentRead = readsInContig.begin();
         ConsensusGraph consensusGraph(aligner);
         consensusGraph.tempDir = tempDir;
         consensusGraph.compressedTempDir = compressedTempDir;
@@ -74,5 +73,5 @@ void Compressor::compress(const char *inputFileName) const {
             "Error occurred during tar archive generation.");
     std::cout << "Tar archive done!\n";
     std::string lsCommand = "ls -lh " + outfile;
-    int lsStatus = std::system(lsCommand.c_str());
+    std::system(lsCommand.c_str());
 }

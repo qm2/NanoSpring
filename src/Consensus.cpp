@@ -97,7 +97,7 @@ void ConsensusGraph::initialize(const std::string &seed, size_t readId,
     currentNode->cumulativeWeight = 0;
     for (size_t i = 1; i < len; ++i) {
         Node *nextNode = createNode(seed[i]);
-        Edge *e = createEdge(currentNode, nextNode, readId);
+        createEdge(currentNode, nextNode, readId);
         currentNode = nextNode;
     }
 }
@@ -136,7 +136,6 @@ void ConsensusGraph::addReads(
     readsInContig.erase(currentRead);
     calculateMainPathGreedy();
 
-    size_t count = 0;
     while (!readsInContig.empty()) {
 
         // First we lengthen mainPath by len/2
@@ -167,7 +166,7 @@ void ConsensusGraph::addReads(
         // Then we add all reads that should overlap with mainPath
         auto endRead2Add =
             readsInContig.lower_bound(std::make_pair(endPos - len - 100, 0));
-        size_t count = 0;
+        // size_t count = 0;
         std::vector<std::pair<long, read_t>> reads2Add(readsInContig.begin(),
                                                        endRead2Add);
         size_t num = reads2Add.size();
@@ -236,7 +235,8 @@ void ConsensusGraph::updateGraph(const std::string &s,
             nodeInPath = (*edgeInPath)->sink;
             edgeInPath++;
 
-            if (beginOffset < leftMostChangedNodeOffset) {
+            // In this case beginOffset must be positive
+            if ((size_t)beginOffset < leftMostChangedNodeOffset) {
                 leftMostChangedNodeOffset = beginOffset;
                 leftMostChangedNode = nodeInPath;
             }
@@ -251,7 +251,7 @@ void ConsensusGraph::updateGraph(const std::string &s,
             initialNode = currentNode;
             for (; i < numOfNodes2Insert; ++i) {
                 Node *nextNode = createNode(s[i]);
-                Edge *edge = createEdge(currentNode, nextNode, readId);
+                createEdge(currentNode, nextNode, readId);
                 currentNode = nextNode;
             }
             leftMostChangedNodeOffset = 0;
@@ -307,7 +307,6 @@ void ConsensusGraph::updateGraph(const std::string &s,
 
             // We deal with the rest of the nodes
             for (size_t i = 1; i < num; ++i) {
-                Edge *temp = currentNode->getEdgeTo(nodeInPath);
                 currentNode->getEdgeTo(nodeInPath)->addRead(readId);
                 currentNode = nodeInPath;
                 advanceNodeInPath();
@@ -502,7 +501,7 @@ Path &ConsensusGraph::calculateMainPathGreedy() {
     currentNode->onMainPath = true;
     size_t currentId = leftMostChangedNodeOffset;
     Edge *edgeToAdd;
-    while (edgeToAdd = currentNode->getBestEdge()) {
+    while ((edgeToAdd = currentNode->getBestEdge())) {
         edgesInPath.push_back(edgeToAdd);
         currentNode = edgeToAdd->sink;
         currentNode->onMainPath = true;
@@ -654,8 +653,6 @@ void ConsensusGraph::removeReadsFromEdge(Edge *e,
     e->reads.swap(updatedReadsInOldEdge);
     e->count = e->reads.size();
     if (e->count == 0) {
-        Node *source = e->source;
-        Node *sink = e->sink;
         removeEdge(e);
     }
 }
@@ -894,7 +891,7 @@ size_t ConsensusGraph::read2EditScript(ConsensusGraph::Read &r, size_t id,
             editScript.push_back(Edit(INSERT, curNode->base));
             editDis++;
         }
-    } while (curNode = advanceInRead(curNode));
+    } while ((curNode = advanceInRead(curNode)));
 
     dealWithUnchanged();
 

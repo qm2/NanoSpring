@@ -1,11 +1,11 @@
 #ifndef EXPERIMENTS_NANOPOREREADS_H
 #define EXPERIMENTS_NANOPOREREADS_H
 
-#include <vector>
-#include <string>
 #include <iostream>
-#include <memory>
 #include <map>
+#include <memory>
+#include <string>
+#include <vector>
 
 #define KMER_BITS 64
 #define ROTATE_BITS 13
@@ -18,12 +18,12 @@ typedef uint64_t kMer_t;
 
 class filterStats {
 public:
-    unsigned int totalPositive, totalNegative, numOverlaps,
-            numDisjoint, falsePositives, falseNegatives;
     const unsigned int overlapBaseThreshold, overlapSketchThreshold;
+    unsigned int totalPositive, totalNegative, numOverlaps, numDisjoint,
+        falsePositives, falseNegatives;
 
-
-    filterStats(unsigned int overlapBaseThreshold, unsigned int overlapSketchThreshold);
+    filterStats(unsigned int overlapBaseThreshold,
+                unsigned int overlapSketchThreshold);
 
     friend std::ostream &operator<<(std::ostream &out, const filterStats &o);
 };
@@ -55,7 +55,8 @@ public:
 
     void printHashes();
 
-    filterStats getFilterStats(unsigned int overlapBaseThreshold, unsigned int overlapSketchThreshold);
+    filterStats getFilterStats(unsigned int overlapBaseThreshold,
+                               unsigned int overlapSketchThreshold);
 
     /***
      * Turns a k-mer in string format to an int
@@ -66,10 +67,10 @@ public:
 
     static char baseToInt(const char base);
 
-
 private:
-    static void hashKMer(const size_t numReads, const size_t numKMers, const size_t n,
-                         kMer_t *kMers, kMer_t *hashes, kMer_t *randNumbers);
+    static void hashKMer(const size_t numReads, const size_t numKMers,
+                         const size_t n, kMer_t *kMers, kMer_t *hashes,
+                         kMer_t *randNumbers);
 
     static void calcSketch(const size_t numReads, const size_t currentRead,
                            const size_t numKMers, const size_t n,
@@ -80,11 +81,12 @@ private:
 
 #ifdef _GPU
 __global__ void hashKMer_GPU(const size_t totalKMers, const size_t n,
-                             kMer_t *kMers, kMer_t *hashes, kMer_t *randNumbers);
+                             kMer_t *kMers, kMer_t *hashes,
+                             kMer_t *randNumbers);
 
 /***
- * Kernel to calculate the sketch. If kMers is provided then the sequence is stored;
- * if not, the hash values are stored
+ * Kernel to calculate the sketch. If kMers is provided then the sequence is
+ * stored; if not, the hash values are stored
  * @param numReads
  * @param currentRead
  * @param numKMers
@@ -100,7 +102,8 @@ __global__ void calcSketch_GPU(const size_t numReads, const size_t currentRead,
 
 class ReadFilter {
 public:
-    virtual void getFilteredReads(size_t readToFind, std::vector<size_t> &results) = 0;
+    virtual void getFilteredReads(size_t readToFind,
+                                  std::vector<size_t> &results) = 0;
 };
 
 class MinHashReadFilter : public ReadFilter {
@@ -114,4 +117,4 @@ private:
     NanoporeReads &nR;
 };
 
-#endif //EXPERIMENTS_NANOPOREREADS_H
+#endif // EXPERIMENTS_NANOPOREREADS_H

@@ -27,7 +27,7 @@ bool LocalMyersRollBackOld::localAlign(const char *&Abegin,
 
     int Xreached = lenA;
     int Yreached = lenB;
-    for (int d = 0; d <= max; d++) {
+    for (int d = 0; d <= (int)max; d++) {
         for (int k = -d; k <= d; k += 2) {
             // we either choose to go down or go right
             // We choose to go down if 1. we have no choice or 2. going down is
@@ -54,7 +54,7 @@ bool LocalMyersRollBackOld::localAlign(const char *&Abegin,
 
             // we go along the diagonal until we fail
             size_t snakeLen = 0;
-            while (xEnd < lenA && yEnd < lenB &&
+            while (xEnd < (int)lenA && yEnd < (int)lenB &&
                    ((forward && Abegin[xEnd] == Bbegin[yEnd]) ||
                     (!forward && Abegin[-xEnd] == Bbegin[-yEnd]))) {
                 ++xEnd;
@@ -71,7 +71,7 @@ bool LocalMyersRollBackOld::localAlign(const char *&Abegin,
                                EditPath(xStart, yStart, xMid, yMid, snakeLen)));
 
             // whether we have found an edit
-            if (xEnd >= lenA || yEnd >= lenB) {
+            if (xEnd >= (int)lenA || yEnd >= (int)lenB) {
                 //                std::cout << "Minimum edits required to
                 //                convert string A into B is: " << d <<
                 //                std::endl;
@@ -187,10 +187,7 @@ bool LocalMyersRollBackOld::align(const std::string &s1, const std::string &s2,
     const char *const Aend = Abegin1 + s1.length();
     const char *Bbegin1 = s2.c_str();
     const char *const Bend = Bbegin1 + s2.length();
-    ssize_t beginOffset1 = offsetGuess;
-    ssize_t beginOffset2 = -offsetGuess;
-    ssize_t endOffset1 = 0;
-    ssize_t endOffset2 = 0;
+
     size_t editDis1 = 0;
     size_t editDis2 = 0;
 

@@ -41,7 +41,7 @@ bool LocalMyersRollBack::localAlign(const char *&Abegin, const char *const Aend,
             int yEnd = yMid;
             // we go along the diagonal until we fail
             size_t snakeLen = 0;
-            while (xEnd < lenAString && yEnd < lenBString &&
+            while (xEnd < (int)lenAString && yEnd < (int)lenBString &&
                    ((forward && Abegin[xEnd] == Bbegin[yEnd]) ||
                     (!forward && Abegin[-xEnd] == Bbegin[-yEnd]))) {
                 ++xEnd;
@@ -62,7 +62,7 @@ bool LocalMyersRollBack::localAlign(const char *&Abegin, const char *const Aend,
             //           << '\n';
 
             // whether we have found an edit
-            if (xEnd >= lenAString || yEnd >= lenBString) {
+            if (xEnd >= (int)lenAString || yEnd >= (int)lenBString) {
                 // std::cout
                 //     << "Minimum edits required to convert string A into B
                 //     is : "
@@ -93,14 +93,14 @@ bool LocalMyersRollBack::localAlign(const char *&Abegin, const char *const Aend,
 
         // Now the case where d = 1;
         d++;
-        if (foundEdit || d > max)
+        if (foundEdit || d > (int)max)
             return;
 
         V[d][0] = MIN_VALUE;
 
         // Now the case where d = 2;
         d++;
-        if (foundEdit || d > max)
+        if (foundEdit || d > (int)max)
             return;
         {
             // k ranges from -1 to 1
@@ -149,7 +149,7 @@ bool LocalMyersRollBack::localAlign(const char *&Abegin, const char *const Aend,
 
         // Now for d>=3
         ++d;
-        for (; d <= max; d++) {
+        for (; d <= (int)max; d++) {
             int halfD = d / 2;
             for (int k = -halfD; k <= halfD; ++k) {
                 int VDown = 2 * (k + 1) >= -(d - 2) && 2 * (k + 1) <= d - 2
@@ -325,10 +325,7 @@ bool LocalMyersRollBack::align(const std::string &s1, const std::string &s2,
     const char *const Aend = Abegin1 + s1.length();
     const char *Bbegin1 = s2.c_str();
     const char *const Bend = Bbegin1 + s2.length();
-    ssize_t beginOffset1 = offsetGuess;
-    ssize_t beginOffset2 = -offsetGuess;
-    ssize_t endOffset1 = 0;
-    ssize_t endOffset2 = 0;
+
     size_t editDis1 = 0;
     size_t editDis2 = 0;
 
