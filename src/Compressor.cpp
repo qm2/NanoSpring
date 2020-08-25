@@ -1,8 +1,9 @@
 #include "Compressor.h"
 #include "Consensus.h"
 #include "Contig.h"
+#include <boost/filesystem.hpp>
 #include <chrono>
-#include <filesystem>
+// #include <filesystem>
 #include <fstream>
 
 void Compressor::compress(const char *inputFileName) const {
@@ -33,11 +34,13 @@ void Compressor::compress(const char *inputFileName) const {
 
     // We clear the temp directories and create them if they do not
     // exist
-    std::error_code ec;
-    std::filesystem::remove_all(tempDir, ec);
-    std::filesystem::remove_all(compressedTempDir, ec);
-    std::filesystem::create_directory(tempDir, ec);
-    std::filesystem::create_directory(compressedTempDir, ec);
+    boost::system::error_code ec;
+    const boost::filesystem::path tempDirPath(tempDir);
+    const boost::filesystem::path compressedTempDirPath(compressedTempDir);
+    boost::filesystem::remove_all(tempDirPath, ec);
+    boost::filesystem::remove_all(compressedTempDirPath, ec);
+    boost::filesystem::create_directory(tempDirPath, ec);
+    boost::filesystem::create_directory(compressedTempDirPath, ec);
 
     size_t numContigs = cG.contigs.size();
     std::vector<Contig *> contigs(cG.contigs.begin(), cG.contigs.end());
@@ -68,10 +71,12 @@ void Compressor::compress(const char *inputFileName) const {
     std::string tar_command =
         "tar -cvf " + outfile + " -C " + compressedTempDir + " . ";
     int tar_status = std::system(tar_command.c_str());
-    if (tar_status != 0)
+    if (tar_status)
         throw std::runtime_error(
             "Error occurred during tar archive generation.");
     std::cout << "Tar archive done!\n";
     std::string lsCommand = "ls -lh " + outfile;
-    std::system(lsCommand.c_str());
+    int ls_status = std::system(lsCommand.c_str());
+    if (ls_status)
+        throw std::runtime_error("Error occurred during ls command.");
 }

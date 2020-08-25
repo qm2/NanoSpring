@@ -1,8 +1,8 @@
-#include "AlignerTester.h"
-#include "Edits.h"
-#include "LocalMyers.h"
-#include "LocalMyersRollBack.h"
-#include "LocalMyersRollBackOld.h"
+#include "../include/AlignerTester.h"
+#include "../include/Edits.h"
+#include "../include/LocalMyers.h"
+#include "../include/LocalMyersRollBack.h"
+#include "../include/LocalMyersRollBackOld.h"
 #include <iomanip>
 #include <iostream>
 

@@ -86,6 +86,7 @@ bool StringAligner::align(const std::string &s1, const std::string &s2,
                           const ssize_t offsetGuess, ssize_t &beginOffset,
                           ssize_t &endOffset, std::vector<Edit> &editScript,
                           size_t &editDis) {
+    (void)offsetGuess;
     beginOffset = 0;
     endOffset = 0;
     return align(s1, s2, editScript, editDis);

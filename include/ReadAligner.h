@@ -23,9 +23,11 @@ public:
     const size_t kMerNumTh;
 
     /***
-     * For overlaps of size 2000, error rate = 10%, k = 21 and kMerNumTh = 10
-     * works really well (No false negatives, false positives capture overlaps
-     * of size >= 400)
+     * Returns true if the number of matching k-mers is greater than kMerNumTh.
+     *
+     * On simulate data, for overlaps of size 2000, error rate = 10%, k = 21 and
+     * kMerNumTh = 10 works really well (No false negatives, false positives
+     * capture overlaps of size >= 400)
      * @param k
      * @param kMerNumTh
      */

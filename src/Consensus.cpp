@@ -102,7 +102,7 @@ void ConsensusGraph::initialize(const std::string &seed, size_t readId,
     }
 }
 
-bool ConsensusGraph::addRead(const std::string &s, size_t readId, long pos,
+bool ConsensusGraph::addRead(const std::string &s, long pos,
                              std::vector<Edit> &editScript,
                              ssize_t &beginOffset, ssize_t &endOffset) {
     std::string &originalString = mainPath.path;
@@ -113,11 +113,11 @@ bool ConsensusGraph::addRead(const std::string &s, size_t readId, long pos,
                                   endOffset, editScript, editDis);
     //    std::cout << "success ? " << success << std::endl;
     if (!success) {
-        std::cout << "Failed to add"
-                  << "\n";
-        std::cout << "mainPath startPos " << startPos << " mainPath endPos "
-                  << endPos << " current read startPos " << pos
-                  << " OffsetGuess " << offsetGuess << std::endl;
+        // std::cout << "Failed to add"
+        //           << "\n";
+        // std::cout << "mainPath startPos " << startPos << " mainPath endPos "
+        //           << endPos << " current read startPos " << pos
+        //           << " OffsetGuess " << offsetGuess << std::endl;
         return false;
     }
     return true;
@@ -152,8 +152,7 @@ void ConsensusGraph::addReads(
             read_t readId = read2Lengthen->second;
             ssize_t pos = read2Lengthen->first;
             std::string &s = *readData[readId];
-            bool success =
-                addRead(s, readId, pos, editScript, beginOffset, endOffset);
+            bool success = addRead(s, pos, editScript, beginOffset, endOffset);
             if (success) {
                 updateGraph(s, editScript, beginOffset, endOffset, readId, pos);
                 calculateMainPathGreedy();
@@ -178,8 +177,7 @@ void ConsensusGraph::addReads(
             read_t readId = read2Add.second;
             ssize_t pos = read2Add.first;
             std::string &s = *readData[readId];
-            bool success =
-                addRead(s, readId, pos, editScript, beginOffset, endOffset);
+            bool success = addRead(s, pos, editScript, beginOffset, endOffset);
 #pragma omp critical
             {
                 if (success)
@@ -569,7 +567,7 @@ void ConsensusGraph::walkAndPrune(Edge *e) {
     if (sink->onMainPath)
         return;
     if (sink->edgesIn.size() > 1)
-        splitPath(source, source, e, e->reads);
+        splitPath(source, e, e->reads);
     auto end = sink->edgesOut.end();
     for (auto subEdge = sink->edgesOut.begin(); subEdge != end;) {
         Edge *edge2WorkOn = subEdge->second;
@@ -578,7 +576,7 @@ void ConsensusGraph::walkAndPrune(Edge *e) {
     }
 }
 
-void ConsensusGraph::splitPath(Node *oldPre, Node *newPre, Edge *e,
+void ConsensusGraph::splitPath(Node *newPre, Edge *e,
                                std::set<size_t> const &reads2Split) {
     // The reads that need to be split going down this path
     std::set<size_t> readsInPath2Split;
@@ -614,7 +612,7 @@ void ConsensusGraph::splitPath(Node *oldPre, Node *newPre, Edge *e,
     for (auto subEdge = oldCur->edgesOut.begin(); subEdge != end;) {
         Edge *edge2WorkOn = subEdge->second;
         subEdge++;
-        splitPath(oldCur, newCur, edge2WorkOn, readsInPath2Split);
+        splitPath(newCur, edge2WorkOn, readsInPath2Split);
     }
     if (oldCur->edgesIn.empty() && oldCur->edgesOut.empty())
         removeNode(oldCur);
@@ -735,8 +733,9 @@ void ConsensusGraph::removeConnectedNodes(Node *n) {
 }
 
 void ConsensusGraph::printStatus() {
-    std::cout << readsInGraph.size() << " reads, " << numNodes << " nodes, and "
-              << numEdges << " edges."
+    std::cout << unalignedReads.size() << " unaligned reads "
+              << readsInGraph.size() << " reads in graph, " << numNodes
+              << " nodes, and " << numEdges << " edges."
               << "\n";
     std::cout << "mainPath len " << mainPath.edges.size() + 1 << " "
               << mainPath.path.size() << " avg weight "

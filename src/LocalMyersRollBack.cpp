@@ -430,7 +430,7 @@ bool LocalMyersRollBack::align(const std::string &s1, const std::string &s2,
         // }
         return true;
     }
-    std::cerr << "Backward alignment failed\n";
+    // std::cerr << "Backward alignment failed\n";
     return false;
 }
 

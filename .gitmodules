@@ -1,3 +1,6 @@
 [submodule "libbsc"]
 	path = libbsc
 	url = https://github.com/IlyaGrebnov/libbsc.git
+[submodule "boost-cmake"]
+	path = boost-cmake
+	url = https://github.com/Orphis/boost-cmake.git

@@ -2,8 +2,9 @@
 #include "Consensus.h"
 #include "bsc_helper.h"
 #include <arpa/inet.h>
+#include <boost/filesystem.hpp>
 #include <cassert>
-#include <filesystem>
+// #include <filesystem>
 #include <fstream>
 
 void Decompressor::decompress(const char *inputFileName,
@@ -18,11 +19,13 @@ void Decompressor::decompress(const char *inputFileName,
 }
 
 void Decompressor::prepareTempDirs() const {
-    std::error_code ec;
-    std::filesystem::remove_all(tempDir, ec);
-    std::filesystem::remove_all(compressedTempDir, ec);
-    std::filesystem::create_directory(tempDir, ec);
-    std::filesystem::create_directory(compressedTempDir, ec);
+    boost::system::error_code ec;
+    const boost::filesystem::path tempDirPath(tempDir);
+    const boost::filesystem::path compressedTempDirPath(compressedTempDir);
+    boost::filesystem::remove_all(tempDirPath, ec);
+    boost::filesystem::remove_all(compressedTempDirPath, ec);
+    boost::filesystem::create_directory(tempDirPath, ec);
+    boost::filesystem::create_directory(compressedTempDirPath, ec);
 }
 
 void Decompressor::untar(const char *inputFileName) const {

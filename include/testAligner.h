@@ -3,14 +3,19 @@
 
 #include "NanoporeReads.h"
 
+/**
+ * @brief Tests aligner algorithm used for contig generation.
+ *
+ */
 class TestAligner {
 public:
     TestAligner(const char *fileName);
 
-    void test(const size_t k, const size_t kMerNumTh, const size_t baseOverlapTh);
+    void test(const size_t k, const size_t kMerNumTh,
+              const size_t baseOverlapTh);
 
 private:
     NanoporeReads nR;
 };
 
-#endif //EXPERIMENTS_TESTALIGNER_CUH
+#endif // EXPERIMENTS_TESTALIGNER_CUH

@@ -244,6 +244,7 @@ void NanoporeReads::calcSketch(const size_t numReads, const size_t currentRead,
                                const size_t numKMers, const size_t n,
                                kMer_t *hashes, kMer_t *sketches,
                                kMer_t *kMers) {
+    (void)kMers;
 #pragma omp parallel for
     for (size_t i = 0; i < numReads; i++) {
         size_t sketchIndex = (i + currentRead) * n;
@@ -251,19 +252,18 @@ void NanoporeReads::calcSketch(const size_t numReads, const size_t currentRead,
         for (size_t j = 0; j < n; ++j) {
             size_t hashIndex = i * n * numKMers + j;
             kMer_t currentMin = ~(kMer_t)0;
-            //            size_t minIndex = 0;
+            // size_t minIndex = 0;
             //#pragma omp parallel for reduction(min:currentMin)
             for (size_t l = 0; l < numKMers * n; l += n) {
                 //                kMer_t temp = hashes[hashIndex];
                 //                hashIndex += n;
                 kMer_t temp = hashes[hashIndex + l];
-                //                minIndex = currentMin < temp ? minIndex : l;
+                // minIndex = currentMin < temp ? minIndex : l;
                 currentMin = currentMin < temp ? currentMin : temp;
             }
-            //            if (kMers) {
-            //                sketches[sketchIndex++] = kMers[i * numKMers +
-            //                minIndex];
-            //            } else
+            // if (kMers) {
+            //     sketches[sketchIndex + j] = kMers[i * numKMers + minIndex];
+            // } else
             sketches[sketchIndex + j] = currentMin;
         }
     }
@@ -348,19 +348,26 @@ filterStats NanoporeReads::getFilterStats(unsigned int overlapBaseThreshold,
                                           unsigned int overlapSketchThreshold) {
     filterStats result(overlapBaseThreshold, overlapSketchThreshold);
     // First we calculate the number of overlaps and disjoints
+
+    size_t numOverlaps = 0;
+#pragma omp parallel for reduction(+ : numOverlaps)
     for (size_t i = 0; i < numReads; ++i) {
         long curTh = readPosSorted[i] + readLen - overlapBaseThreshold;
         for (size_t j = i + 1; j < numReads; ++j) {
             if (((long)readPosSorted[j]) <= curTh)
-                result.numOverlaps++;
+                numOverlaps++;
             else
                 break;
         }
     }
+    result.numOverlaps = numOverlaps;
     result.numDisjoint = (numReads * (unsigned long long)(numReads - 1)) / 2 -
                          result.numOverlaps;
 
     // Now we calculate falsePositives, falseNegatives, etc
+    size_t totalPositive = 0;
+    size_t falsePositives = 0;
+#pragma omp parallel for reduction(+ : totalPositive, falsePositives)
     for (size_t i = 0; i < numReads; ++i) {
         std::multiset<size_t> matches;
         unsigned long curPos = readPos[i];
@@ -384,12 +391,15 @@ filterStats NanoporeReads::getFilterStats(unsigned int overlapBaseThreshold,
             unsigned long pos = readPos[*it];
             if (matches.count(*it) >= overlapSketchThreshold) {
                 if (abs((long)pos - (long)curPos) > th)
-                    result.falsePositives++;
-                result.totalPositive++;
+                    falsePositives++;
+                totalPositive++;
             }
         }
         //        std::cout << std::endl;
     }
+
+    result.falsePositives = falsePositives;
+    result.totalPositive = totalPositive;
 
     result.totalNegative =
         result.numOverlaps + result.numDisjoint - result.totalPositive;

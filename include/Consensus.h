@@ -185,9 +185,8 @@ public:
      * in all the reads read)
      * @param pos Relative position of read in contig
      */
-    bool addRead(const std::string &s, size_t readId, long pos,
-                 std::vector<Edit> &editScript, ssize_t &beginOffset,
-                 ssize_t &endOffset);
+    bool addRead(const std::string &s, long pos, std::vector<Edit> &editScript,
+                 ssize_t &beginOffset, ssize_t &endOffset);
 
     void addReads(const std::set<std::pair<long, read_t>> &reads,
                   std::vector<std::unique_ptr<std::string>> &readData);
@@ -298,12 +297,11 @@ private:
     void walkAndPrune(Edge *e);
 
     /***
-     * Move everything below oldPre->e to newPre->e (everything means all
+     * Move everything below e to newPre->e (everything means all
      * the reads in reads2Split until the mainPath or a leaf node is
      * reached)
      */
-    void splitPath(Node *oldPre, Node *newPre, Edge *e,
-                   std::set<size_t> const &reads2Split);
+    void splitPath(Node *newPre, Edge *e, std::set<size_t> const &reads2Split);
 
     /***
      * Write the edits trings of the reads into a single file
