@@ -121,13 +121,12 @@ public:
     void clear();
 };
 
-/// TODO: finish the comments for this class
 /***
  * We store the current reads along with their relations as a directly acyclic
  * graph. The nodes represent different bases, and each each edge means there is
  * at least one read where the base in the next node follows the current node.
  * The nodes contain the base, and the edges going in and the edges going out.
- * The edges contain
+ * The edges contain a count of reads going down that path.
  */
 class ConsensusGraph {
 public:
@@ -257,7 +256,7 @@ private:
     std::map<size_t, Read> readsInGraph;
     Path mainPath;
     // Starting and ending positions of mainPath in contig
-    long startPos, endPos;
+    ssize_t startPos, endPos;
     StringAligner *aligner;
     // Maps ID of reads that cannot be successfully aligned to actual strings
     std::map<size_t, std::string> unalignedReads;
@@ -348,6 +347,83 @@ private:
     void clearMainPath();
 
     // void writeGraph(std::ofstream &f);
+};
+
+class Consensus {
+public:
+    NanoporeReads *nR;
+
+    ReadFilter *rF;
+
+    /***
+     * This is the read aligner used to align the reads as they are being added
+     * to the Contig. This is only a rough aligner
+     */
+    ReadAligner *rA;
+
+    /**
+     * @brief The detailed aligner that aligns reads to the consensus senquence.
+     *
+     */
+    StringAligner *aligner;
+
+    const static POS_T END_SYMBOL = ~(POS_T)0l;
+
+    /**
+     * @brief Directory for storing the temp files (.genome, .pos, .type)
+     *
+     */
+    std::string tempDir = "tempRaw/";
+
+    /**
+     * @brief Directory for storing the compressed temp files
+     *
+     */
+    std::string compressedTempDir = "tempCompressed/";
+
+    void generateConsensus();
+
+    void writeConsensus();
+
+private:
+    /**
+     * @brief Whether the reads have been added to a graph
+     * !!vector<bool> is not thread safe!!
+     */
+    std::vector<bool> inGraph;
+    /**
+     * @brief Index of the first read that has not been added to any graph
+     *
+     */
+    size_t firstUnaddedRead;
+    size_t numReads;
+
+    std::vector<ConsensusGraph *> graphs;
+
+    /**
+     * @brief Initializes firstUnaddedRead and numReads
+     *
+     */
+    void initialize();
+
+    /**
+     * @brief Whether there are still reads that ar not in any graph
+     *
+     * @return true
+     * @return false
+     */
+    bool hasReadsLeft();
+
+    /**
+     * @brief Gets an unadded read and updates its status to added
+     *
+     * @param read
+     * @return true
+     * @return false
+     */
+    bool getRead(size_t &read);
+
+    ConsensusGraph *createGraph();
 };
 
 #endif // Z_CONSENSUS_CUH

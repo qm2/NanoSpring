@@ -104,11 +104,16 @@ class ReadFilter {
 public:
     virtual void getFilteredReads(size_t readToFind,
                                   std::vector<size_t> &results) = 0;
+
+    // virtual void getFilteredReads(std::string &s,
+    //                               std::vector<size_t> &results) = 0;
 };
 
 class MinHashReadFilter : public ReadFilter {
 public:
     void getFilteredReads(size_t readToFind, std::vector<size_t> &results);
+
+    // void getFilteredReads(std::string &s, std::vector<size_t> &results);
 
     MinHashReadFilter(size_t overlapSketchThreshold, NanoporeReads &nR);
 

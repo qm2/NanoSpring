@@ -100,6 +100,8 @@ void ConsensusGraph::initialize(const std::string &seed, size_t readId,
         createEdge(currentNode, nextNode, readId);
         currentNode = nextNode;
     }
+    startPos = pos;
+    endPos = pos + len;
 }
 
 bool ConsensusGraph::addRead(const std::string &s, long pos,
@@ -333,38 +335,7 @@ void ConsensusGraph::updateGraph(const std::string &s,
     // Don't forget to add the read!
     readsInGraph.insert(
         std::make_pair(readId, Read(pos, initialNode, s.length())));
-
-    // {
-    //     std::ofstream f;
-    //     f.open("graph" + std::to_string(readsInGraph.size()) + ".dot");
-    //     writeGraph(f);
-    //     f.close();
-    // }
 }
-
-// void ConsensusGraph::writeGraph(std::ofstream &f) {
-//     f << "digraph g {\n";
-//     // f << "splins=line;\n";
-//     f << "maxiter=1;\n";
-//     // f << "fixedsize=true;\n";
-//     // f << "fontsize=2;\n";
-//     // f << "labelfontsize=2;\n";
-//     size_t count = 0;
-//     for (Node *n : nodes) {
-//         f << std::to_string((size_t)n) << " [label=\"" << n->base << "\"
-//         pos=\""
-//           << "0," << std::to_string(count * 100) << "!\"];\n";
-//         count++;
-//     }
-//     for (Node *n : nodes) {
-//         for (auto edgeIt : n->edgesOut) {
-//             Edge *e = edgeIt.second;
-//             f << std::to_string((size_t)n) << " -> "
-//               << std::to_string((size_t)e->sink) << "\n";
-//         }
-//     }
-//     f << "}\n";
-// }
 
 // TODO: Optimize this to only update the portion of the graph that has changed
 Path &ConsensusGraph::calculateMainPath() {
@@ -1012,3 +983,49 @@ ConsensusGraph::ConsensusGraph(StringAligner *aligner) : aligner(aligner) {}
 
 ConsensusGraph::Read::Read(long pos, Node *start, size_t len)
     : pos(pos), start(start), len(len) {}
+
+void Consensus::generateConsensus() {
+    initialize();
+    ConsensusGraph *cG = nullptr;
+    while (hasReadsLeft()) {
+        if (!cG) {
+            cG = createGraph();
+            std::cout << "Creating graph " << graphs.size() << '\n';
+            continue;
+        }
+        cG = nullptr;
+    }
+}
+
+void Consensus::writeConsensus() {}
+
+/// TODO: free the memory allocated by new
+ConsensusGraph *Consensus::createGraph() {
+    size_t read;
+    if (!getRead(read))
+        return nullptr;
+    ConsensusGraph *cG = new ConsensusGraph(aligner);
+    graphs.push_back(cG);
+    cG->tempDir = tempDir;
+    cG->compressedTempDir = compressedTempDir;
+    cG->initialize(*(nR->readData[read]), read, 0);
+    return cG;
+}
+
+void Consensus::initialize() {
+    numReads = nR->readData.size();
+    inGraph.resize(numReads, false);
+    firstUnaddedRead = 0;
+}
+
+bool Consensus::hasReadsLeft() { return firstUnaddedRead < numReads; }
+
+bool Consensus::getRead(size_t &read) {
+    if (firstUnaddedRead >= numReads)
+        return false;
+    read = firstUnaddedRead++;
+    inGraph[read] = true;
+    while (firstUnaddedRead < numReads && inGraph[firstUnaddedRead])
+        firstUnaddedRead++;
+    return true;
+}

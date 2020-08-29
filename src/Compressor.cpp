@@ -20,6 +20,8 @@ void Compressor::compress(const char *inputFileName) const {
         std::cout << "Calculating MinHashes took " << duration.count()
                   << " milliseconds" << std::endl;
     }
+
+    // Contig generation
     ContigGenerator cG(rA, nR, &rF);
     {
         auto start = std::chrono::high_resolution_clock::now();
@@ -42,6 +44,18 @@ void Compressor::compress(const char *inputFileName) const {
     boost::filesystem::create_directory(tempDirPath, ec);
     boost::filesystem::create_directory(compressedTempDirPath, ec);
 
+    // Consensus consensus;
+    // {
+    //     consensus.nR = &nR;
+    //     consensus.rF = &rF;
+    //     consensus.rA = rA;
+    //     consensus.aligner = aligner;
+    //     consensus.tempDir = tempDir;
+    //     consensus.compressedTempDir = compressedTempDir;
+
+    //     consensus.generateConsensus();
+    //     consensus.writeConsensus();
+    // }
     size_t numContigs = cG.contigs.size();
     std::vector<Contig *> contigs(cG.contigs.begin(), cG.contigs.end());
 #pragma omp parallel for
