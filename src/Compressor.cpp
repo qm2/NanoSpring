@@ -1,19 +1,27 @@
 #include "Compressor.h"
 #include "Consensus.h"
 #include "Contig.h"
+#include "ReadData.h"
+#include "ReadFilter.h"
 #include <boost/filesystem.hpp>
 #include <chrono>
-// #include <filesystem>
 #include <fstream>
+#include <iostream>
 
 void Compressor::compress(const char *inputFileName) const {
 
     //        MergeSortReadAligner rA(10, 1);
-    NanoporeReads nR(inputFileName, k, n);
-    MinHashReadFilter rF(overlapSketchThreshold, nR);
+
+    ReadData rD;
+    rD.loadFromFile(inputFileName);
+    // (inputFileName, k, n);
+    MinHashReadFilter rF;
+    rF.k = k;
+    rF.n = n;
+    rF.overlapSketchThreshold = overlapSketchThreshold;
     {
         auto start = std::chrono::high_resolution_clock::now();
-        nR.calculateMinHashSketches();
+        rF.initialize(rD);
         auto end = std::chrono::high_resolution_clock::now();
         auto duration =
             std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
@@ -22,7 +30,7 @@ void Compressor::compress(const char *inputFileName) const {
     }
 
     // Contig generation
-    ContigGenerator cG(rA, nR, &rF);
+    ContigGenerator cG(rA, &rD, &rF);
     {
         auto start = std::chrono::high_resolution_clock::now();
         cG.generateContigs();
@@ -65,7 +73,7 @@ void Compressor::compress(const char *inputFileName) const {
         ConsensusGraph consensusGraph(aligner);
         consensusGraph.tempDir = tempDir;
         consensusGraph.compressedTempDir = compressedTempDir;
-        consensusGraph.addReads(readsInContig, cG.nR.readData);
+        consensusGraph.addReads(readsInContig, rD.getReadData());
 
         consensusGraph.calculateMainPathGreedy();
         consensusGraph.printStatus();
@@ -77,7 +85,7 @@ void Compressor::compress(const char *inputFileName) const {
     std::ofstream metaData;
     metaData.open(compressedTempDir + "metaData");
     metaData << cG.contigs.size() << '\n';
-    metaData << cG.nR.readData.size() << '\n';
+    metaData << rD.getNumReads() << '\n';
     metaData.close();
 
     std::cout << "Creating tar archive ..." << std::endl;

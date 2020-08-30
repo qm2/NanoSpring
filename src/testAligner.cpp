@@ -1,8 +1,9 @@
-#include "../include/testAligner.h"
-#include "../include/ReadAligner.h"
+#include "testAligner.h"
+#include "ReadAligner.h"
 #include <ctime>
 #include <gperftools/profiler.h>
 #include <iomanip>
+#include <iostream>
 
 int main(int argc, char **argv) {
     srand(time(NULL));
@@ -24,7 +25,8 @@ int main(int argc, char **argv) {
     ProfilerStop();
 }
 
-TestAligner::TestAligner(const char *fileName) : nR(fileName, 1, 1) {
+TestAligner::TestAligner(const char *fileName) {
+    rD.loadFromFile(fileName);
     std::cout << "Finished Initializing TestAligner from " << fileName
               << std::endl;
 }
@@ -32,10 +34,10 @@ TestAligner::TestAligner(const char *fileName) : nR(fileName, 1, 1) {
 void TestAligner::test(const size_t k, const size_t kMerNumTh,
                        const size_t baseOverlapTh) {
     ReadAligner *rA = new MergeSortReadAligner(k, kMerNumTh);
-    size_t randomReadIndex = rand() % nR.numReads;
-    const std::string &randomRead = *nR.readData[randomReadIndex];
-    const long randomPos = nR.readPos[randomReadIndex];
-    const long th = nR.readLen - baseOverlapTh;
+    size_t randomReadIndex = rand() % rD.getNumReads();
+    const std::string &randomRead = rD.getRead(randomReadIndex);
+    const long randomPos = rD.getReadPos()[randomReadIndex];
+    const long th = rD.getRead(0).size() - baseOverlapTh;
     std::cout << "Pos of read is " << randomPos << std::endl;
     size_t numPositives = 0;
     size_t truePositives = 0;
@@ -44,29 +46,32 @@ void TestAligner::test(const size_t k, const size_t kMerNumTh,
     size_t falseNegatives = 0;
     size_t trueNegatives = 0;
     double posError = 0;
+    size_t numReads = rD.getNumReads();
+    size_t readLen = rD.getRead(0).size();
 #pragma omp parallel for reduction(+ : numPositives, numNegatives, \
     falsePositives, truePositives, falseNegatives, trueNegatives, posError)
-    for (size_t i = 0; i < nR.numReads; ++i) {
+    for (size_t i = 0; i < numReads; ++i) {
         if (i == randomReadIndex)
             continue;
         //        if (i % 1000 == 0)
         //            std::cout << i << std::endl;
         ssize_t relPos;
-        if (rA->align(randomRead, *nR.readData[i], relPos)) {
+        if (rA->align(randomRead, rD.getRead(i), relPos)) {
             // std::cout << "Real " << (long) nR.readPos[i] - (long) randomPos
             //<< " Predicted " << relPos << std::endl;
-            posError += abs((long)nR.readPos[i] - (long)randomPos - relPos);
+            posError +=
+                abs((long)rD.getReadPos()[i] - (long)randomPos - relPos);
             numPositives++;
-            if (abs(randomPos - (long)nR.readPos[i]) > th) {
+            if (abs(randomPos - (long)rD.getReadPos()[i]) > th) {
                 falsePositives++;
-                std::cout << (long)nR.readLen -
-                                 abs((long)randomPos - (long)nR.readPos[i])
+                std::cout << (long)readLen -
+                                 abs((long)randomPos - (long)rD.getReadPos()[i])
                           << std::endl;
             } else
                 truePositives++;
         } else {
             numNegatives++;
-            if (abs(randomPos - (long)nR.readPos[i]) > th)
+            if (abs(randomPos - (long)rD.getReadPos()[i]) > th)
                 trueNegatives++;
             else
                 falseNegatives++;

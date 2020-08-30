@@ -1,7 +1,9 @@
 #ifndef EXPERIMENTS_READALIGNER_CUH
 #define EXPERIMENTS_READALIGNER_CUH
 
-#include "NanoporeReads.h"
+#include "ReadFilter.h"
+#include <string>
+#include <vector>
 
 class ReadAligner {
 public:
@@ -36,8 +38,9 @@ public:
     bool align(const std::string &r1, const std::string &r2, ssize_t &relPos);
 
 private:
-    void stringToSortedKMers(const std::string &s,
-                             std::vector<std::pair<kMer_t, size_t>> &v);
+    void stringToSortedKMers(
+        const std::string &s,
+        std::vector<std::pair<MinHashReadFilter::kMer_t, size_t>> &v);
 };
 
 #endif // EXPERIMENTS_READALIGNER_CUH

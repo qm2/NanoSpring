@@ -1008,12 +1008,12 @@ ConsensusGraph *Consensus::createGraph() {
     graphs.push_back(cG);
     cG->tempDir = tempDir;
     cG->compressedTempDir = compressedTempDir;
-    cG->initialize(*(nR->readData[read]), read, 0);
+    cG->initialize(rD->getRead(read), read, 0);
     return cG;
 }
 
 void Consensus::initialize() {
-    numReads = nR->readData.size();
+    numReads = rD->getNumReads();
     inGraph.resize(numReads, false);
     firstUnaddedRead = 0;
 }

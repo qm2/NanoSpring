@@ -3,6 +3,7 @@
 
 #include "Contig.h"
 #include "Edits.h"
+#include "ReadData.h"
 #include <map>
 #include <set>
 #include <string>
@@ -351,7 +352,7 @@ private:
 
 class Consensus {
 public:
-    NanoporeReads *nR;
+    ReadData *rD;
 
     ReadFilter *rF;
 

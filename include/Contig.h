@@ -2,6 +2,8 @@
 #define EXPERIMENTS_CONTIG_CUH
 
 #include "ReadAligner.h"
+#include "ReadData.h"
+#include "ReadFilter.h"
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
@@ -21,9 +23,8 @@ public:
 class ContigGenerator {
 public:
     std::set<Contig *> contigs;
-    NanoporeReads &nR;
 
-    ContigGenerator(ReadAligner *rA, NanoporeReads &nR, ReadFilter *rF);
+    ContigGenerator(ReadAligner *rA, ReadData *rD, ReadFilter *rF);
 
     ~ContigGenerator();
 
@@ -33,8 +34,7 @@ public:
                                     const ContigGenerator &o);
 
 private:
-    bool hasActiveContig = false;
-    Contig *activeContig = nullptr;
+    ReadData *rD;
 
     /***
      * This is the read aligner used to align the reads as they are being added
@@ -43,6 +43,10 @@ private:
     ReadAligner *rA;
 
     ReadFilter *rF;
+
+    bool hasActiveContig = false;
+    Contig *activeContig = nullptr;
+
     // We maintain a list of all reads that have not been treated and a map from
     // reads to contigs
     std::unordered_map<read_t, std::pair<Contig *, long>> readsInContig;

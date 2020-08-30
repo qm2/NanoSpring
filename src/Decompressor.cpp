@@ -4,8 +4,8 @@
 #include <arpa/inet.h>
 #include <boost/filesystem.hpp>
 #include <cassert>
-// #include <filesystem>
 #include <fstream>
+#include <iostream>
 
 void Decompressor::decompress(const char *inputFileName,
                               const char *outputFileName) {

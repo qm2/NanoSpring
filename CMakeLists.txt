@@ -81,8 +81,9 @@ add_library(NanoporeCompressionLib
         src/LocalMyersRollBack.cpp
         src/LocalMyersRollBackOld.cpp
         src/MyersAligner.cpp
-        src/NanoporeReads.cpp
         src/ReadAligner.cpp
+        src/ReadData.cpp
+        src/ReadFilter.cpp
         include/AlignerTester.h
         include/bsc_helper.h
         include/Compressor.h
@@ -94,8 +95,9 @@ add_library(NanoporeCompressionLib
         include/LocalMyersRollBack.h
         include/LocalMyersRollBackOld.h
         include/MyersAligner.h
-        include/NanoporeReads.h
         include/ReadAligner.h
+        include/ReadData.h
+        include/ReadFilter.h
         include/testAligner.h
         )
 
@@ -115,6 +117,10 @@ target_compile_options(NanoporeCompressionLib
 target_compile_options(NanoporeCompressionLib 
     PRIVATE 
     $<$<CONFIG:Debug>:-g -O3 -fsanitize=address -fno-omit-frame-pointer>)
+
+target_compile_definitions(NanoporeCompressionLib PUBLIC "$<$<CONFIG:Debug>:DEBUG>")
+target_compile_definitions(NanoporeCompressionLib PUBLIC "$<$<CONFIG:RelWithDebInfo>:DEBUG>")
+
 
 target_link_libraries(NanoporeCompressionLib 
     PRIVATE 

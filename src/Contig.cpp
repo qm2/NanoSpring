@@ -1,12 +1,12 @@
-#include "../include/Contig.h"
+#include "Contig.h"
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 #include <omp.h>
 #include <stdexcept>
 
-ContigGenerator::ContigGenerator(ReadAligner *rA, NanoporeReads &nR,
-                                 ReadFilter *rF)
-    : nR(nR), rA(rA), rF(rF) {}
+ContigGenerator::ContigGenerator(ReadAligner *rA, ReadData *rD, ReadFilter *rF)
+    : rD(rD), rA(rA), rF(rF) {}
 
 void ContigGenerator::generateContigs() {
 
@@ -67,8 +67,9 @@ void ContigGenerator::initialize() {
         delete c;
     contigs.clear();
     std::vector<read_t> temp;
-    temp.reserve(nR.numReads);
-    for (size_t i = 0; i < nR.numReads; ++i)
+    size_t numReads = rD->getNumReads();
+    temp.reserve(numReads);
+    for (size_t i = 0; i < numReads; ++i)
         temp.push_back(i);
     std::random_shuffle(temp.begin(), temp.end());
     reads2Contig.insert(temp.begin(), temp.end());
@@ -96,7 +97,7 @@ bool ContigGenerator::addRelatedReads(const std::pair<long, read_t> r) {
         if (findRead != readsInContig.end()) {
             std::pair<Contig *, long> matchedRead = findRead->second;
             if (!merged && matchedRead.first != activeContig &&
-                rA->align(*nR.readData[r.second], *nR.readData[it], relPos)) {
+                rA->align(rD->getRead(r.second), rD->getRead(it), relPos)) {
                 merged = true;
                 contig2MergeWith = matchedRead.first;
                 relPosInMerge = matchedRead.second - relPos - r.first;
@@ -107,7 +108,7 @@ bool ContigGenerator::addRelatedReads(const std::pair<long, read_t> r) {
             omp_unset_lock(&lock);
         }
 
-        if (rA->align(*nR.readData[r.second], *nR.readData[it], relPos)) {
+        if (rA->align(rD->getRead(r.second), rD->getRead(it), relPos)) {
             long pos2Add = r.first + relPos;
             {
                 omp_set_lock(&lock);
@@ -168,7 +169,7 @@ std::ostream &operator<<(std::ostream &out, const ContigGenerator &o) {
         const long genomeLen = 100000;
         //        const long genomeLen = 5000000;
         for (const auto r : contig->reads) {
-            long dif = r.first - (long)o.nR.readPos[r.second];
+            long dif = r.first - (long)o.rD->getReadPos()[r.second];
             dif += 2 * genomeLen;
             dif %= genomeLen;
             if (dif > genomeLen / 2)
@@ -182,7 +183,7 @@ std::ostream &operator<<(std::ostream &out, const ContigGenerator &o) {
 
         long difErrs[contigSize];
         for (const auto r : contig->reads) {
-            long dif = r.first - (long)o.nR.readPos[r.second];
+            long dif = r.first - (long)o.rD->getReadPos()[r.second];
             dif += 2 * genomeLen;
             dif %= genomeLen;
             if (dif > genomeLen / 2)

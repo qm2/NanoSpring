@@ -1,7 +1,7 @@
 #include "Compressor.h"
 #include "LocalMyersRollBack.h"
-#include "NanoporeReads.h"
-#include "ReadAligner.h"
+#include "ReadData.h"
+#include "ReadFilter.h"
 #include <ctime>
 // #include <gperftools/heap-profiler.h>
 // #include <gperftools/profiler.h>

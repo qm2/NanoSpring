@@ -1,8 +1,11 @@
-#include "../include/Contig.h"
+#include "Contig.h"
+#include "ReadAligner.h"
+#include "ReadData.h"
+#include "ReadFilter.h"
+#include <chrono>
+#include <ctime>
 #include <gperftools/profiler.h>
 #include <iostream>
-#include <ctime>
-#include <chrono>
 
 int main(int argc, char **argv) {
     std::srand(unsigned(std::time(0)));
@@ -18,23 +21,35 @@ int main(int argc, char **argv) {
         if (k == 0)
             return 0;
         MergeSortReadAligner rA(21, 10);
-//        MergeSortReadAligner rA(10, 1);
-        NanoporeReads nR(argv[1], k, n);
-        MinHashReadFilter rF(overlapSketchThreshold, nR);
+        //        MergeSortReadAligner rA(10, 1);
+        ReadData rD;
+        rD.loadFromFile(argv[1]);
+
+        // NanoporeReads nR(argv[1], k, n);
+        MinHashReadFilter rF;
+        rF.k = k;
+        rF.n = n;
+        rF.overlapSketchThreshold = overlapSketchThreshold;
         {
             auto start = std::chrono::high_resolution_clock::now();
-            nR.calculateMinHashSketches();
+            rF.initialize(rD);
             auto end = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-            std::cout << "Calculating MinHashes took " << duration.count() << " milliseconds" << std::endl;
+            auto duration =
+                std::chrono::duration_cast<std::chrono::milliseconds>(end -
+                                                                      start);
+            std::cout << "Calculating MinHashes took " << duration.count()
+                      << " milliseconds" << std::endl;
         }
-        ContigGenerator cG(&rA, nR, &rF);
+        ContigGenerator cG(&rA, &rD, &rF);
         {
             auto start = std::chrono::high_resolution_clock::now();
             cG.generateContigs();
             auto end = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-            std::cout << "Generating contigs took " << duration.count() << " milliseconds" << std::endl;
+            auto duration =
+                std::chrono::duration_cast<std::chrono::milliseconds>(end -
+                                                                      start);
+            std::cout << "Generating contigs took " << duration.count()
+                      << " milliseconds" << std::endl;
         }
         std::cout << cG << std::endl;
     }

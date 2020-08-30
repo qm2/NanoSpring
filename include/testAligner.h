@@ -1,7 +1,7 @@
 #ifndef EXPERIMENTS_TESTALIGNER_CUH
 #define EXPERIMENTS_TESTALIGNER_CUH
 
-#include "NanoporeReads.h"
+#include "ReadData.h"
 
 /**
  * @brief Tests aligner algorithm used for contig generation.
@@ -15,7 +15,7 @@ public:
               const size_t baseOverlapTh);
 
 private:
-    NanoporeReads nR;
+    ReadData rD;
 };
 
 #endif // EXPERIMENTS_TESTALIGNER_CUH
