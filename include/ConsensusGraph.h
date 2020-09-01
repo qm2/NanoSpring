@@ -134,9 +134,6 @@ public:
     // Directory for storing the temp files (.genome, .pos, .type)
     std::string tempDir = "tempRaw/";
 
-    // Directory for storing the compressed temp files
-    std::string compressedTempDir = "tempCompressed/";
-
     Path mainPath;
 
     class Read {
@@ -240,6 +237,8 @@ public:
      * Prints the info of the ConsensusGraph. For debugging purposes
      */
     void printStatus();
+
+    size_t getNumReads();
 
     ~ConsensusGraph();
 

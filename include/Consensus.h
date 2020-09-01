@@ -27,19 +27,10 @@ public:
      */
     StringAligner *aligner;
 
-    /**
-     * @brief Directory for storing the temp files (.genome, .pos, .type)
-     *
-     */
+    // Directory for storing the temp files (.genome, .pos, .type, .id metaData)
     std::string tempDir = "tempRaw/";
 
-    /**
-     * @brief Directory for storing the compressed temp files
-     *
-     */
-    std::string compressedTempDir = "tempCompressed/";
-
-    std::string tempFileName = "c";
+    std::string tempFileName = "Contig";
 
     void generateConsensus();
 

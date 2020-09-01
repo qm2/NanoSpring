@@ -722,9 +722,10 @@ void ConsensusGraph::writeMainPath(const std::string &filename) {
     f.open(genomeFileName);
     f << mainPath.path << std::endl;
     f.close();
-    std::string compressedGenomeFileName =
-        compressedTempDir + filename + ".genomeCompressed";
-    bsc::BSC_compress(genomeFileName.c_str(), compressedGenomeFileName.c_str());
+    // std::string compressedGenomeFileName =
+    //     compressedTempDir + filename + ".genomeCompressed";
+    // bsc::BSC_compress(genomeFileName.c_str(),
+    // compressedGenomeFileName.c_str());
 }
 
 void ConsensusGraph::writeReads(const std::string &filename) {
@@ -763,22 +764,22 @@ void ConsensusGraph::writeReads(const std::string &filename) {
     std::cout << "AvgEditDis " << totalEditDis / (double)readsInGraph.size()
               << std::endl;
     printStatus();
-    const std::string posFileCompressedName =
-        compressedTempDir + filename + ".pos" + "Compressed";
-    const std::string editTypeFileCompressedName =
-        compressedTempDir + filename + ".type" + "Compressed";
-    const std::string editBaseFileCompressedName =
-        compressedTempDir + filename + ".base" + "Compressed";
-    const std::string idFileCompressedName =
-        compressedTempDir + filename + ".id" + "Compressed";
-    bsc::BSC_compress(posFileName.c_str(), posFileCompressedName.c_str());
-    bsc::BSC_compress(editTypeFileName.c_str(),
-                      editTypeFileCompressedName.c_str());
-    bsc::BSC_compress(editBaseFileName.c_str(),
-                      editBaseFileCompressedName.c_str());
-    bsc::BSC_compress(idFileName.c_str(), idFileCompressedName.c_str());
+    // const std::string posFileCompressedName =
+    //     compressedTempDir + filename + ".pos" + "Compressed";
+    // const std::string editTypeFileCompressedName =
+    //     compressedTempDir + filename + ".type" + "Compressed";
+    // const std::string editBaseFileCompressedName =
+    //     compressedTempDir + filename + ".base" + "Compressed";
+    // const std::string idFileCompressedName =
+    //     compressedTempDir + filename + ".id" + "Compressed";
+    // bsc::BSC_compress(posFileName.c_str(), posFileCompressedName.c_str());
+    // bsc::BSC_compress(editTypeFileName.c_str(),
+    //                   editTypeFileCompressedName.c_str());
+    // bsc::BSC_compress(editBaseFileName.c_str(),
+    //                   editBaseFileCompressedName.c_str());
+    // bsc::BSC_compress(idFileName.c_str(), idFileCompressedName.c_str());
 
-    writeUnalignedReads(filename);
+    // writeUnalignedReads(filename);
 }
 
 void ConsensusGraph::writeUnalignedReads(const std::string &filename) {
@@ -797,15 +798,17 @@ void ConsensusGraph::writeUnalignedReads(const std::string &filename) {
     }
     unalignedIdsFile.close();
     unalignedReadsFile.close();
-    const std::string unalignedReadsFileCompressedName =
-        compressedTempDir + filename + ".unalignedReads" + "Compressed";
-    const std::string unalignedIdsFileCompressedName =
-        compressedTempDir + filename + ".unalignedIds" + "Compressed";
-    bsc::BSC_compress(unalignedReadsFileName.c_str(),
-                      unalignedReadsFileCompressedName.c_str());
-    bsc::BSC_compress(unalignedIdsFileName.c_str(),
-                      unalignedIdsFileCompressedName.c_str());
+    // const std::string unalignedReadsFileCompressedName =
+    //     compressedTempDir + filename + ".unalignedReads" + "Compressed";
+    // const std::string unalignedIdsFileCompressedName =
+    //     compressedTempDir + filename + ".unalignedIds" + "Compressed";
+    // bsc::BSC_compress(unalignedReadsFileName.c_str(),
+    //                   unalignedReadsFileCompressedName.c_str());
+    // bsc::BSC_compress(unalignedIdsFileName.c_str(),
+    //                   unalignedIdsFileCompressedName.c_str());
 }
+
+size_t ConsensusGraph::getNumReads() { return readsInGraph.size(); }
 
 size_t ConsensusGraph::read2EditScript(ConsensusGraph::Read &r, size_t id,
                                        std::vector<Edit> &editScript,

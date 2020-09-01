@@ -9,7 +9,7 @@ class Decompressor {
 public:
     // The temp directories. Must have trailing "/"
     std::string tempDir = "tempRaw/";
-    std::string compressedTempDir = "tempCompressed/";
+    std::string tarFileName = "originalFile";
 
     // The output filenames to use in temp directories
     std::string tempFilename = "Contig";
@@ -22,11 +22,10 @@ private:
     size_t numReads;
 
     /**
-     * @brief Extract tar archive into compressedTempDir
+     * @brief Unpack the files in tempDir; i.e., break it up by ".\n"
      *
-     * @param inputFileName
      */
-    void untar(const char *inputFileName) const;
+    void unpack();
 
     /**
      * @brief  We clear the temp directories and create them if they do not
@@ -34,20 +33,6 @@ private:
      *
      */
     void prepareTempDirs() const;
-
-    /**
-     * @brief Decompressed the *Compressed files generated using bsc and
-     * initializes numContigs and numReads
-     *
-     */
-    void bscDecompress();
-
-    /**
-     * @brief Decompressed the files associated with a specific contig
-     *
-     * @param f the name of that contig
-     */
-    void bscDecompress(const std::string &f) const;
 
     /**
      * @brief This function generates the outputfile from the files in tempDir

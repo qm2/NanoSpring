@@ -10,59 +10,76 @@ void Decompressor::decompress(const char *inputFileName,
                               const char *outputFileName) {
     prepareTempDirs();
 
-    untar(inputFileName);
+    bsc::BSC_decompress(inputFileName, tarFileName.c_str());
 
-    bscDecompress();
+    // Untar
+    {
+        std::cout << "Extracting tar archive ...";
+        std::string tar_command = "tar -C " + tempDir + " -xvf " + tarFileName;
+        int tar_status = std::system(tar_command.c_str());
+        if (tar_status != 0)
+            throw std::runtime_error(
+                "Error occurred during tar archive extraction.");
+        std::cout << "Tar extraction done!\n";
+    }
+
+    unpack();
 
     generateReads(outputFileName);
+}
+
+void Decompressor::unpack() {
+    std::cout << "Unpacking..." << std::endl;
+    std::ifstream metaDataFile;
+    metaDataFile.open(tempDir + "metaData");
+    std::string line;
+
+    while (std::getline(metaDataFile, line)) {
+        size_t delimPos = line.find('=');
+        if (delimPos == std::string::npos)
+            continue;
+        if (line.substr(0, delimPos) == "numReads") {
+            numReads = std::stol(line.substr(delimPos + 1));
+            std::cout << "NumReads:" << numReads << std::endl;
+        } else if (line.substr(0, delimPos) == "numContigs") {
+            numContigs = std::stol(line.substr(delimPos + 1));
+            std::cout << "NumContigs:" << numContigs << std::endl;
+        }
+    }
+
+    const char *const extensions[] = {".genome", ".base", ".id", ".pos",
+                                      ".type"};
+    const size_t numExtensions = sizeof(extensions) / sizeof(extensions[0]);
+    for (size_t extId = 0; extId < numExtensions; extId++) {
+        size_t i = 0;
+        std::ifstream inFile;
+        inFile.open(tempDir + tempFilename + extensions[extId]);
+        std::ofstream outFile;
+        std::string line;
+        bool need2CreateFile = true;
+        while (std::getline(inFile, line)) {
+            if (need2CreateFile) {
+                need2CreateFile = false;
+                outFile.open(tempDir + tempFilename + std::to_string(i) +
+                             extensions[extId]);
+                ++i;
+                outFile << line << '\n';
+            } else {
+                if (line == ".") {
+                    outFile.close();
+                    need2CreateFile = true;
+                } else
+                    outFile << line << '\n';
+            }
+        }
+    }
 }
 
 void Decompressor::prepareTempDirs() const {
     boost::system::error_code ec;
     const boost::filesystem::path tempDirPath(tempDir);
-    const boost::filesystem::path compressedTempDirPath(compressedTempDir);
     boost::filesystem::remove_all(tempDirPath, ec);
-    boost::filesystem::remove_all(compressedTempDirPath, ec);
     boost::filesystem::create_directory(tempDirPath, ec);
-    boost::filesystem::create_directory(compressedTempDirPath, ec);
-}
-
-void Decompressor::untar(const char *inputFileName) const {
-    std::cout << "Extracting tar archive ...";
-    std::string infile = inputFileName;
-    std::string tar_command = "tar -C " + compressedTempDir + " -xvf " + infile;
-    int tar_status = std::system(tar_command.c_str());
-    if (tar_status != 0)
-        throw std::runtime_error(
-            "Error occurred during tar archive extraction.");
-    std::cout << "Tar extraction done!\n";
-}
-
-void Decompressor::bscDecompress() {
-    {
-        std::ifstream metaData;
-        metaData.open(compressedTempDir + "metaData");
-        metaData >> numContigs >> numReads;
-        std::cout << "numContigs " << numContigs << " numReads " << numReads
-                  << '\n';
-    }
-#pragma omp parallel for
-    for (size_t i = 0; i < numContigs; ++i)
-        bscDecompress(tempFilename + std::to_string(i));
-}
-
-void Decompressor::bscDecompress(const std::string &f) const {
-    const char *const extensions[] = {
-        ".genome",       ".base",          ".id", ".pos", ".type",
-        ".unalignedIds", ".unalignedReads"};
-    const size_t numExtensions = sizeof(extensions) / sizeof(extensions[0]);
-#pragma omp parallel for
-    for (size_t i = 0; i < numExtensions; ++i) {
-        std::string infile =
-            compressedTempDir + f + extensions[i] + "Compressed";
-        std::string outfile = tempDir + f + extensions[i];
-        bsc::BSC_decompress(infile.c_str(), outfile.c_str());
-    }
 }
 
 void Decompressor::generateReads(const char *outputFileName) const {
@@ -107,25 +124,24 @@ void Decompressor::generateReads(std::string *reads, size_t contigId) const {
     posFile.close();
     editTypeFile.close();
     editBaseFile.close();
-    // Now we deal with unaligned reads
-    std::ifstream unalignedIdsFile, unalignedReadsFile;
-    unalignedIdsFile.open(currentFilename + ".unalignedIds", std::ios::binary);
-    unalignedReadsFile.open(currentFilename + ".unalignedReads");
-    id = 0;
-    while (true) {
-        size_t idInc;
-        unalignedIdsFile >> idInc;
-        char c;
-        unalignedIdsFile.get(c);
-        if (!unalignedIdsFile)
-            break;
-        id = id + idInc;
-        unalignedReadsFile >> reads[id];
-        // std::cout << id << " ";
-    }
 
-    unalignedIdsFile.close();
-    unalignedReadsFile.close();
+    // Now we deal with unaligned reads
+    // std::ifstream unalignedIdsFile, unalignedReadsFile;
+    // unalignedIdsFile.open(currentFilename + ".unalignedIds",
+    // std::ios::binary); unalignedReadsFile.open(currentFilename +
+    // ".unalignedReads"); id = 0; while (true) {
+    //     size_t idInc;
+    //     unalignedIdsFile >> idInc;
+    //     char c;
+    //     unalignedIdsFile.get(c);
+    //     if (!unalignedIdsFile)
+    //         break;
+    //     id = id + idInc;
+    //     unalignedReadsFile >> reads[id];
+    //     // std::cout << id << " ";
+    // }
+    // unalignedIdsFile.close();
+    // unalignedReadsFile.close();
 }
 
 void Decompressor::generateRead(const std::string &genome, std::string &read,

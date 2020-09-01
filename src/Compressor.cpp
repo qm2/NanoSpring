@@ -3,6 +3,7 @@
 #include "Contig.h"
 #include "ReadData.h"
 #include "ReadFilter.h"
+#include "bsc_helper.h"
 #include <boost/filesystem.hpp>
 #include <chrono>
 #include <fstream>
@@ -31,11 +32,8 @@ void Compressor::compress(const char *inputFileName) const {
     // exist
     boost::system::error_code ec;
     const boost::filesystem::path tempDirPath(tempDir);
-    const boost::filesystem::path compressedTempDirPath(compressedTempDir);
     boost::filesystem::remove_all(tempDirPath, ec);
-    boost::filesystem::remove_all(compressedTempDirPath, ec);
     boost::filesystem::create_directory(tempDirPath, ec);
-    boost::filesystem::create_directory(compressedTempDirPath, ec);
 
     Consensus consensus;
     {
@@ -44,7 +42,6 @@ void Compressor::compress(const char *inputFileName) const {
         consensus.rA = rA;
         consensus.aligner = aligner;
         consensus.tempDir = tempDir;
-        consensus.compressedTempDir = compressedTempDir;
         consensus.tempFileName = tempFileName;
 
         consensus.generateConsensus();
@@ -52,16 +49,28 @@ void Compressor::compress(const char *inputFileName) const {
     }
 
     std::cout << "Creating tar archive ..." << std::endl;
-    std::string outfile = "compressedFile";
+    std::string tarFileName = "originalFile";
     std::string tar_command =
-        "tar -cvf " + outfile + " -C " + compressedTempDir + " . ";
+        "tar -cvf " + tarFileName + " -C " + tempDir + " . ";
     int tar_status = std::system(tar_command.c_str());
     if (tar_status)
         throw std::runtime_error(
             "Error occurred during tar archive generation.");
     std::cout << "Tar archive done!\n";
-    std::string lsCommand = "ls -lh " + outfile;
-    int ls_status = std::system(lsCommand.c_str());
-    if (ls_status)
-        throw std::runtime_error("Error occurred during ls command.");
+
+    {
+        std::string lsCommand = "ls -lh " + tarFileName;
+        int ls_status = std::system(lsCommand.c_str());
+        if (ls_status)
+            throw std::runtime_error("Error occurred during ls command.");
+    }
+
+    bsc::BSC_compress(tarFileName.c_str(), outputFileName.c_str());
+
+    {
+        std::string lsCommand = "ls -lh " + outputFileName;
+        int ls_status = std::system(lsCommand.c_str());
+        if (ls_status)
+            throw std::runtime_error("Error occurred during ls command.");
+    }
 }

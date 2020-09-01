@@ -14,9 +14,12 @@ public:
     StringAligner *aligner;
     // The temp directories
     std::string tempDir = "tempRaw/";
-    std::string compressedTempDir = "tempCompressed/";
     // The output filenames to use in temp directories
     std::string tempFileName = "Contig";
+
+    std::string outputFileName = "compressedFile";
+
+    std::string tarFileName = "originalFile";
 
     void compress(const char *inputFileName) const;
 };

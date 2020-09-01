@@ -2,6 +2,7 @@
 #include "bsc_helper.h"
 #include <algorithm>
 #include <arpa/inet.h>
+#include <boost/filesystem.hpp>
 #include <csignal>
 #include <fstream>
 #include <iostream>
@@ -94,10 +95,36 @@ void Consensus::writeConsensus() {
         cG.writeReads(fileName);
     }
     std::ofstream metaData;
-    metaData.open(compressedTempDir + "metaData");
-    metaData << graphs.size() << '\n';
-    metaData << rD->getNumReads() << '\n';
+    metaData.open(tempDir + "metaData");
+    metaData << "numReads=" << rD->getNumReads() << '\n';
+    metaData << "numContigs=" << size << '\n';
+    metaData << "numReadsInContig=";
+    for (size_t i = 0; i < size; ++i) {
+        metaData << graphs[i]->getNumReads() << ":";
+    }
+    metaData << '\n';
     metaData.close();
+
+    // Now we combine the files, deliminated by ".\n"
+    const char *const extensions[] = {".genome", ".base", ".id", ".pos",
+                                      ".type"};
+    const size_t numExtensions = sizeof(extensions) / sizeof(extensions[0]);
+    for (size_t i = 0; i < numExtensions; ++i) {
+        std::ofstream outFile(tempDir + tempFileName + extensions[i],
+                              std::ios_base::binary);
+        for (size_t j = 0; j < size; j++) {
+            std::string fileName =
+                tempDir + tempFileName + std::to_string(j) + extensions[i];
+            std::ifstream inFile(fileName, std::ios_base::binary);
+            outFile << inFile.rdbuf();
+            outFile << ".\n";
+            inFile.close();
+            boost::system::error_code ec;
+            const boost::filesystem::path filePath(fileName);
+            boost::filesystem::remove(filePath, ec);
+        }
+        outFile.close();
+    }
 }
 
 ConsensusGraph *Consensus::createGraph() {
@@ -107,7 +134,6 @@ ConsensusGraph *Consensus::createGraph() {
     ConsensusGraph *cG = new ConsensusGraph(aligner);
     graphs.emplace_back(std::move(cG));
     cG->tempDir = tempDir;
-    cG->compressedTempDir = compressedTempDir;
     cG->initialize(rD->getRead(read), read, 0);
     cG->calculateMainPathGreedy();
     return cG;
