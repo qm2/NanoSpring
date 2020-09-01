@@ -84,6 +84,7 @@ add_library(NanoporeCompressionLib
         src/ReadAligner.cpp
         src/ReadData.cpp
         src/ReadFilter.cpp
+        src/ConsensusGraph.cpp
         include/AlignerTester.h
         include/bsc_helper.h
         include/Compressor.h
@@ -99,6 +100,7 @@ add_library(NanoporeCompressionLib
         include/ReadData.h
         include/ReadFilter.h
         include/testAligner.h
+        include/ConsensusGraph.h
         )
 
 target_include_directories(NanoporeCompressionLib 

@@ -86,8 +86,11 @@ void MinHashReadFilter::getFilteredReads(kMer_t *sketch,
     results.clear();
     for (size_t sketchIndex = 0; sketchIndex < n; ++sketchIndex) {
         kMer_t curHash = sketch[sketchIndex];
-        std::vector<size_t> &m = hashTables[sketchIndex].at(curHash);
-        matches.insert(matches.end(), m.begin(), m.end());
+        // std::vector<size_t> &m = hashTables[sketchIndex].at(curHash);
+        auto m = hashTables[sketchIndex].find(curHash);
+        if (m == hashTables[sketchIndex].end())
+            continue;
+        matches.insert(matches.end(), m->second.begin(), m->second.end());
     }
     std::sort(matches.begin(), matches.end());
     auto end = matches.end();

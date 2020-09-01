@@ -10,8 +10,6 @@
 
 void Compressor::compress(const char *inputFileName) const {
 
-    //        MergeSortReadAligner rA(10, 1);
-
     ReadData rD;
     rD.loadFromFile(inputFileName);
     // (inputFileName, k, n);
@@ -29,18 +27,19 @@ void Compressor::compress(const char *inputFileName) const {
                   << " milliseconds" << std::endl;
     }
 
-    // Contig generation
-    ContigGenerator cG(rA, &rD, &rF);
-    {
-        auto start = std::chrono::high_resolution_clock::now();
-        cG.generateContigs();
-        auto end = std::chrono::high_resolution_clock::now();
-        auto duration =
-            std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        std::cout << "Generating contigs took " << duration.count()
-                  << " milliseconds" << std::endl;
-    }
-    std::cout << cG << std::endl;
+    // // Contig generation
+    // ContigGenerator cG(rA, &rD, &rF);
+    // {
+    //     auto start = std::chrono::high_resolution_clock::now();
+    //     cG.generateContigs();
+    //     auto end = std::chrono::high_resolution_clock::now();
+    //     auto duration =
+    //         std::chrono::duration_cast<std::chrono::milliseconds>(end -
+    //         start);
+    //     std::cout << "Generating contigs took " << duration.count()
+    //               << " milliseconds" << std::endl;
+    // }
+    // std::cout << cG << std::endl;
 
     // We clear the temp directories and create them if they do not
     // exist
@@ -52,41 +51,35 @@ void Compressor::compress(const char *inputFileName) const {
     boost::filesystem::create_directory(tempDirPath, ec);
     boost::filesystem::create_directory(compressedTempDirPath, ec);
 
-    // Consensus consensus;
-    // {
-    //     consensus.nR = &nR;
-    //     consensus.rF = &rF;
-    //     consensus.rA = rA;
-    //     consensus.aligner = aligner;
-    //     consensus.tempDir = tempDir;
-    //     consensus.compressedTempDir = compressedTempDir;
+    Consensus consensus;
+    {
+        consensus.rD = &rD;
+        consensus.rF = &rF;
+        consensus.rA = rA;
+        consensus.aligner = aligner;
+        consensus.tempDir = tempDir;
+        consensus.compressedTempDir = compressedTempDir;
 
-    //     consensus.generateConsensus();
-    //     consensus.writeConsensus();
-    // }
-    size_t numContigs = cG.contigs.size();
-    std::vector<Contig *> contigs(cG.contigs.begin(), cG.contigs.end());
-#pragma omp parallel for
-    for (size_t i = 0; i < numContigs; ++i) {
-        Contig *c = contigs[i];
-        std::set<std::pair<long, read_t>> &readsInContig = c->reads;
-        ConsensusGraph consensusGraph(aligner);
-        consensusGraph.tempDir = tempDir;
-        consensusGraph.compressedTempDir = compressedTempDir;
-        consensusGraph.addReads(readsInContig, rD.getReadData());
-
-        consensusGraph.calculateMainPathGreedy();
-        consensusGraph.printStatus();
-        std::string filename = tempFilename + std::to_string(i);
-        consensusGraph.writeMainPath(filename);
-        consensusGraph.writeReads(filename);
+        consensus.generateConsensus();
+        consensus.writeConsensus();
     }
+    //     size_t numContigs = cG.contigs.size();
+    //     std::vector<Contig *> contigs(cG.contigs.begin(), cG.contigs.end());
+    // #pragma omp parallel for
+    //     for (size_t i = 0; i < numContigs; ++i) {
+    //         Contig *c = contigs[i];
+    //         std::set<std::pair<long, read_t>> &readsInContig = c->reads;
+    //         ConsensusGraph consensusGraph(aligner);
+    //         consensusGraph.tempDir = tempDir;
+    //         consensusGraph.compressedTempDir = compressedTempDir;
+    //         consensusGraph.addReads(readsInContig, rD.getReadData());
 
-    std::ofstream metaData;
-    metaData.open(compressedTempDir + "metaData");
-    metaData << cG.contigs.size() << '\n';
-    metaData << rD.getNumReads() << '\n';
-    metaData.close();
+    //         consensusGraph.calculateMainPathGreedy();
+    //         consensusGraph.printStatus();
+    //         std::string filename = tempFilename + std::to_string(i);
+    //         consensusGraph.writeMainPath(filename);
+    //         consensusGraph.writeReads(filename);
+    //     }
 
     std::cout << "Creating tar archive ..." << std::endl;
     std::string outfile = "compressedFile";
