@@ -1,7 +1,6 @@
 #include "Decompressor.h"
 #include "Consensus.h"
 #include "bsc_helper.h"
-#include <arpa/inet.h>
 #include <boost/filesystem.hpp>
 #include <cassert>
 #include <fstream>
@@ -88,17 +87,18 @@ void Decompressor::generateReads(std::string *reads, size_t contigId) const {
         genomeFile.close();
     }
     std::ifstream idFile, posFile, editTypeFile, editBaseFile;
-    idFile.open(currentFilename + ".id", std::ios::binary);
-    posFile.open(currentFilename + ".pos", std::ios::binary);
+    idFile.open(currentFilename + ".id");
+    posFile.open(currentFilename + ".pos");
     editTypeFile.open(currentFilename + ".type");
     editBaseFile.open(currentFilename + ".base");
-    POS_T id = 0;
+    size_t id = 0;
     while (true) {
-        POS_T idInc;
-        idFile.read(reinterpret_cast<char *>(&idInc), sizeof(idInc));
+        size_t idInc;
+        idFile >> idInc;
+        char c;
+        idFile.get(c);
         if (!idFile)
             break;
-        idInc = ntohl(idInc);
         id = id + idInc;
         generateRead(genome, reads[id], posFile, editTypeFile, editBaseFile);
         // std::cout << id << " ";
@@ -113,11 +113,12 @@ void Decompressor::generateReads(std::string *reads, size_t contigId) const {
     unalignedReadsFile.open(currentFilename + ".unalignedReads");
     id = 0;
     while (true) {
-        POS_T idInc;
-        unalignedIdsFile.read(reinterpret_cast<char *>(&idInc), sizeof(idInc));
+        size_t idInc;
+        unalignedIdsFile >> idInc;
+        char c;
+        unalignedIdsFile.get(c);
         if (!unalignedIdsFile)
             break;
-        idInc = ntohl(idInc);
         id = id + idInc;
         unalignedReadsFile >> reads[id];
         // std::cout << id << " ";
@@ -131,14 +132,15 @@ void Decompressor::generateRead(const std::string &genome, std::string &read,
                                 std::ifstream &posFile,
                                 std::ifstream &editTypeFile,
                                 std::ifstream &editBaseFile) const {
-    POS_T curPos;
-    posFile.read(reinterpret_cast<char *>(&curPos), sizeof(POS_T));
-    curPos = ntohl(curPos);
+    size_t curPos;
+    char c;
+    posFile >> curPos;
+    posFile.get(c);
     while (true) {
         // First we handle the unchanged bases
-        POS_T numUnchanged;
-        posFile.read(reinterpret_cast<char *>(&numUnchanged), sizeof(POS_T));
-        numUnchanged = ntohl(numUnchanged);
+        size_t numUnchanged;
+        posFile >> numUnchanged;
+        posFile.get(c);
         for (size_t i = 0; i < numUnchanged; ++i) {
             read.push_back(genome[curPos++]);
         }
@@ -161,11 +163,9 @@ void Decompressor::generateRead(const std::string &genome, std::string &read,
             read.push_back(editBase);
         }
     }
-    // We need to read extra END_SYMBOL
-    POS_T temp;
-    posFile.read(reinterpret_cast<char *>(&temp), sizeof(POS_T));
+    // We need to read extra '\n'
+    posFile.get(c);
     // Read the line breaks in editBase
-    char c;
     editBaseFile.get(c);
     assert(c == '\n');
 

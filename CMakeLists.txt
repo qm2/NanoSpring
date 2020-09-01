@@ -79,7 +79,7 @@ add_library(NanoporeCompressionLib
         src/Edits.cpp
         src/LocalMyers.cpp
         src/LocalMyersRollBack.cpp
-        src/LocalMyersRollBackOld.cpp
+        # src/LocalMyersRollBackOld.cpp
         src/MyersAligner.cpp
         src/ReadAligner.cpp
         src/ReadData.cpp
@@ -94,7 +94,7 @@ add_library(NanoporeCompressionLib
         include/Edits.h
         include/LocalMyers.h
         include/LocalMyersRollBack.h
-        include/LocalMyersRollBackOld.h
+        # include/LocalMyersRollBackOld.h
         include/MyersAligner.h
         include/ReadAligner.h
         include/ReadData.h

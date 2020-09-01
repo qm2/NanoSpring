@@ -1,7 +1,6 @@
 #include "ConsensusGraph.h"
 #include "bsc_helper.h"
 #include <algorithm>
-#include <arpa/inet.h>
 #include <deque>
 #include <fstream>
 #include <iostream>
@@ -590,11 +589,11 @@ void ConsensusGraph::splitPath(Node *newPre, Edge *e,
 ConsensusGraph::~ConsensusGraph() {
     if (!startingNode)
         return;
-    std::cerr << "Removing" << std::endl;
+    // std::cerr << "Removing" << std::endl;
 
     removeConnectedNodes(startingNode);
-    std::cerr << std::to_string(numEdges) << " edges "
-              << std::to_string(numNodes) << " nodes left\n";
+    // std::cerr << std::to_string(numEdges) << " edges "
+    //           << std::to_string(numNodes) << " nodes left\n";
 }
 
 Node *ConsensusGraph::createNode(char base) {
@@ -743,21 +742,20 @@ void ConsensusGraph::writeReads(const std::string &filename) {
     const std::string editBaseFileName = tempDir + filename + ".base";
     const std::string idFileName = tempDir + filename + ".id";
     std::ofstream posFile, editTypeFile, editBaseFile, idFile;
-    posFile.open(posFileName, std::ios::binary);
-    editTypeFile.open(editTypeFileName, std::ios::binary);
-    editBaseFile.open(editBaseFileName, std::ios::binary);
-    idFile.open(idFileName, std::ios::binary);
+    posFile.open(posFileName);
+    editTypeFile.open(editTypeFileName);
+    editBaseFile.open(editBaseFileName);
+    idFile.open(idFileName);
     size_t pasId = 0;
     for (auto it : readsInGraph) {
         {
-            POS_T id_pos_t = it.first - pasId;
+            idFile << it.first - pasId << ':';
             pasId = it.first;
-            id_pos_t = htonl(id_pos_t);
-            idFile.write(reinterpret_cast<char *>(&id_pos_t), sizeof(POS_T));
         }
         totalEditDis +=
             writeRead(posFile, editTypeFile, editBaseFile, it.second, it.first);
     }
+    idFile << '\n';
     posFile.close();
     editTypeFile.close();
     editBaseFile.close();
@@ -789,17 +787,12 @@ void ConsensusGraph::writeUnalignedReads(const std::string &filename) {
     const std::string unalignedIdsFileName =
         tempDir + filename + ".unalignedIds";
     std::ofstream unalignedReadsFile, unalignedIdsFile;
-    unalignedReadsFile.open(unalignedReadsFileName, std::ios::binary);
-    unalignedIdsFile.open(unalignedIdsFileName, std::ios::binary);
+    unalignedReadsFile.open(unalignedReadsFileName);
+    unalignedIdsFile.open(unalignedIdsFileName);
     size_t pastId = 0;
     for (auto it : unalignedReads) {
-        {
-            POS_T id_pos_t = it.first - pastId;
-            pastId = it.first;
-            id_pos_t = htonl(id_pos_t);
-            unalignedIdsFile.write(reinterpret_cast<char *>(&id_pos_t),
-                                   sizeof(POS_T));
-        }
+        unalignedIdsFile << it.first - pastId << ":";
+        pastId = it.first;
         unalignedReadsFile << it.second << '\n';
     }
     unalignedIdsFile.close();
@@ -875,9 +868,7 @@ size_t ConsensusGraph::writeRead(std::ofstream &posFile,
     size_t offset;
     std::vector<Edit> editScript;
     size_t editDis = read2EditScript(r, id, editScript, offset);
-    POS_T initialPos = offset;
-    initialPos = htonl(initialPos);
-    posFile.write(reinterpret_cast<char *>(&initialPos), sizeof(POS_T));
+    posFile << offset << ':';
 
     std::vector<Edit> newEditScript;
     editDis = Edit::optimizeEditScript(editScript, newEditScript);
@@ -889,27 +880,21 @@ size_t ConsensusGraph::writeRead(std::ofstream &posFile,
             break;
         }
         case INSERT: {
-            POS_T pos = unchangedCount;
+            posFile << unchangedCount << ':';
             unchangedCount = 0;
-            pos = htonl(pos);
-            posFile.write(reinterpret_cast<char *>(&pos), sizeof(POS_T));
             editTypeFile << 'i';
             editBaseFile << e.editInfo.ins;
             break;
         }
         case DELETE: {
-            POS_T pos = unchangedCount;
+            posFile << unchangedCount << ':';
             unchangedCount = 0;
-            pos = htonl(pos);
-            posFile.write(reinterpret_cast<char *>(&pos), sizeof(POS_T));
             editTypeFile << 'd';
             break;
         }
         case SUBSTITUTION: {
-            POS_T pos = unchangedCount;
+            posFile << unchangedCount << ':';
             unchangedCount = 0;
-            pos = htonl(pos);
-            posFile.write(reinterpret_cast<char *>(&pos), sizeof(POS_T));
             editTypeFile << 's';
             editBaseFile << e.editInfo.sub;
             break;
@@ -917,16 +902,12 @@ size_t ConsensusGraph::writeRead(std::ofstream &posFile,
         }
     }
 
-    POS_T pos = unchangedCount;
+    posFile << unchangedCount << ':';
     unchangedCount = 0;
-    pos = htonl(pos);
-    posFile.write(reinterpret_cast<char *>(&pos), sizeof(POS_T));
 
-    POS_T t = END_SYMBOL;
-    posFile.write(reinterpret_cast<char *>(&t), sizeof(POS_T));
+    posFile << '\n';
     editTypeFile << '\n';
     editBaseFile << '\n';
-    // f << std::endl;
     return editDis;
 }
 

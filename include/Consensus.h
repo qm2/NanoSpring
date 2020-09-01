@@ -27,8 +27,6 @@ public:
      */
     StringAligner *aligner;
 
-    const static POS_T END_SYMBOL = ~(POS_T)0l;
-
     /**
      * @brief Directory for storing the temp files (.genome, .pos, .type)
      *
@@ -40,6 +38,8 @@ public:
      *
      */
     std::string compressedTempDir = "tempCompressed/";
+
+    std::string tempFileName = "c";
 
     void generateConsensus();
 

@@ -8,8 +8,6 @@
 #include <set>
 #include <vector>
 
-typedef uint32_t POS_T;
-
 class Node;
 
 class Edge;
@@ -130,8 +128,6 @@ public:
  */
 class ConsensusGraph {
 public:
-    const static POS_T END_SYMBOL = ~(POS_T)0l;
-
     // Starting and ending positions of mainPath in contig
     ssize_t startPos, endPos;
 
@@ -280,7 +276,7 @@ private:
 
     void removeConnectedNodes(Node *n);
 
-      void clearHasReached(Node *n);
+    void clearHasReached(Node *n);
 
     /***
      * Remove possible cycles from mainPath. Should be called internally

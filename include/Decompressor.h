@@ -12,7 +12,7 @@ public:
     std::string compressedTempDir = "tempCompressed/";
 
     // The output filenames to use in temp directories
-    std::string tempFilename = "testContig";
+    std::string tempFilename = "Contig";
 
     void decompress(const char *inputFileName, const char *outputFileName);
 

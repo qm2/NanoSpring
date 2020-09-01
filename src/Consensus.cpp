@@ -19,7 +19,7 @@ void Consensus::generateConsensus() {
         ssize_t initialStartPos = cG->startPos;
         ssize_t initialEndPos = cG->endPos;
         const ssize_t len = initialEndPos - initialStartPos;
-        size_t offset = len / 2;
+        size_t offset = len / 8;
 
         ssize_t curPos = cG->startPos;
 
@@ -89,7 +89,7 @@ void Consensus::writeConsensus() {
     size_t size = graphs.size();
     for (size_t i = 0; i < size; ++i) {
         ConsensusGraph &cG = *graphs[i];
-        std::string fileName = "testContig" + std::to_string(i);
+        std::string fileName = tempFileName + std::to_string(i);
         cG.writeMainPath(fileName);
         cG.writeReads(fileName);
     }

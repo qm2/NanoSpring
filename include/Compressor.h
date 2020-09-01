@@ -16,7 +16,7 @@ public:
     std::string tempDir = "tempRaw/";
     std::string compressedTempDir = "tempCompressed/";
     // The output filenames to use in temp directories
-    std::string tempFilename = "testContig";
+    std::string tempFileName = "Contig";
 
     void compress(const char *inputFileName) const;
 };
