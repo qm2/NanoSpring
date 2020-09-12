@@ -10,17 +10,43 @@ void Decompressor::decompress(const char *inputFileName,
                               const char *outputFileName) {
     prepareTempDirs();
 
-    bsc::BSC_decompress(inputFileName, tarFileName.c_str());
+    // bsc::BSC_decompress(inputFileName, tarFileName.c_str());
 
     // Untar
     {
         std::cout << "Extracting tar archive ...";
-        std::string tar_command = "tar -C " + tempDir + " -xvf " + tarFileName;
+        std::string tar_command =
+            "tar -C " + tempDir + " -xvf " + inputFileName;
         int tar_status = std::system(tar_command.c_str());
         if (tar_status != 0)
             throw std::runtime_error(
                 "Error occurred during tar archive extraction.");
         std::cout << "Tar extraction done!\n";
+    }
+
+    // bsc Decompress
+    {
+        boost::filesystem::path tempPath(tempDir);
+        boost::filesystem::directory_iterator endIt;
+        for (boost::filesystem::directory_iterator it(tempDir); it != endIt;
+             ++it) {
+            if (boost::filesystem::is_regular_file(*it)) {
+                const boost::filesystem::path &fullPath = it->path();
+                const std::string filename = fullPath.filename().string();
+                // We only decompress files ending with "Compressed"
+                const std::string ending("Compressed");
+                if (filename.length() < ending.length())
+                    continue;
+                if (filename.compare(filename.length() - ending.length(),
+                                     ending.length(), ending) != 0)
+                    continue;
+                const std::string &fullPathString = fullPath.string();
+                std::string outPath = fullPathString.substr(
+                    0, fullPathString.length() - ending.length());
+                bsc::BSC_decompress(fullPath.string().c_str(), outPath.c_str());
+                boost::filesystem::remove(fullPath);
+            }
+        }
     }
 
     unpack();

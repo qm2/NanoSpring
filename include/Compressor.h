@@ -19,7 +19,7 @@ public:
 
     std::string outputFileName = "compressedFile";
 
-    std::string tarFileName = "originalFile";
+    // std::string tarFileName = "originalFile";
 
     void compress(const char *inputFileName) const;
 };

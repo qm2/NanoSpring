@@ -48,24 +48,37 @@ void Compressor::compress(const char *inputFileName) const {
         consensus.writeConsensus();
     }
 
+    {
+// We first compress all the files in the temp directory (we compress
+// only files with extensions)
+#ifdef DEBUG
+        std::cout << "bsc compression starts" << std::endl;
+#endif
+        boost::filesystem::path tempPath(tempDir);
+        boost::filesystem::directory_iterator endIt;
+        for (boost::filesystem::directory_iterator it(tempDir); it != endIt;
+             ++it) {
+            if (boost::filesystem::is_regular_file(*it)) {
+                boost::filesystem::path fullPath = it->path();
+                std::string filename = fullPath.filename().string();
+                // We only compress files with extensions
+                if (filename.find('.') == std::string::npos)
+                    continue;
+                std::string outPath = fullPath.string() + "Compressed";
+                bsc::BSC_compress(fullPath.string().c_str(), outPath.c_str());
+                boost::filesystem::remove(fullPath);
+            }
+        }
+    }
+
     std::cout << "Creating tar archive ..." << std::endl;
-    std::string tarFileName = "originalFile";
     std::string tar_command =
-        "tar -cvf " + tarFileName + " -C " + tempDir + " . ";
+        "tar -cvf " + outputFileName + " -C " + tempDir + " . ";
     int tar_status = std::system(tar_command.c_str());
     if (tar_status)
         throw std::runtime_error(
             "Error occurred during tar archive generation.");
     std::cout << "Tar archive done!\n";
-
-    {
-        std::string lsCommand = "ls -lh " + tarFileName;
-        int ls_status = std::system(lsCommand.c_str());
-        if (ls_status)
-            throw std::runtime_error("Error occurred during ls command.");
-    }
-
-    bsc::BSC_compress(tarFileName.c_str(), outputFileName.c_str());
 
     {
         std::string lsCommand = "ls -lh " + outputFileName;
