@@ -39,6 +39,7 @@ public:
     ~Consensus();
 
 private:
+    // TODO: make this threadsafe
     /**
      * @brief Whether the reads have been added to a graph
      * !!vector<bool> is not thread safe!!

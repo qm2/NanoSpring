@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
         if (k == 0)
             return 0;
         MergeSortReadAligner rA(21, 10);
-        LocalMyersRollBack localMyersRollBackAligner(100, 200, 6400);
+        LocalMyersRollBack localMyersRollBackAligner(100, 200, 3200);
         StringAligner *aligner = &localMyersRollBackAligner;
         Compressor compressor;
         compressor.k = k;

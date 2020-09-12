@@ -381,7 +381,9 @@ bool LocalMyersRollBack::align(const std::string &s1, const std::string &s2,
         }
     }
     if (!dir1Success && !dir2Success) {
+#ifdef DEBUG
         std::cerr << "initial alignment failed\n";
+#endif
         return false;
     }
 

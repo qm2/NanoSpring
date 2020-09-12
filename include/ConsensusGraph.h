@@ -50,7 +50,14 @@ public:
      * @return the edge with the most weight going out of this node. null if no
      * edge goes out of this node.
      */
-    Edge *getBestEdge();
+    Edge *getBestEdgeOut();
+
+    /***
+     * Returns the edge with the most weight going in to this node.
+     * @return the edge with the most weight going in to this node. null if no
+     * edge goes in to this node.
+     */
+    Edge *getBestEdgeIn();
 
     /***
      * Adds an edge starting from this node
@@ -197,6 +204,8 @@ public:
     /***
      * Clears the old mainPath, calculates the new mainPath and adds it.
      * Uses greedy algorithm.
+     * Uses the cumulative weight field to store the position of the nodes on
+     * mainPath (starts at 0)
      * @return the new mainPath
      */
     Path &calculateMainPathGreedy();
@@ -211,6 +220,8 @@ public:
     /***
      * @param editScript outputs the editScript (consisting of insertions,
      * deletions, and unchanged)
+     * For this to work properly, the cumulativeWeight field of the nodes on the
+     * main path must store their positions on main path (starting with 0)
      * @param pos outputs the relative position in mainPath
      */
     size_t read2EditScript(Read &r, size_t id, std::vector<Edit> &editScript,
@@ -244,8 +255,11 @@ public:
 
 private:
     Node *startingNode;
-    Node *leftMostChangedNode;
-    size_t leftMostChangedNodeOffset = 0;
+    // These are stored such that the path only needs to be updated locally
+    Node *rightMostUnchangedNode;
+    size_t rightMostUnchangedNodeOffset = 0;
+    Node *leftMostUnchangedNode;
+    size_t leftMostUnchangedNodeOffset = 0;
     size_t numNodes = 0;
     size_t numEdges = 0;
     // Maps ID of read to (relative position of read in contig, beginning node

@@ -20,7 +20,7 @@ void Consensus::generateConsensus() {
         ssize_t initialStartPos = cG->startPos;
         ssize_t initialEndPos = cG->endPos;
         const ssize_t len = initialEndPos - initialStartPos;
-        size_t offset = len / 8;
+        size_t offset = len / 4;
 
         ssize_t curPos = cG->startPos;
 
@@ -44,7 +44,10 @@ void Consensus::generateConsensus() {
                     continue;
                 ssize_t relPos;
                 std::string &readStr = rD->getRead(r);
-                rA->align(s, readStr, relPos);
+                if (!rA->align(s, readStr, relPos)) {
+                    putReadBack(r);
+                    continue;
+                }
 
                 ssize_t pos = curPos + relPos;
                 std::vector<Edit> editScript;
@@ -63,9 +66,9 @@ void Consensus::generateConsensus() {
         };
 
         while (true) {
-            // std::cout << "right\n";
+            std::cout << "right\n";
             addRelatedReads();
-            // cG->printStatus();
+            cG->printStatus();
             curPos += offset;
             // std::cout << "curPos " << curPos << " len " << len << " endPos "
             //           << cG->endPos << '\n';
@@ -75,14 +78,15 @@ void Consensus::generateConsensus() {
 
         /// TODO: consensusgraph doesn't really support adding reads from the
         /// left,,,
-        // curPos = initialStartPos - offset;
-        // while (true) {
-        //     std::cout << "left\n";
-        //     if (curPos < cG->startPos)
-        //         break;
-        //     addRelatedReads();
-        //     curPos -= offset;
-        // }
+        curPos = initialStartPos - offset;
+        while (true) {
+            std::cout << "left\n";
+            if (curPos < cG->startPos)
+                break;
+            cG->printStatus();
+            addRelatedReads();
+            curPos -= offset;
+        }
     }
 }
 
