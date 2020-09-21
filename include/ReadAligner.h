@@ -15,8 +15,8 @@ public:
      * after r1 and negative otherwise)
      * @return Whether alignment succeeded
      */
-    virtual bool align(const std::string &r1, const std::string &r2,
-                       ssize_t &relPos) = 0;
+    __attribute__((warn_unused_result)) virtual bool
+    align(const std::string &r1, const std::string &r2, ssize_t &relPos) = 0;
 };
 
 class MergeSortReadAligner : public ReadAligner {
@@ -35,7 +35,8 @@ public:
      */
     MergeSortReadAligner(size_t k, size_t kMerNumTh);
 
-    bool align(const std::string &r1, const std::string &r2, ssize_t &relPos);
+    bool align(const std::string &r1, const std::string &r2,
+               ssize_t &relPos) override;
 
 private:
     void stringToSortedKMers(

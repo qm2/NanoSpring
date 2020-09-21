@@ -10,6 +10,6 @@ void BSC_compress(const char *infile, const char *outfile,
 
 void BSC_decompress(const char *infile, const char *outfile);
 
-}; // namespace bsc
+} // namespace bsc
 
 #endif /* C9E093FF_F3FD_4F67_9206_519C995B0ED1 */

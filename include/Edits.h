@@ -54,8 +54,9 @@ public:
      * string into the second.
      * @return whether alignment succeeded
      */
-    virtual bool align(const std::string &s1, const std::string &s2,
-                       std::vector<Edit> &editScript);
+    __attribute__((warn_unused_result)) virtual bool
+    align(const std::string &s1, const std::string &s2,
+          std::vector<Edit> &editScript);
 
     /***
      * Calculates a good edit script from string s1 to string s2 and stores it
@@ -67,8 +68,9 @@ public:
      * @param editDis the edit distance obtained by this algorithm
      * @return whether alignment succeeded
      */
-    virtual bool align(const std::string &s1, const std::string &s2,
-                       std::vector<Edit> &editScript, size_t &editDis) = 0;
+    __attribute__((warn_unused_result)) virtual bool
+    align(const std::string &s1, const std::string &s2,
+          std::vector<Edit> &editScript, size_t &editDis) = 0;
 
     /***
      * Calculates a good edit script from string s1 to string s2 and stores it
@@ -91,10 +93,12 @@ public:
      * (this edit distance is only of the overlapping portions)s
      * @return whether alignment succeeded
      */
-    virtual bool align(const std::string &s1, const std::string &s2,
-                       const ssize_t offsetGuess, ssize_t &beginOffset,
-                       ssize_t &endOffset, std::vector<Edit> &editScript,
-                       size_t &editDis);
+    __attribute__((warn_unused_result)) virtual bool
+    align(const std::string &s1, const std::string &s2,
+          const ssize_t offsetGuess, ssize_t &beginOffset, ssize_t &endOffset,
+          std::vector<Edit> &editScript, size_t &editDis);
+
+    bool align();
 
     StringAligner(const std::string &name);
 

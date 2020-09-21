@@ -130,7 +130,7 @@ bool ContigGenerator::addRelatedReads(const std::pair<long, read_t> r) {
             mergeContigs(contig2MergeWith, activeContig, relPosInMerge);
     }
     return addedRead;
-};
+}
 
 void ContigGenerator::mergeContigs(Contig *c1, Contig *c2, long pos) {
     //                    std::cout << "Merging" << std::endl;

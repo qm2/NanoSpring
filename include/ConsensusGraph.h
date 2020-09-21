@@ -184,8 +184,9 @@ public:
      * in all the reads read)
      * @param pos Relative position of read in contig
      */
-    bool addRead(const std::string &s, long pos, std::vector<Edit> &editScript,
-                 ssize_t &beginOffset, ssize_t &endOffset);
+    __attribute__((warn_unused_result)) bool
+    addRead(const std::string &s, long pos, std::vector<Edit> &editScript,
+            ssize_t &beginOffset, ssize_t &endOffset);
 
     void addReads(const std::set<std::pair<long, read_t>> &reads,
                   std::vector<std::unique_ptr<std::string>> &readData);

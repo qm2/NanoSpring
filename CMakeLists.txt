@@ -109,7 +109,7 @@ target_include_directories(NanoporeCompressionLib
 
 target_compile_options(NanoporeCompressionLib 
     PRIVATE 
-    -Wall -Wextra -Werror)
+    -W -Wall -Wextra)
 target_compile_options(NanoporeCompressionLib 
     PRIVATE 
     $<$<CONFIG:Release>:-O3>)
