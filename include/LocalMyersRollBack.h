@@ -41,6 +41,8 @@ public:
      * Performs alignment using an modification of myers algorithm where
      * substitution cost is 1.5. Alignment stops when one of the strings reaches
      * its end.
+     * @tparam RandomAccessIt Random Access Read Iterator that dereferences to
+     * char.
      * @param Abegin
      * @param Aend
      * @param Bbegin
@@ -49,20 +51,38 @@ public:
      * @param editScript
      * @param editDis This will store the Levenshtein distance is used, i.e.,
      * insertions, deletions, and substitutions all have edit distance 1.
-     * @param forward True if we are aligning from left to right, and false if
-     * we are aligning from right to left.
      * @return true
      * @return false
      */
-    static bool localAlign(const char *&Abegin, const char *const Aend,
-                           const char *&Bbegin, const char *const Bend,
+    template <typename RandomAccessIt>
+    static bool localAlign(RandomAccessIt &Abegin, RandomAccessIt Aend,
+                           RandomAccessIt &Bbegin, RandomAccessIt Bend,
                            const size_t max, std::vector<Edit> &editScript,
-                           size_t &editDis, bool forward);
+                           size_t &editDis);
 
 private:
-    bool alignReverse(const std::string &s1, const std::string &s2,
-                      const ssize_t offsetGuess, ssize_t &beginOffset,
-                      ssize_t &endOffset, std::vector<Edit> &editScript,
-                      size_t &editDis);
+    /**
+     * @brief Performs global alignment algorithm once
+     *
+     * @tparam RandomAccessIt Random Access Read Iterator that dereferences to
+     * char.
+     * @param Abegin
+     * @param Aend
+     * @param Bbegin
+     * @param Bend
+     * @param offsetGuess
+     * @param beginOffset
+     * @param endOffset
+     * @param editScript
+     * @param editDis
+     * @return true
+     * @return false
+     */
+    template <typename RandomAccessIt>
+    bool alignOnce(RandomAccessIt Abegin, RandomAccessIt Aend,
+                   RandomAccessIt Bbegin, RandomAccessIt Bend,
+                   const ssize_t offsetGuess, ssize_t &beginOffset,
+                   ssize_t &endOffset, std::vector<Edit> &editScript,
+                   size_t &editDis);
 };
 #endif /* F1ADC39F_6A7F_4671_B4B5_77EF545E2B5C */
