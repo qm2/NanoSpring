@@ -1,12 +1,15 @@
-#include "../include/AlignerTester.h"
-#include "../include/Edits.h"
-#include "../include/LocalMyers.h"
-#include "../include/LocalMyersRollBack.h"
-#include "../include/LocalMyersRollBackOld.h"
+#include "AlignerTester.h"
+#include "Edits.h"
+#include "LocalMyers.h"
+#include "LocalMyersRollBack.h"
+#include "LocalMyersRollBack_impl.h"
+#include "LocalMyers_impl.h"
+#include "StringAligner.h"
+//#include "../include/LocalMyersRollBackOld.h"
 #include <iomanip>
 #include <iostream>
 
-void testAlg(std::vector<StringAligner *> aligners);
+void testAlg(std::vector<StringAligner<const char *> *> aligners);
 
 void printString(std::string::iterator *begin, std::string::iterator *end) {
     for (; *begin != *end; (*begin)++)
@@ -15,7 +18,7 @@ void printString(std::string::iterator *begin, std::string::iterator *end) {
 }
 
 int main(int argc, char **argv) {
-    std::vector<StringAligner *> aligners;
+    std::vector<StringAligner<const char *> *> aligners;
 
     //    aligners.push_back(new LocalMyers(50));
     //    aligners.push_back(new LocalMyers(100));
@@ -23,11 +26,15 @@ int main(int argc, char **argv) {
     size_t maxEditDis = 3200;
     //    aligners.push_back(new LocalMyers(32, 64));
     // aligners.push_back(new LocalMyersRollBack(32, 64, maxEditDis));
-    aligners.push_back(new LocalMyers(50, 100));
-    aligners.push_back(new LocalMyersRollBack(50, 100, maxEditDis));
-    aligners.push_back(new LocalMyersRollBack(50, 100, maxEditDis * 2));
-    aligners.push_back(new LocalMyersRollBack(100, 200, maxEditDis));
-    aligners.push_back(new LocalMyersRollBack(100, 200, maxEditDis * 2));
+    aligners.push_back(new LocalMyers<const char *>(50, 100));
+    aligners.push_back(
+        new LocalMyersRollBack<const char *>(50, 100, maxEditDis));
+    aligners.push_back(
+        new LocalMyersRollBack<const char *>(50, 100, maxEditDis * 2));
+    aligners.push_back(
+        new LocalMyersRollBack<const char *>(100, 200, maxEditDis));
+    aligners.push_back(
+        new LocalMyersRollBack<const char *>(100, 200, maxEditDis * 2));
 
     //    aligners.push_back(new LocalMyersRollBack(100, 50, maxEditDis));
     //    aligners.push_back(new LocalMyers(100, 200));
@@ -35,11 +42,11 @@ int main(int argc, char **argv) {
     //    aligners.push_back(new LocalMyersRollBack(200, 100, maxEditDis));
     // aligners.push_back(new MyersAligner());
     testAlg(aligners);
-    for (StringAligner *aligner : aligners)
+    for (StringAligner<const char *> *aligner : aligners)
         delete aligner;
 }
 
-void testAlg(std::vector<StringAligner *> aligners) {
+void testAlg(std::vector<StringAligner<const char *> *> aligners) {
     AlignerTester aT;
     // ssize_t offsets2Test[] = {0,    100, -100, 200,  -200, 400,
     //                           -400, 800, -800, 1600, -1600};
@@ -48,7 +55,7 @@ void testAlg(std::vector<StringAligner *> aligners) {
 
     aT.generateData(10000, 0, 1, 0.03, 0.03, 0.04);
     const size_t algW = 35;
-    for (StringAligner *aligner : aligners) {
+    for (StringAligner<const char *> *aligner : aligners) {
         if (aT.validate(aligner)) {
             std::cout << "Validation of " << std::setw(algW) << aligner->name
                       << " succeeded." << std::endl;
@@ -69,7 +76,7 @@ void testAlg(std::vector<StringAligner *> aligners) {
                   << " " << std::setw(14) << "AvgBeginOffset"
                   << " " << std::setw(12) << "AvgEndOffset"
                   << " " << std::endl;
-        for (StringAligner *aligner : aligners) {
+        for (StringAligner<const char *> *aligner : aligners) {
             double duration, successRate, avgEditDis, avgBeginOffset,
                 avgEndOffset;
             aT.profile(aligner, duration, successRate, avgBeginOffset,

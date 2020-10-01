@@ -70,7 +70,7 @@ endif()
 # the NanoporeCompressionLib library
 add_library(NanoporeCompressionLib 
     STATIC 
-        #src/AlignerTester.cpp
+        src/AlignerTester.cpp
         src/bsc.cpp
         #src/Compressor.cpp
         #src/Consensus.cpp
@@ -84,7 +84,7 @@ add_library(NanoporeCompressionLib
         src/ReadData.cpp
         src/ReadFilter.cpp
         #src/ConsensusGraph.cpp
-        #include/AlignerTester.h
+        include/AlignerTester.h
         include/bsc_helper.h
         #include/Compressor.h
         #include/Consensus.h
@@ -141,11 +141,11 @@ endif()
 
 ###############################################
 
-#add_executable(testAligner src/testAligner.cpp)
-#target_link_libraries(testAligner PRIVATE NanoporeCompressionLib profiler)
+add_executable(testAligner src/testAligner.cpp)
+target_link_libraries(testAligner PRIVATE NanoporeCompressionLib profiler)
 
-# add_executable(testAlignAlgs src/testAlignAlgs.cpp)
-# target_link_libraries(testAlignAlgs PRIVATE NanoporeCompressionLib profiler)
+add_executable(testAlignAlgs src/testAlignAlgs.cpp)
+target_link_libraries(testAlignAlgs PRIVATE NanoporeCompressionLib profiler)
 
 #add_executable(testCompressor src/testCompressor.cpp)
 #target_link_libraries(testCompressor PRIVATE NanoporeCompressionLib profiler)

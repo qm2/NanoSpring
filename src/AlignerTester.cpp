@@ -79,9 +79,10 @@ void AlignerTester::generateData(size_t readLen, ssize_t offset, size_t num,
     }
 }
 
-void AlignerTester::profile(StringAligner *aligner, double &duration,
-                            double &successRate, double &avgBeginOffset,
-                            double &avgEndOffset, double &avgEditDis) {
+void AlignerTester::profile(StringAligner<const char *> *aligner,
+                            double &duration, double &successRate,
+                            double &avgBeginOffset, double &avgEndOffset,
+                            double &avgEditDis) {
     size_t numSuccess = 0;
     size_t totalEditDis = 0;
     ssize_t totalBeginOffset = 0;
@@ -93,9 +94,13 @@ void AlignerTester::profile(StringAligner *aligner, double &duration,
         std::vector<Edit> editScript;
         size_t editDis;
         ssize_t beginOffset, endOffset;
-
-        bool success = aligner->align(readsA[i], readsB[i], 0, beginOffset,
-                                      endOffset, editScript, editDis);
+        const char *Abegin = readsA[i].c_str();
+        const char *Aend = Abegin + readsA[i].length();
+        const char *Bbegin = readsB[i].c_str();
+        const char *Bend = Bbegin + readsB[i].length();
+        bool success =
+            aligner->align(Abegin, Aend, Bbegin, Bend, 0, beginOffset,
+                           endOffset, editScript, editDis);
         if (success) {
             numSuccess++;
             totalEditDis += editDis;
@@ -114,8 +119,9 @@ void AlignerTester::profile(StringAligner *aligner, double &duration,
     avgEndOffset = totalEndOffset / (double)numSuccess;
 }
 
-void AlignerTester::profile(StringAligner *aligner, double &duration,
-                            double &successRate, double &avgEditDis) {
+void AlignerTester::profile(StringAligner<const char *> *aligner,
+                            double &duration, double &successRate,
+                            double &avgEditDis) {
     size_t numSuccess = 0;
     size_t totalEditDis = 0;
     auto start = std::chrono::high_resolution_clock::now();
@@ -124,8 +130,14 @@ void AlignerTester::profile(StringAligner *aligner, double &duration,
     for (size_t i = 0; i < numReads; ++i) {
         std::vector<Edit> editScript;
         size_t editDis;
+        const char *Abegin = readsA[i].c_str();
+        const char *Aend = Abegin + readsA[i].length();
+        const char *Bbegin = readsB[i].c_str();
+        const char *Bend = Bbegin + readsB[i].length();
+        ssize_t beginOffset, endOffset;
         bool success =
-            aligner->align(readsA[i], readsB[i], editScript, editDis);
+            aligner->align(Abegin, Aend, Bbegin, Bend, 0, beginOffset,
+                           endOffset, editScript, editDis);
         if (success) {
             numSuccess++;
             totalEditDis += editDis;
@@ -140,7 +152,7 @@ void AlignerTester::profile(StringAligner *aligner, double &duration,
     avgEditDis = totalEditDis / (double)numSuccess;
 }
 
-bool AlignerTester::validate(StringAligner *aligner) {
+bool AlignerTester::validate(StringAligner<const char *> *aligner) {
     size_t numReads = readsA.size();
     for (size_t i = 0; i < numReads; ++i) {
         std::vector<Edit> editScript;
@@ -149,11 +161,19 @@ bool AlignerTester::validate(StringAligner *aligner) {
         // std::cout << readsA[i] << '\n';
         // std::cout << readsB[i] << '\n';
 
-        bool success = aligner->align(readsA[i], readsB[i], 0, beginOffset,
-                                      endOffset, editScript, editDis);
+        const char *Abegin = readsA[i].c_str();
+        const char *Aend = Abegin + readsA[i].length();
+        const char *Bbegin = readsB[i].c_str();
+        const char *Bend = Bbegin + readsB[i].length();
+        bool success =
+            aligner->align(Abegin, Aend, Bbegin, Bend, 0, beginOffset,
+                           endOffset, editScript, editDis);
         if (!success)
             return false;
         std::string result;
+        // std::cout << "beginOffset" << beginOffset << std::endl;
+        // std::cout << "endOffset" << endOffset << std::endl;
+        // std::cout << aligner->name << std::endl;
         std::string origString = readsA[i].substr(
             beginOffset > 0 ? beginOffset : 0,
             readsA[i].length() - (beginOffset > 0 ? beginOffset : 0) +

@@ -2,6 +2,7 @@
 #define Z_ALIGNERTESTER_H
 
 #include "Edits.h"
+#include "StringAligner.h"
 #include <cstddef>
 #include <string>
 #include <vector>

@@ -268,9 +268,8 @@ template <typename RandomAccessIt>
 LocalMyersRollBack<RandomAccessIt>::LocalMyersRollBack(const size_t lenA,
                                                        const size_t lenB,
                                                        const size_t maxEditDis)
-    : LocalMyers<RandomAccessIt>("LMRB " + std::to_string(this->lenA) + " " +
-                                     std::to_string(this->lenB) +
-                                     " MaxEditDis " +
+    : LocalMyers<RandomAccessIt>("LMRB " + std::to_string(lenA) + " " +
+                                     std::to_string(lenB) + " MaxEditDis " +
                                      std::to_string(maxEditDis),
                                  lenA, lenB),
       maxEditDis(maxEditDis) {}

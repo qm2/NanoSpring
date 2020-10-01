@@ -21,6 +21,8 @@ bool LocalMyers<RandomAccessIt>::align(
     RandomAccessIt s1Begin, RandomAccessIt s1End, RandomAccessIt s2Begin,
     RandomAccessIt s2End, const ssize_t offsetGuess, ssize_t &beginOffset,
     ssize_t &endOffset, std::vector<Edit> &editScript, size_t &editDis) {
+    beginOffset = 0;
+    endOffset = 0;
     RandomAccessIt Abegin = s1Begin;
     RandomAccessIt Aend = s1End;
     RandomAccessIt Bbegin = s2Begin;
