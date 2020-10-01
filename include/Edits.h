@@ -38,71 +38,25 @@ public:
                                      std::vector<Edit> &newEditScript);
 };
 
-class StringAligner {
+/***
+ * An edit path in the myers algorithm consists of a starting point (from
+ * another furthest reaching path), and a horizontal or vertical move to the mid
+ * point, and finally a snake (all diagonal moves) to the end point.
+ */
+class EditPath {
 public:
-    /***
-     * Name of the alignment algorithm
-     */
-    const std::string name;
+    // start point
+    int xStart;
+    int yStart;
 
-    /***
-     * Calculates a good edit script from string s1 to string s2 and stores it
-     * in a vector of edits. Returns whether the alignment succeeded
-     * @param s1 The first string (the original string)
-     * @param s2 The second string (the target string)
-     * @param editScript stores a vector of edits that will transform the first
-     * string into the second.
-     * @return whether alignment succeeded
-     */
-    __attribute__((warn_unused_result)) virtual bool
-    align(const std::string &s1, const std::string &s2,
-          std::vector<Edit> &editScript);
+    // mid point
+    int xMid;
+    int yMid;
 
-    /***
-     * Calculates a good edit script from string s1 to string s2 and stores it
-     * in a vector of edits. Returns whether the alignment succeeded
-     * @param s1 The first string (the original string)
-     * @param s2 The second string (the target string)
-     * @param editScript stores a vector of edits that will transform the first
-     * string into the second.
-     * @param editDis the edit distance obtained by this algorithm
-     * @return whether alignment succeeded
-     */
-    __attribute__((warn_unused_result)) virtual bool
-    align(const std::string &s1, const std::string &s2,
-          std::vector<Edit> &editScript, size_t &editDis) = 0;
+    // snake length
+    size_t snakeLen;
 
-    /***
-     * Calculates a good edit script from string s1 to string s2 and stores it
-     * in a vector of edits. Here the edit script only transforms the
-     * overlapping portion of s1 to the overlapping portion of s2. The tail and
-     * head that are not aligned are stored as beginOffset and endOffset.
-     * Returns whether the alignment succeeded.
-     * @param s1 The first string (the original string)
-     * @param s2 The second string (the target string)
-     * @param offsetGuess An initial guess of beginOffset
-     * @param beginOffset The alignment of the left most ends of the two reads.
-     * Positive means the second read goes after the first, and negative means
-     * the second read goes before the first.
-     * @param endOffset The alignment of the right most ends of the two reads.
-     * Positive means the second read goes after the first, and negative means
-     * the second read goes before the first.
-     * @param editScript stores a vector of edits that will transform the
-     * overlapping portion of the first string into the second.
-     * @param editDis the edit distance obtained by this algorithm
-     * (this edit distance is only of the overlapping portions)s
-     * @return whether alignment succeeded
-     */
-    __attribute__((warn_unused_result)) virtual bool
-    align(const std::string &s1, const std::string &s2,
-          const ssize_t offsetGuess, ssize_t &beginOffset, ssize_t &endOffset,
-          std::vector<Edit> &editScript, size_t &editDis);
-
-    bool align();
-
-    StringAligner(const std::string &name);
-
-    virtual ~StringAligner();
+    EditPath(int xStart, int yStart, int xMid, int yMid, size_t snakeLen);
 };
 
 #endif // EXPERIMENTS_EDITS_H

@@ -1,3 +1,6 @@
+#ifndef EEF78146_670F_4E04_ABCE_4FD978240D5F
+#define EEF78146_670F_4E04_ABCE_4FD978240D5F
+
 #include "Edits.h"
 
 Edit::Edit(EDIT_TYPE editType, size_t num) : editType(editType) {
@@ -74,22 +77,8 @@ std::ostream &operator<<(std::ostream &out, const Edit &o) {
     return out;
 }
 
-StringAligner::StringAligner(const std::string &name) : name(name) {}
+EditPath::EditPath(int xStart, int yStart, int xMid, int yMid, size_t snakeLen)
+    : xStart(xStart), yStart(yStart), xMid(xMid), yMid(yMid),
+      snakeLen(snakeLen) {}
 
-bool StringAligner::align(const std::string &s1, const std::string &s2,
-                          std::vector<Edit> &editScript) {
-    size_t editDis;
-    return align(s1, s2, editScript, editDis);
-}
-
-bool StringAligner::align(const std::string &s1, const std::string &s2,
-                          const ssize_t offsetGuess, ssize_t &beginOffset,
-                          ssize_t &endOffset, std::vector<Edit> &editScript,
-                          size_t &editDis) {
-    (void)offsetGuess;
-    beginOffset = 0;
-    endOffset = 0;
-    return align(s1, s2, editScript, editDis);
-}
-
-StringAligner::~StringAligner() {}
+#endif /* EEF78146_670F_4E04_ABCE_4FD978240D5F */

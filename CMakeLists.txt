@@ -70,46 +70,46 @@ endif()
 # the NanoporeCompressionLib library
 add_library(NanoporeCompressionLib 
     STATIC 
-        src/AlignerTester.cpp
+        #src/AlignerTester.cpp
         src/bsc.cpp
-        src/Compressor.cpp
-        src/Consensus.cpp
-        src/Contig.cpp
-        src/Decompressor.cpp
+        #src/Compressor.cpp
+        #src/Consensus.cpp
+        #src/Contig.cpp
+        #src/Decompressor.cpp
         src/Edits.cpp
-        src/LocalMyers.cpp
-        src/LocalMyersRollBack.cpp
+        src/LocalMyers_impl.h
+        src/LocalMyersRollBack_impl.h
         # src/LocalMyersRollBackOld.cpp
-        src/MyersAligner.cpp
-        src/ReadAligner.cpp
+        #src/ReadAligner.cpp
         src/ReadData.cpp
         src/ReadFilter.cpp
-        src/ConsensusGraph.cpp
-        include/AlignerTester.h
+        #src/ConsensusGraph.cpp
+        #include/AlignerTester.h
         include/bsc_helper.h
-        include/Compressor.h
-        include/Consensus.h
-        include/Contig.h
-        include/Decompressor.h
+        #include/Compressor.h
+        #include/Consensus.h
+        #include/Contig.h
+        #include/Decompressor.h
         include/Edits.h
+        include/StringAligner.h
         include/LocalMyers.h
         include/LocalMyersRollBack.h
         # include/LocalMyersRollBackOld.h
-        include/MyersAligner.h
         include/ReadAligner.h
         include/ReadData.h
         include/ReadFilter.h
-        include/testAligner.h
-        include/ConsensusGraph.h
+        #include/testAligner.h
+        #include/ConsensusGraph.h
         )
 
 target_include_directories(NanoporeCompressionLib 
-    PUBLIC include
+    PUBLIC include src
     PRIVATE libbsc)
 
 target_compile_options(NanoporeCompressionLib 
     PRIVATE 
     -W -Wall -Wextra)
+
 target_compile_options(NanoporeCompressionLib 
     PRIVATE 
     $<$<CONFIG:Release>:-O3>)
@@ -141,20 +141,20 @@ endif()
 
 ###############################################
 
-add_executable(testAligner src/testAligner.cpp)
-target_link_libraries(testAligner PRIVATE NanoporeCompressionLib profiler)
+#add_executable(testAligner src/testAligner.cpp)
+#target_link_libraries(testAligner PRIVATE NanoporeCompressionLib profiler)
 
-add_executable(testAlignAlgs src/testAlignAlgs.cpp)
-target_link_libraries(testAlignAlgs PRIVATE NanoporeCompressionLib profiler)
+# add_executable(testAlignAlgs src/testAlignAlgs.cpp)
+# target_link_libraries(testAlignAlgs PRIVATE NanoporeCompressionLib profiler)
 
-add_executable(testCompressor src/testCompressor.cpp)
-target_link_libraries(testCompressor PRIVATE NanoporeCompressionLib profiler)
+#add_executable(testCompressor src/testCompressor.cpp)
+#target_link_libraries(testCompressor PRIVATE NanoporeCompressionLib profiler)
 
-add_executable(testContig src/testContigGenerator.cpp)
-target_link_libraries(testContig PRIVATE NanoporeCompressionLib profiler)
+#add_executable(testContig src/testContigGenerator.cpp)
+#target_link_libraries(testContig PRIVATE NanoporeCompressionLib profiler)
 
-add_executable(testDecompressor src/testDecompressor.cpp)
-target_link_libraries(testDecompressor PRIVATE NanoporeCompressionLib profiler)
+#add_executable(testDecompressor src/testDecompressor.cpp)
+#target_link_libraries(testDecompressor PRIVATE NanoporeCompressionLib profiler)
 
 add_executable(testMinHash src/testMinHash.cpp)
 target_link_libraries(testMinHash PRIVATE NanoporeCompressionLib profiler)
@@ -162,6 +162,5 @@ target_link_libraries(testMinHash PRIVATE NanoporeCompressionLib profiler)
 add_executable(testMyers src/testMyers.cpp)
 target_link_libraries(testMyers PRIVATE NanoporeCompressionLib profiler)
 
-
-add_executable(validateResult src/validateResult.cpp)
-target_link_libraries(validateResult PRIVATE NanoporeCompressionLib profiler)
+#add_executable(validateResult src/validateResult.cpp)
+#target_link_libraries(validateResult PRIVATE NanoporeCompressionLib profiler)

@@ -3,7 +3,7 @@
 
 #include "Edits.h"
 #include "LocalMyers.h"
-#include "MyersAligner.h"
+#include "StringAligner.h"
 
 /***
  * This class basically runs the local myers algorithm from left the right to
@@ -16,7 +16,14 @@
  * deletions, and substitutions all have edit distance 1.
  */
 
-class LocalMyersRollBack : public LocalMyers {
+/**
+ * @brief
+ *
+ * @tparam RandomAccessIt Random Access Read Iterator that dereferences to
+ * char.
+ */
+template <typename RandomAccessIt>
+class LocalMyersRollBack : public LocalMyers<RandomAccessIt> {
 public:
     /***
      * The maximum edit distance to search for among the overlapping portions
@@ -25,10 +32,31 @@ public:
 
     const double errorRate = 0.2;
 
-    virtual bool align(const std::string &s1, const std::string &s2,
-                       std::vector<Edit> &editScript, size_t &editDis) override;
-
-    virtual bool align(const std::string &s1, const std::string &s2,
+    /***
+     * Calculates a good edit script from string s1 to string s2 and stores it
+     * in a vector of edits. Here the edit script only transforms the
+     * overlapping portion of s1 to the overlapping portion of s2. The tail and
+     * head that are not aligned are stored as beginOffset and endOffset.
+     * Returns whether the alignment succeeded.
+     * @param Abegin Start of original string
+     * @param Aend End of original string
+     * @param Bbegin Start of target string
+     * @param Bend End of target string
+     * @param offsetGuess An initial guess of beginOffset
+     * @param beginOffset The alignment of the left most ends of the two reads.
+     * Positive means the second read goes after the first, and negative means
+     * the second read goes before the first.
+     * @param endOffset The alignment of the right most ends of the two reads.
+     * Positive means the second read goes after the first, and negative means
+     * the second read goes before the first.
+     * @param editScript stores a vector of edits that will transform the
+     * overlapping portion of the first string into the second.
+     * @param editDis the edit distance obtained by this algorithm
+     * (this edit distance is only of the overlapping portions)s
+     * @return whether alignment succeeded
+     */
+    virtual bool align(RandomAccessIt Abegin, RandomAccessIt Aend,
+                       RandomAccessIt Bbegin, RandomAccessIt Bend,
                        const ssize_t offsetGuess, ssize_t &beginOffset,
                        ssize_t &endOffset, std::vector<Edit> &editScript,
                        size_t &editDis) override;
@@ -36,27 +64,27 @@ public:
     LocalMyersRollBack(const size_t lenA, const size_t lenB,
                        const size_t maxEditDis);
 
+protected:
     /**
      * @brief
      * Performs alignment using an modification of myers algorithm where
      * substitution cost is 1.5. Alignment stops when one of the strings reaches
      * its end.
-     * @tparam RandomAccessIt Random Access Read Iterator that dereferences to
-     * char.
+     * @tparam RIt Random Access Read Iterator that dereferences to
+     * char. This may be the reverse iterator of RandomAccessIt
      * @param Abegin
      * @param Aend
      * @param Bbegin
      * @param Bend
      * @param max
      * @param editScript
-     * @param editDis This will store the Levenshtein distance is used, i.e.,
+     * @param editDis This will store the Levenshtein distance used, i.e.,
      * insertions, deletions, and substitutions all have edit distance 1.
      * @return true
      * @return false
      */
-    template <typename RandomAccessIt>
-    static bool localAlign(RandomAccessIt &Abegin, RandomAccessIt Aend,
-                           RandomAccessIt &Bbegin, RandomAccessIt Bend,
+    template <typename RIt>
+    static bool localAlign(RIt &Abegin, RIt Aend, RIt &Bbegin, RIt Bend,
                            const size_t max, std::vector<Edit> &editScript,
                            size_t &editDis);
 
@@ -64,8 +92,8 @@ private:
     /**
      * @brief Performs global alignment algorithm once
      *
-     * @tparam RandomAccessIt Random Access Read Iterator that dereferences to
-     * char.
+     * @tparam RIt Random Access Read Iterator that dereferences to
+     * char. This may be the reverse iterator of RandomAccessIt
      * @param Abegin
      * @param Aend
      * @param Bbegin
@@ -78,9 +106,8 @@ private:
      * @return true
      * @return false
      */
-    template <typename RandomAccessIt>
-    bool alignOnce(RandomAccessIt Abegin, RandomAccessIt Aend,
-                   RandomAccessIt Bbegin, RandomAccessIt Bend,
+    template <typename RIt>
+    bool alignOnce(RIt Abegin, RIt Aend, RIt Bbegin, RIt Bend,
                    const ssize_t offsetGuess, ssize_t &beginOffset,
                    ssize_t &endOffset, std::vector<Edit> &editScript,
                    size_t &editDis);

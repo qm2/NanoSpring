@@ -1,31 +1,36 @@
+#ifndef DF93CB52_1F2B_4A32_9D3B_FEA65A4B8F96
+#define DF93CB52_1F2B_4A32_9D3B_FEA65A4B8F96
 #include "LocalMyers.h"
 #include <algorithm>
 #include <iostream>
 #include <map>
 
-LocalMyers::LocalMyers(const size_t len)
-    : StringAligner("LocalMyers Len " + std::to_string(len)), lenA(len),
-      lenB(len) {}
+template <typename RandomAccessIt>
+LocalMyers<RandomAccessIt>::LocalMyers(const size_t len)
+    : StringAligner<RandomAccessIt>("LocalMyers Len " + std::to_string(len)),
+      lenA(len), lenB(len) {}
 
-LocalMyers::LocalMyers(const size_t lenA, const size_t lenB)
-    : StringAligner("LocalMyers Lens " + std::to_string(lenA) + " and " +
-                    std::to_string(lenB)),
+template <typename RandomAccessIt>
+LocalMyers<RandomAccessIt>::LocalMyers(const size_t lenA, const size_t lenB)
+    : StringAligner<RandomAccessIt>("LocalMyers Lens " + std::to_string(lenA) +
+                                    " and " + std::to_string(lenB)),
       lenA(lenA), lenB(lenB) {}
 
-bool LocalMyers::align(const std::string &s1, const std::string &s2,
-                       std::vector<Edit> &editScript, size_t &editDis) {
-    const char *Abegin = s1.c_str();
-    const char *const Aend = Abegin + s1.length();
-    const char *Bbegin = s2.c_str();
-    const char *const Bend = Bbegin + s2.length();
+template <typename RandomAccessIt>
+bool LocalMyers<RandomAccessIt>::align(
+    RandomAccessIt s1Begin, RandomAccessIt s1End, RandomAccessIt s2Begin,
+    RandomAccessIt s2End, const ssize_t offsetGuess, ssize_t &beginOffset,
+    ssize_t &endOffset, std::vector<Edit> &editScript, size_t &editDis) {
+    RandomAccessIt Abegin = s1Begin;
+    RandomAccessIt Aend = s1End;
+    RandomAccessIt Bbegin = s2Begin;
+    RandomAccessIt Bend = s2End;
     editDis = 0;
     editScript.clear();
     while (Abegin < Aend && Bbegin < Bend) {
         const size_t max = std::min(lenA, lenB) * 2;
-        const char *const ALocalEnd =
-            Abegin + lenA < Aend ? Abegin + lenA : Aend;
-        const char *const BLocalEnd =
-            Bbegin + lenB < Bend ? Bbegin + lenB : Bend;
+        RandomAccessIt ALocalEnd = Aend - Abegin > lenA ? Abegin + lenA : Aend;
+        RandomAccessIt BLocalEnd = Bend - Bbegin > lenB ? Bbegin + lenB : Bend;
         std::vector<Edit> localEditScript;
         size_t localEditDis;
         bool success = localAlign(Abegin, ALocalEnd, Bbegin, BLocalEnd, max,
@@ -55,10 +60,11 @@ bool LocalMyers::align(const std::string &s1, const std::string &s2,
     return true;
 }
 
-bool LocalMyers::localAlign(const char *&Abegin, const char *const Aend,
-                            const char *&Bbegin, const char *const Bend,
-                            const size_t max, std::vector<Edit> &editScript,
-                            size_t &editDis) {
+template <typename RandomAccessIt>
+bool LocalMyers<RandomAccessIt>::localAlign(
+    RandomAccessIt &Abegin, RandomAccessIt Aend, RandomAccessIt &Bbegin,
+    RandomAccessIt Bend, const size_t max, std::vector<Edit> &editScript,
+    size_t &editDis) {
     unsigned const int lenA = Aend - Abegin;
     unsigned const int lenB = Bend - Bbegin;
     bool foundEdit = false;
@@ -167,6 +173,8 @@ bool LocalMyers::localAlign(const char *&Abegin, const char *const Aend,
     return true;
 }
 
-LocalMyers::LocalMyers(const std::string &name, const size_t lenA,
-                       const size_t lenB)
-    : StringAligner(name), lenA(lenA), lenB(lenB) {}
+template <typename RandomAccessIt>
+LocalMyers<RandomAccessIt>::LocalMyers(const std::string &name,
+                                       const size_t lenA, const size_t lenB)
+    : StringAligner<RandomAccessIt>(name), lenA(lenA), lenB(lenB) {}
+#endif /* DF93CB52_1F2B_4A32_9D3B_FEA65A4B8F96 */

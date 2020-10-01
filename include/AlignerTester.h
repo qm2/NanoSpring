@@ -1,10 +1,10 @@
 #ifndef Z_ALIGNERTESTER_H
 #define Z_ALIGNERTESTER_H
 
-#include <cstddef>
-#include <vector>
-#include <string>
 #include "Edits.h"
+#include <cstddef>
+#include <string>
+#include <vector>
 
 class AlignerTester {
 public:
@@ -17,10 +17,8 @@ public:
      * @param pDel deletion error rate
      * @param pS substitution error rate
      */
-    void generateData(size_t readLen, ssize_t offset, size_t num, double pIns = 0.03,
-                      double pDel = 0.03,
-                      double pS = 0.04
-    );
+    void generateData(size_t readLen, ssize_t offset, size_t num,
+                      double pIns = 0.03, double pDel = 0.03, double pS = 0.04);
 
     /***
      * Runs the algorithm contained in aligner on the data generatad
@@ -29,8 +27,8 @@ public:
      * @param successRate Will store probability that the aligner succeeds
      * @param avgEditDis the average edit distance returned by the aligner
      */
-    void profile(StringAligner *aligner, double &duration, double &successRate,
-                 double &avgEditDis);
+    void profile(StringAligner<const char *> *aligner, double &duration,
+                 double &successRate, double &avgEditDis);
 
     /***
      * Runs the algorithm contained in aligner on the data generatad
@@ -41,9 +39,9 @@ public:
      * @param avgEndOffset the average endOffset
      * @param avgEditDis the average edit distance returned by the aligner
      */
-    void profile(StringAligner *aligner, double &duration, double &successRate,
-                 double &avgBeginOffset, double &avgEndOffset,
-                 double &avgEditDis);
+    void profile(StringAligner<const char *> *aligner, double &duration,
+                 double &successRate, double &avgBeginOffset,
+                 double &avgEndOffset, double &avgEditDis);
 
     /***
      * Validates on the generated data that aligner->align returns true
@@ -51,7 +49,7 @@ public:
      * @param aligner
      * @return
      */
-    bool validate(StringAligner *aligner);
+    bool validate(StringAligner<const char *> *aligner);
 
     /***
      * Applies editScript to origString and stores in result
@@ -61,7 +59,8 @@ public:
      * @return
      */
     static void applyEditsToString(const std::string &origString,
-                                   const std::vector<Edit> &editScript, std::string &result);
+                                   const std::vector<Edit> &editScript,
+                                   std::string &result);
 
     /***
      * Applies editScript to origString and stores in result
@@ -71,12 +70,11 @@ public:
      * @return
      */
     static void applyEditsToString(const std::string &origString,
-                                   const std::string &editScript, std::string &result);
+                                   const std::string &editScript,
+                                   std::string &result);
 
 private:
     std::vector<std::string> readsA, readsB;
-
-
 };
 
-#endif //Z_ALIGNERTESTER_H
+#endif // Z_ALIGNERTESTER_H
