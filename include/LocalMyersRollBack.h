@@ -22,8 +22,8 @@
  * @tparam RandomAccessIt Random Access Read Iterator that dereferences to
  * char.
  */
-template <typename RandomAccessIt>
-class LocalMyersRollBack : public LocalMyers<RandomAccessIt> {
+template <typename RandomAccessItA, typename RandomAccessItB = RandomAccessItA>
+class LocalMyersRollBack : public LocalMyers<RandomAccessItA, RandomAccessItB> {
 public:
     /***
      * The maximum edit distance to search for among the overlapping portions
@@ -55,8 +55,8 @@ public:
      * (this edit distance is only of the overlapping portions)s
      * @return whether alignment succeeded
      */
-    virtual bool align(RandomAccessIt Abegin, RandomAccessIt Aend,
-                       RandomAccessIt Bbegin, RandomAccessIt Bend,
+    virtual bool align(RandomAccessItA Abegin, RandomAccessItA Aend,
+                       RandomAccessItB Bbegin, RandomAccessItB Bend,
                        const ssize_t offsetGuess, ssize_t &beginOffset,
                        ssize_t &endOffset, std::vector<Edit> &editScript,
                        size_t &editDis) override;
@@ -83,8 +83,8 @@ protected:
      * @return true
      * @return false
      */
-    template <typename RIt>
-    static bool localAlign(RIt &Abegin, RIt Aend, RIt &Bbegin, RIt Bend,
+    template <typename RItA, typename RItB>
+    static bool localAlign(RItA &Abegin, RItA Aend, RItB &Bbegin, RItB Bend,
                            const size_t max, std::vector<Edit> &editScript,
                            size_t &editDis);
 

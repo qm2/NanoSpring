@@ -5,34 +5,37 @@
 #include <iostream>
 #include <map>
 
-template <typename RandomAccessIt>
-LocalMyers<RandomAccessIt>::LocalMyers(const size_t len)
-    : StringAligner<RandomAccessIt>("LocalMyers Len " + std::to_string(len)),
+template <typename RandomAccessItA, typename RandomAccessItB>
+LocalMyers<RandomAccessItA, RandomAccessItB>::LocalMyers(const size_t len)
+    : StringAligner<RandomAccessItA, RandomAccessItB>("LocalMyers Len " +
+                                                      std::to_string(len)),
       lenA(len), lenB(len) {}
 
-template <typename RandomAccessIt>
-LocalMyers<RandomAccessIt>::LocalMyers(const size_t lenA, const size_t lenB)
-    : StringAligner<RandomAccessIt>("LocalMyers Lens " + std::to_string(lenA) +
-                                    " and " + std::to_string(lenB)),
+template <typename RandomAccessItA, typename RandomAccessItB>
+LocalMyers<RandomAccessItA, RandomAccessItB>::LocalMyers(const size_t lenA,
+                                                         const size_t lenB)
+    : StringAligner<RandomAccessItA, RandomAccessItB>(
+          "LocalMyers Lens " + std::to_string(lenA) + " and " +
+          std::to_string(lenB)),
       lenA(lenA), lenB(lenB) {}
 
-template <typename RandomAccessIt>
-bool LocalMyers<RandomAccessIt>::align(
-    RandomAccessIt s1Begin, RandomAccessIt s1End, RandomAccessIt s2Begin,
-    RandomAccessIt s2End, const ssize_t offsetGuess, ssize_t &beginOffset,
+template <typename RandomAccessItA, typename RandomAccessItB>
+bool LocalMyers<RandomAccessItA, RandomAccessItB>::align(
+    RandomAccessItA s1Begin, RandomAccessItA s1End, RandomAccessItB s2Begin,
+    RandomAccessItB s2End, const ssize_t offsetGuess, ssize_t &beginOffset,
     ssize_t &endOffset, std::vector<Edit> &editScript, size_t &editDis) {
     beginOffset = 0;
     endOffset = 0;
-    RandomAccessIt Abegin = s1Begin;
-    RandomAccessIt Aend = s1End;
-    RandomAccessIt Bbegin = s2Begin;
-    RandomAccessIt Bend = s2End;
+    RandomAccessItA Abegin = s1Begin;
+    RandomAccessItA Aend = s1End;
+    RandomAccessItB Bbegin = s2Begin;
+    RandomAccessItB Bend = s2End;
     editDis = 0;
     editScript.clear();
     while (Abegin < Aend && Bbegin < Bend) {
         const size_t max = std::min(lenA, lenB) * 2;
-        RandomAccessIt ALocalEnd = Aend - Abegin > lenA ? Abegin + lenA : Aend;
-        RandomAccessIt BLocalEnd = Bend - Bbegin > lenB ? Bbegin + lenB : Bend;
+        RandomAccessItA ALocalEnd = Aend - Abegin > lenA ? Abegin + lenA : Aend;
+        RandomAccessItB BLocalEnd = Bend - Bbegin > lenB ? Bbegin + lenB : Bend;
         std::vector<Edit> localEditScript;
         size_t localEditDis;
         bool success = localAlign(Abegin, ALocalEnd, Bbegin, BLocalEnd, max,
@@ -62,10 +65,10 @@ bool LocalMyers<RandomAccessIt>::align(
     return true;
 }
 
-template <typename RandomAccessIt>
-bool LocalMyers<RandomAccessIt>::localAlign(
-    RandomAccessIt &Abegin, RandomAccessIt Aend, RandomAccessIt &Bbegin,
-    RandomAccessIt Bend, const size_t max, std::vector<Edit> &editScript,
+template <typename RandomAccessItA, typename RandomAccessItB>
+bool LocalMyers<RandomAccessItA, RandomAccessItB>::localAlign(
+    RandomAccessItA &Abegin, RandomAccessItA Aend, RandomAccessItB &Bbegin,
+    RandomAccessItB Bend, const size_t max, std::vector<Edit> &editScript,
     size_t &editDis) {
     unsigned const int lenA = Aend - Abegin;
     unsigned const int lenB = Bend - Bbegin;
@@ -175,8 +178,9 @@ bool LocalMyers<RandomAccessIt>::localAlign(
     return true;
 }
 
-template <typename RandomAccessIt>
-LocalMyers<RandomAccessIt>::LocalMyers(const std::string &name,
-                                       const size_t lenA, const size_t lenB)
-    : StringAligner<RandomAccessIt>(name), lenA(lenA), lenB(lenB) {}
+template <typename RandomAccessItA, typename RandomAccessItB>
+LocalMyers<RandomAccessItA, RandomAccessItB>::LocalMyers(
+    const std::string &name, const size_t lenA, const size_t lenB)
+    : StringAligner<RandomAccessItA, RandomAccessItB>(name), lenA(lenA),
+      lenB(lenB) {}
 #endif /* DF93CB52_1F2B_4A32_9D3B_FEA65A4B8F96 */

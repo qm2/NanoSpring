@@ -9,10 +9,10 @@
 #include <iterator>
 #include <map>
 
-template <typename RandomAccessIt>
-template <typename RIt>
-bool LocalMyersRollBack<RandomAccessIt>::localAlign(
-    RIt &Abegin, RIt Aend, RIt &Bbegin, RIt Bend, const size_t max,
+template <typename RandomAccessItA, typename RandomAccessItB>
+template <typename RItA, typename RItB>
+bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::localAlign(
+    RItA &Abegin, RItA Aend, RItB &Bbegin, RItB Bend, const size_t max,
     std::vector<Edit> &editScript, size_t &editDis) {
     assert(Abegin < Aend);
     assert(Bbegin < Bend);
@@ -264,19 +264,18 @@ bool LocalMyersRollBack<RandomAccessIt>::localAlign(
     return true;
 }
 
-template <typename RandomAccessIt>
-LocalMyersRollBack<RandomAccessIt>::LocalMyersRollBack(const size_t lenA,
-                                                       const size_t lenB,
-                                                       const size_t maxEditDis)
-    : LocalMyers<RandomAccessIt>("LMRB " + std::to_string(lenA) + " " +
-                                     std::to_string(lenB) + " MaxEditDis " +
-                                     std::to_string(maxEditDis),
-                                 lenA, lenB),
+template <typename RandomAccessItA, typename RandomAccessItB>
+LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::LocalMyersRollBack(
+    const size_t lenA, const size_t lenB, const size_t maxEditDis)
+    : LocalMyers<RandomAccessItA, RandomAccessItB>(
+          "LMRB " + std::to_string(lenA) + " " + std::to_string(lenB) +
+              " MaxEditDis " + std::to_string(maxEditDis),
+          lenA, lenB),
       maxEditDis(maxEditDis) {}
 
-template <typename RandomAccessIt>
+template <typename RandomAccessItA, typename RandomAccessItB>
 template <typename RIt>
-bool LocalMyersRollBack<RandomAccessIt>::alignOnce(
+bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::alignOnce(
     RIt Abegin, RIt Aend, RIt Bbegin, RIt Bend, const ssize_t offsetGuess,
     ssize_t &beginOffset, ssize_t &endOffset, std::vector<Edit> &editScript,
     size_t &editDis) {
@@ -325,15 +324,15 @@ bool LocalMyersRollBack<RandomAccessIt>::alignOnce(
     return true;
 }
 
-template <typename RandomAccessIt>
-bool LocalMyersRollBack<RandomAccessIt>::align(
-    RandomAccessIt s1Begin, RandomAccessIt s1End, RandomAccessIt s2Begin,
-    RandomAccessIt s2End, const ssize_t offsetGuess, ssize_t &beginOffset,
+template <typename RandomAccessItA, typename RandomAccessItB>
+bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::align(
+    RandomAccessItA s1Begin, RandomAccessItA s1End, RandomAccessItB s2Begin,
+    RandomAccessItB s2End, const ssize_t offsetGuess, ssize_t &beginOffset,
     ssize_t &endOffset, std::vector<Edit> &editScript, size_t &editDis) {
-    RandomAccessIt Abegin1 = s1Begin;
-    RandomAccessIt Aend = s1End;
-    RandomAccessIt Bbegin1 = s2Begin;
-    RandomAccessIt Bend = s2End;
+    RandomAccessItA Abegin1 = s1Begin;
+    RandomAccessItA Aend = s1End;
+    RandomAccessItB Bbegin1 = s2Begin;
+    RandomAccessItB Bend = s2End;
     //{
     //    std::cout << s1End - s1Begin;
     //    for (RandomAccessIt it = s1Begin; it < s1End; ++it)
@@ -352,19 +351,19 @@ bool LocalMyersRollBack<RandomAccessIt>::align(
         if (Bbegin1 > Bend)
             return false;
     }
-    RandomAccessIt Abegin2 = Abegin1;
-    RandomAccessIt Bbegin2 = Bbegin1;
+    RandomAccessItA Abegin2 = Abegin1;
+    RandomAccessItB Bbegin2 = Bbegin1;
     bool dir1Success = true;
     bool dir2Success = true;
     const size_t max = std::min(this->lenA, this->lenB) * 2;
     auto const advance = [max,
-                          this](RandomAccessIt &Abegin, RandomAccessIt Aend,
-                                RandomAccessIt &Bbegin, RandomAccessIt Bend,
+                          this](RandomAccessItA &Abegin, RandomAccessItA Aend,
+                                RandomAccessItB &Bbegin, RandomAccessItB Bend,
                                 size_t lenAString, size_t lenBString,
                                 bool &dirSuccess, size_t &editDis) {
-        RandomAccessIt ALocalEnd =
+        RandomAccessItA ALocalEnd =
             Aend - Abegin > lenAString ? Abegin + lenAString : Aend;
-        RandomAccessIt BLocalEnd =
+        RandomAccessItB BLocalEnd =
             Bend - Bbegin > lenBString ? Bbegin + lenBString : Bend;
         std::vector<Edit> localEditScript;
         size_t localEditDis;
@@ -429,10 +428,10 @@ bool LocalMyersRollBack<RandomAccessIt>::align(
     ssize_t backwardPassBeginOffset, backwardPassEndOffset;
 
     bool secondPassSuccess = alignOnce(
-        std::reverse_iterator<RandomAccessIt>(s1End),
-        std::reverse_iterator<RandomAccessIt>(s1Begin),
-        std::reverse_iterator<RandomAccessIt>(s2End),
-        std::reverse_iterator<RandomAccessIt>(s2Begin), -forwardPassEndOffset,
+        std::reverse_iterator<RandomAccessItA>(s1End),
+        std::reverse_iterator<RandomAccessItA>(s1Begin),
+        std::reverse_iterator<RandomAccessItB>(s2End),
+        std::reverse_iterator<RandomAccessItB>(s2Begin), -forwardPassEndOffset,
         backwardPassBeginOffset, backwardPassEndOffset, editScript, editDis);
     if (secondPassSuccess) {
         beginOffset = -backwardPassEndOffset;

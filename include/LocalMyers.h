@@ -9,8 +9,8 @@
  * Run myers on a0 and b0 until at least one of them is fully aligned.
  * Advance a0 and b0 to new substrings of length len and repeat.
  */
-template <typename RandomAccessIt>
-class LocalMyers : public StringAligner<RandomAccessIt> {
+template <typename RandomAccessItA, typename RandomAccessItB = RandomAccessItA>
+class LocalMyers : public StringAligner<RandomAccessItA, RandomAccessItB> {
 public:
     /***
      * The length of substrings to run myers algorithm on
@@ -22,8 +22,8 @@ public:
 
     LocalMyers(const size_t lenA, const size_t lenB);
 
-    virtual bool align(RandomAccessIt Abegin, RandomAccessIt Aend,
-                       RandomAccessIt Bbegin, RandomAccessIt Bend,
+    virtual bool align(RandomAccessItA Abegin, RandomAccessItA Aend,
+                       RandomAccessItB Bbegin, RandomAccessItB Bend,
                        const ssize_t offsetGuess, ssize_t &beginOffset,
                        ssize_t &endOffset, std::vector<Edit> &editScript,
                        size_t &editDis) override;
@@ -44,8 +44,8 @@ protected:
      * @param editDis The edit distance
      * @return Whether alignment succeeded within max steps
      */
-    static bool localAlign(RandomAccessIt &Abegin, RandomAccessIt Aend,
-                           RandomAccessIt &Bbegin, RandomAccessIt Bend,
+    static bool localAlign(RandomAccessItA &Abegin, RandomAccessItA Aend,
+                           RandomAccessItB &Bbegin, RandomAccessItB Bend,
                            const size_t max, std::vector<Edit> &editScript,
                            size_t &editDis);
 

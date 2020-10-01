@@ -80,7 +80,7 @@ add_library(NanoporeCompressionLib
         src/LocalMyers_impl.h
         src/LocalMyersRollBack_impl.h
         # src/LocalMyersRollBackOld.cpp
-        #src/ReadAligner.cpp
+        src/ReadAligner.cpp
         src/ReadData.cpp
         src/ReadFilter.cpp
         #src/ConsensusGraph.cpp
@@ -98,7 +98,7 @@ add_library(NanoporeCompressionLib
         include/ReadAligner.h
         include/ReadData.h
         include/ReadFilter.h
-        #include/testAligner.h
+        include/testAligner.h
         #include/ConsensusGraph.h
         )
 

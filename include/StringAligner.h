@@ -9,7 +9,8 @@
  * @tparam RandomAccessIt Random Access Read Iterator that dereferences to
  * char.
  */
-template <typename RandomAccessIt> class StringAligner {
+template <typename RandomAccessItA, typename RandomAccessItB = RandomAccessItA>
+class StringAligner {
 public:
     /***
      * Name of the alignment algorithm
@@ -40,8 +41,8 @@ public:
      * @return whether alignment succeeded
      */
     __attribute__((warn_unused_result)) virtual bool
-    align(RandomAccessIt Abegin, RandomAccessIt Aend, RandomAccessIt Bbegin,
-          RandomAccessIt Bend, const ssize_t offsetGuess, ssize_t &beginOffset,
+    align(RandomAccessItA Abegin, RandomAccessItA Aend, RandomAccessItB Bbegin,
+          RandomAccessItB Bend, const ssize_t offsetGuess, ssize_t &beginOffset,
           ssize_t &endOffset, std::vector<Edit> &editScript,
           size_t &editDis) = 0;
 
