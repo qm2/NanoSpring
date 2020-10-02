@@ -250,9 +250,9 @@ public:
      */
     void printStatus();
 
-    size_t getNumReads();
+    size_t getNumReads()
 
-    ~ConsensusGraph();
+        ~ConsensusGraph();
 
 private:
     Node *startingNode;
@@ -293,18 +293,45 @@ private:
     void clearHasReached(Node *n);
 
     /**
+     * @brief
      * Remove possible cycles from mainPath. Should be called internally
      * every time the mainPath is updated. Cycles are avoided by ensuring
      * that every side path only has one edge in from the main path.
      */
     void removeCycles();
 
+    /**
+     * @brief Does a depth first search of all edges on side paths that are
+     * reachable from e, and guarantees that the sink of any such edge only has
+     * one edge going in.
+     * @details
+     * Post condition: for all Edge edge such that
+     *
+     * - edge is on side paths
+     * - edge is reachable from e (including the case where edge == e)
+     *
+     * then number of edges going into edge <= 1.
+     *
+     * All edges and nodes NOT reachable from e via sidepaths are kept constant.
+     *
+     * @param e
+     */
     void walkAndPrune(Edge *e);
 
     /**
-     * Move everything below e to newPre->e (everything means all
-     * the reads in reads2Split until the mainPath or a leaf node is
-     * reached)
+     * @brief
+     * Move everything below e to newPre->newNode.
+     * @details
+     * "Everything" means all the reads in reads2Split until the mainPath or a
+     * leaf node is reached.
+     *
+     * - Nodes and Edges that will be deleted: \n
+     *  e will be erased if it only has reads in reads2Split; e->sink will be
+     * erased if it becomes disconnected from the graph. The same applies to
+     * nodes and edges reachable from e via sidepaths.
+     * - Nodes and Edges that will be created: \n
+     *  A duplicate of "everything" below e in reads2Split will be created under
+     * newPre. In particular, newPre will have a new edge going out.
      */
     void splitPath(Node *newPre, Edge *e, std::set<size_t> const &reads2Split);
 
