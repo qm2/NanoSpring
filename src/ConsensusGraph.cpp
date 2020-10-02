@@ -614,6 +614,9 @@ void ConsensusGraph::walkAndPrune(Edge *e) {
     for (auto subEdge = sink->edgesOut.begin(); subEdge != end;) {
         Edge *edge2WorkOn = subEdge->second;
         subEdge++;
+        // Here walkAndPrune will only change sink->edgesOut by 1. deleting
+        // edge2WorkOn and 2. adding new edges that we don't need to prune. So
+        // copying sink->edgesOut should work.
         walkAndPrune(edge2WorkOn);
     }
 }
@@ -654,6 +657,8 @@ void ConsensusGraph::splitPath(Node *newPre, Edge *e,
     for (auto subEdge = oldCur->edgesOut.begin(); subEdge != end;) {
         Edge *edge2WorkOn = subEdge->second;
         subEdge++;
+        // Here, splitPath will only affect oldCur->edgesOut by deleting
+        // edge2WorkOn. So again just copying everything should work.
         splitPath(newCur, edge2WorkOn, readsInPath2Split);
     }
     if (oldCur->edgesIn.empty() && oldCur->edgesOut.empty())

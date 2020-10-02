@@ -310,10 +310,13 @@ private:
      * - edge is on side paths
      * - edge is reachable from e (including the case where edge == e)
      *
-     * then number of edges going into edge <= 1.
+     * the number of edges going into edge will be <= 1.
      *
      * All edges and nodes NOT reachable from e via sidepaths are kept constant.
      *
+     * In particular, e->source might receive new edges going out, and the old
+     * might be deleted. But the newly created edges are guaranteed to need no
+     * further pruning.
      * @param e
      */
     void walkAndPrune(Edge *e);
@@ -331,7 +334,8 @@ private:
      * nodes and edges reachable from e via sidepaths.
      * - Nodes and Edges that will be created: \n
      *  A duplicate of "everything" below e in reads2Split will be created under
-     * newPre. In particular, newPre will have a new edge going out.
+     * newPre. In particular, newPre will have a new edge going out. The newly
+     * created nodes are guaranteed to have at most one Edge going in.
      */
     void splitPath(Node *newPre, Edge *e, std::set<size_t> const &reads2Split);
 
