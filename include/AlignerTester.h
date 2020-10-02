@@ -9,7 +9,7 @@
 
 class AlignerTester {
 public:
-    /***
+    /**
      * Create random reads.
      * @param readLen read length
      * @param offset offset between the start of the two reads
@@ -21,7 +21,7 @@ public:
     void generateData(size_t readLen, ssize_t offset, size_t num,
                       double pIns = 0.03, double pDel = 0.03, double pS = 0.04);
 
-    /***
+    /**
      * Runs the algorithm contained in aligner on the data generatad
      * @param aligner
      * @param duration Will store the average time taken in seconds
@@ -31,7 +31,7 @@ public:
     void profile(StringAligner<const char *> *aligner, double &duration,
                  double &successRate, double &avgEditDis);
 
-    /***
+    /**
      * Runs the algorithm contained in aligner on the data generatad
      * @param aligner
      * @param duration Will store the average time taken in seconds
@@ -44,7 +44,7 @@ public:
                  double &successRate, double &avgBeginOffset,
                  double &avgEndOffset, double &avgEditDis);
 
-    /***
+    /**
      * Validates on the generated data that aligner->align returns true
      * and that the editScript is correct
      * @param aligner
@@ -52,7 +52,7 @@ public:
      */
     bool validate(StringAligner<const char *> *aligner);
 
-    /***
+    /**
      * Applies editScript to origString and stores in result
      * @param origString The original string to transform
      * @param editScript The edit script to apply
@@ -63,7 +63,7 @@ public:
                                    const std::vector<Edit> &editScript,
                                    std::string &result);
 
-    /***
+    /**
      * Applies editScript to origString and stores in result
      * @param origString The original string to transform
      * @param editScript The edit script to apply

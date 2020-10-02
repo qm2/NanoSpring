@@ -4,7 +4,7 @@
 #include "Edits.h"
 #include "StringAligner.h"
 
-/***
+/**
  * Given strings A and B, let a0 and b0 be initial substrings with length len.
  * Run myers on a0 and b0 until at least one of them is fully aligned.
  * Advance a0 and b0 to new substrings of length len and repeat.
@@ -12,7 +12,7 @@
 template <typename RandomAccessItA, typename RandomAccessItB = RandomAccessItA>
 class LocalMyers : public StringAligner<RandomAccessItA, RandomAccessItB> {
 public:
-    /***
+    /**
      * The length of substrings to run myers algorithm on
      */
     const size_t lenA;
@@ -29,7 +29,7 @@ public:
                        size_t &editDis) override;
 
 protected:
-    /***
+    /**
      * Performs alignment via myers algorithm on two strings and returns when
      * one of them is fully aligned
      * @param Abegin The start of the first string. Will be updated to reflect

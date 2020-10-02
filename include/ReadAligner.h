@@ -7,7 +7,7 @@
 
 class ReadAligner {
 public:
-    /***
+    /**
      * Interface for roughly aligning two reads.
      * @param r1 First read to align
      * @param r2 Second read to align
@@ -24,7 +24,7 @@ public:
     const size_t k;
     const size_t kMerNumTh;
 
-    /***
+    /**
      * Returns true if the number of matching k-mers is greater than kMerNumTh.
      *
      * On simulate data, for overlaps of size 2000, error rate = 10%, k = 21 and

@@ -5,7 +5,7 @@
 #include "LocalMyers.h"
 #include "StringAligner.h"
 
-/***
+/**
  * This class basically runs the local myers algorithm from left the right to
  * obtain a good alignment at the right most end, and then uses that alignment
  * to run the local myers algorithm from right to left. In internal
@@ -25,14 +25,14 @@
 template <typename RandomAccessItA, typename RandomAccessItB = RandomAccessItA>
 class LocalMyersRollBack : public LocalMyers<RandomAccessItA, RandomAccessItB> {
 public:
-    /***
+    /**
      * The maximum edit distance to search for among the overlapping portions
      */
     const size_t maxEditDis;
 
     const double errorRate = 0.2;
 
-    /***
+    /**
      * Calculates a good edit script from string s1 to string s2 and stores it
      * in a vector of edits. Here the edit script only transforms the
      * overlapping portion of s1 to the overlapping portion of s2. The tail and

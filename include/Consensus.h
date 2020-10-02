@@ -15,7 +15,7 @@ public:
 
     ReadFilter *rF;
 
-    /***
+    /**
      * This is the read aligner used to align the reads as they are being added
      * to the Contig. This is only a rough aligner
      */

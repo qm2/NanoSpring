@@ -11,7 +11,7 @@
 // We use the indices of the reads to represent them
 typedef size_t read_t;
 
-/***
+/**
  * A contig is just an ordered set of reads along with their positions
  */
 class Contig {
@@ -36,7 +36,7 @@ public:
 private:
     ReadData *rD;
 
-    /***
+    /**
      * This is the read aligner used to align the reads as they are being added
      * to the Contig
      */
@@ -54,7 +54,7 @@ private:
 
     bool addRelatedReads(const std::pair<long, read_t> r);
 
-    /***
+    /**
      * Merges the second contig into the first one
      * @param c1
      * @param c2

@@ -108,7 +108,7 @@ public:
 
     ~MinHashReadFilter() override;
 
-    /***
+    /**
      * Turns a k-mer in string format to an int
      * @param s k-mer
      * @return int representing k-mer

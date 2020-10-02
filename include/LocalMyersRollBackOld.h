@@ -5,7 +5,7 @@
 #include "LocalMyers.h"
 #include "MyersAligner.h"
 
-/***
+/**
  * This class basically runs the local myers algorithm from left the right to
  * obtain a good alignment at the right most end, and then uses that alignment
  * to run the local myers algorithm from right to left. The old version that
@@ -13,7 +13,7 @@
  */
 class LocalMyersRollBackOld : public LocalMyers {
 public:
-    /***
+    /**
      * The maximum edit distance to search for among the overlapping portions
      */
     const size_t maxEditDis;

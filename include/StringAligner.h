@@ -12,12 +12,13 @@
 template <typename RandomAccessItA, typename RandomAccessItB = RandomAccessItA>
 class StringAligner {
 public:
-    /***
+    /**
      * Name of the alignment algorithm
      */
     const std::string name;
 
-    /***
+    /**
+     * @brief
      * Calculates a good edit script from string s1 to string s2 and stores it
      * in a vector of edits. Here the edit script only transforms the
      * overlapping portion of s1 to the overlapping portion of s2. The tail and

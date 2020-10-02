@@ -7,7 +7,7 @@
 
 typedef enum { SAME, INSERT, DELETE, SUBSTITUTION } EDIT_TYPE;
 
-/***
+/**
  * Class denoting a single edit. editType is either SAME (no change), or INSERT,
  * or DELETE. If editType is SAME, we use the num field in editInfo to denote
  * the number of consecutive characters left unchanged. If editType is INSERT,
@@ -28,7 +28,7 @@ public:
 
     friend std::ostream &operator<<(std::ostream &out, const Edit &o);
 
-    /***
+    /**
      * Changes adjacent insertions and deletions to substitutions. The
      * oldEditScript can only have insertions and deletions. It can't have
      * substitutions
@@ -38,7 +38,7 @@ public:
                                      std::vector<Edit> &newEditScript);
 };
 
-/***
+/**
  * An edit path in the myers algorithm consists of a starting point (from
  * another furthest reaching path), and a horizontal or vertical move to the mid
  * point, and finally a snake (all diagonal moves) to the end point.
