@@ -12,8 +12,8 @@
 template <typename RandomAccessItA, typename RandomAccessItB>
 template <typename RItA, typename RItB>
 bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::localAlign(
-    RItA &Abegin, RItA &Aend, RItB &Bbegin, RItB &Bend, const size_t max,
-    std::vector<Edit> &editScript, size_t &editDis, bool forward) {
+    RItA &Abegin, RItA Aend, RItB &Bbegin, RItB Bend, const size_t max,
+    std::vector<Edit> &editScript, size_t &editDis) {
     assert(Abegin < Aend);
     assert(Bbegin < Bend);
     unsigned const int lenAString = Aend - Abegin;
@@ -37,9 +37,9 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::localAlign(
 
     int Xreached = 0;
     int Yreached = 0;
-    auto findEdit = [lenAString, lenBString, Abegin, Bbegin, Aend, Bend, max,
-                     forward, &Xreached, &Yreached, &editInfo, &editDis,
-                     &foundEdit]() {
+    auto findEdit = [lenAString, lenBString, Abegin, Bbegin,
+                     /*Aend, Bend, forward,*/ max, &Xreached, &Yreached,
+                     &editInfo, &editDis, &foundEdit]() {
         const size_t VSize = max + 1;
         // std::cout << "VSize " << VSize << std::endl;
         int VTemp[VSize * 4];
@@ -50,7 +50,7 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::localAlign(
                 V[i] = cur;
         }
         auto findSnakeAndUpdate =
-            [lenAString, lenBString, V, Abegin, Bbegin, Aend, Bend, forward,
+            [lenAString, lenBString, V, Abegin, Bbegin, /*Aend, Bend, forward,*/
              &Xreached, &Yreached, &editInfo,
              &foundEdit](const int xStart, const int yStart, const int xMid,
                          const int yMid, const int d, const int k) {
@@ -60,8 +60,9 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::localAlign(
                 // we go along the diagonal until we fail
                 size_t snakeLen = 0;
                 while (xEnd < (int)lenAString && yEnd < (int)lenBString &&
-                       (forward ? Abegin[xEnd] == Bbegin[yEnd]
-                                : Aend[-xEnd - 1] == Bend[-yEnd - 1])) {
+                Abegin[xEnd ] == Bbegin[yEnd]
+                       /*(forward ? Abegin[xEnd] == Bbegin[yEnd]
+                                : Aend[-xEnd - 1] == Bend[-yEnd - 1])*/) {
                     ++xEnd;
                     ++yEnd;
                     ++snakeLen;
@@ -241,19 +242,23 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::localAlign(
                 // Edit(SUBSTITUTION,
                 //      forward ? Bbegin[e.yStart] : Bbegin[-e.yStart]));
                 editScript.push_back(Edit(
-                    DELETE, forward ? Abegin[e.xStart] : Aend[-1 - e.xStart]));
+                    DELETE,
+                    /*forward ?*/ Abegin[e.xStart] /*: Aend[-1 - e.xStart]*/));
                 editScript.push_back(Edit(
-                    INSERT, forward ? Bbegin[e.yStart] : Bend[-1 - e.yStart]));
+                    INSERT,
+                    /*forward ?*/ Bbegin[e.yStart] /*: Bend[-1 - e.yStart]*/));
             } else {
                 // If we moved right, then this is a deletion
                 editScript.push_back(Edit(
-                    DELETE, forward ? Abegin[e.xStart] : Aend[-1 - e.xStart]));
+                    DELETE,
+                    /*forward ?*/ Abegin[e.xStart] /*: Aend[-1 - e.xStart]*/));
             }
         } else if (e.yMid > e.yStart) {
             editDis++;
             // If we moved down and there is an insertion
             editScript.push_back(
-                Edit(INSERT, forward ? Bbegin[e.yStart] : Bend[-1 - e.yStart]));
+                Edit(INSERT,
+                     /*forward ?*/ Bbegin[e.yStart] /*: Bend[-1 - e.yStart]*/));
         }
         currentX = e.xStart;
         currentY = e.yStart;
@@ -262,13 +267,13 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::localAlign(
     editScript.shrink_to_fit();
 
     // Update Abegin and Bbegin
-    if (forward) {
-        Abegin += Xreached;
-        Bbegin += Yreached;
-    } else {
+    /*if (forward) {*/
+    Abegin += Xreached;
+    Bbegin += Yreached;
+    /*} else {
         Aend -= Xreached;
         Bend -= Yreached;
-    }
+    }*/
 
     assert(Abegin == Aend || Bbegin == Bend);
 
@@ -292,10 +297,11 @@ LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::LocalMyersRollBack(
       maxEditDis(maxEditDis) {}
 
 template <typename RandomAccessItA, typename RandomAccessItB>
-bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::alignReverse(
-    RandomAccessItA Abegin, RandomAccessItA Aend, RandomAccessItB Bbegin,
-    RandomAccessItB Bend, const ssize_t offsetGuess, ssize_t &beginOffset,
-    ssize_t &endOffset, std::vector<Edit> &editScript, size_t &editDis) {
+template <typename RItA, typename RItB>
+bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::alignOnce(
+    RItA Abegin, RItA Aend, RItB Bbegin, RItB Bend, const ssize_t offsetGuess,
+    ssize_t &beginOffset, ssize_t &endOffset, std::vector<Edit> &editScript,
+    size_t &editDis) {
     beginOffset = offsetGuess;
     endOffset = 0;
     editDis = 0;
@@ -303,31 +309,35 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::alignReverse(
 
     // std::cout << "299AlignReverse" << offsetGuess << std::endl;
     if (offsetGuess > 0) {
-        if (Aend - Abegin <= offsetGuess) {
-            std::cout << "302" << std::endl;
+        if (Aend - Abegin <= offsetGuess)
             return false;
-        }
-        Aend -= offsetGuess;
+        // Aend -= offsetGuess;
+        Abegin += offsetGuess;
     } else {
-        if (Bend - Bbegin <= -offsetGuess) {
-            std::cout << "308" << std::endl;
+        if (Bend - Bbegin <= -offsetGuess)
             return false;
-        }
-        Bend -= (-offsetGuess);
+        // Bend -= (-offsetGuess);
+        Bbegin += (-offsetGuess);
     }
     const size_t max = std::min(this->lenA, this->lenB) * 2;
 
     while (Abegin != Aend && Bbegin != Bend) {
-        RandomAccessItA ALocalBegin =
-            Aend - Abegin > (ssize_t)this->lenA ? Aend - this->lenA : Abegin;
-        RandomAccessItB BLocalBegin =
-            Bend - Bbegin > (ssize_t)this->lenB ? Bend - this->lenB : Bbegin;
+        // RItA ALocalBegin =
+        // Aend - Abegin > (ssize_t)this->lenA ? Aend - this->lenA : Abegin;
+        // RItB BLocalBegin =
+        // Bend - Bbegin > (ssize_t)this->lenB ? Bend - this->lenB : Bbegin;
+        RItA ALocalEnd =
+            Aend - Abegin > (ssize_t)this->lenA ? Abegin + this->lenA : Aend;
+        RItB BLocalEnd =
+            Bend - Bbegin > (ssize_t)this->lenB ? Bbegin + this->lenB : Bend;
         std::vector<Edit> localEditScript;
         size_t localEditDis;
         // std::cout << "324: Aend-Abegin " << Aend - Abegin << " Bend-Bbegin "
         //          << Bend - Bbegin << std::endl;
-        bool success = localAlign(ALocalBegin, Aend, BLocalBegin, Bend, max,
-                                  localEditScript, localEditDis, false);
+        // bool success = localAlign(ALocalBegin, Aend, BLocalBegin, Bend, max,
+        // localEditScript, localEditDis, false);
+        bool success = localAlign(Abegin, ALocalEnd, Bbegin, BLocalEnd, max,
+                                  localEditScript, localEditDis);
         // std::cout << "320" << std::endl;
         if (!success) {
             // std::cout << "326" << std::endl;
@@ -404,7 +414,7 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::align(
         std::vector<Edit> localEditScript;
         size_t localEditDis;
         bool success = localAlign(Abegin, ALocalEnd, Bbegin, BLocalEnd, max,
-                                  localEditScript, localEditDis, true);
+                                  localEditScript, localEditDis /*, true*/);
         if (success) {
             editDis += localEditDis;
             if (editDis + errorRate * std::min(Aend - Abegin, Bend - Bbegin) >
@@ -463,8 +473,14 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::align(
 
     ssize_t backwardPassBeginOffset, backwardPassEndOffset;
 
-    bool secondPassSuccess = alignReverse(
-        s1Begin, s1End, s2Begin, s2End, -forwardPassEndOffset,
+    // bool secondPassSuccess = alignReverse(
+    // s1Begin, s1End, s2Begin, s2End, -forwardPassEndOffset,
+    // backwardPassBeginOffset, backwardPassEndOffset, editScript, editDis);
+    bool secondPassSuccess = alignOnce(
+        std::reverse_iterator<RandomAccessItA>(s1End),
+        std::reverse_iterator<RandomAccessItA>(s1Begin),
+        std::reverse_iterator<RandomAccessItB>(s2End),
+        std::reverse_iterator<RandomAccessItB>(s2Begin), -forwardPassEndOffset,
         backwardPassBeginOffset, backwardPassEndOffset, editScript, editDis);
     if (secondPassSuccess) {
         beginOffset = -backwardPassEndOffset;
