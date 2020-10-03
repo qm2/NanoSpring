@@ -119,12 +119,12 @@ void ConsensusGraph::initialize(const std::string &seed, size_t readId,
 bool ConsensusGraph::addRead(const std::string &s, long pos,
                              std::vector<Edit> &editScript,
                              ssize_t &beginOffset, ssize_t &endOffset) {
-    const std::string &originalString = mainPath.path;
-    const ssize_t offsetGuess = originalString.length() - endPos + pos;
+    auto &originalString = mainPath.path;
+    const ssize_t offsetGuess = originalString.size() - endPos + pos;
     size_t editDis;
 
-    RAItA Abegin = originalString.c_str();
-    RAItA Aend = Abegin + originalString.length();
+    RAItA Abegin = originalString.begin();
+    RAItA Aend = Abegin + originalString.size();
     RAItB Bbegin = s.c_str();
     RAItB Bend = Bbegin + s.length();
     bool success = aligner->align(Abegin, Aend, Bbegin, Bend, offsetGuess,
@@ -423,8 +423,8 @@ Path &ConsensusGraph::calculateMainPath() {
 
     startingNode = globalMaxWeightNode;
 
-    std::vector<Edge *> &edgesInPath = mainPath.edges;
-    std::string &stringPath = mainPath.path;
+    auto &edgesInPath = mainPath.edges;
+    auto &stringPath = mainPath.path;
 
     stringPath.push_back(globalMaxWeightNode->base);
     globalMaxWeightNode->onMainPath = true;
@@ -490,8 +490,8 @@ void ConsensusGraph::clearHasReached(Node *n) {
 Path &ConsensusGraph::calculateMainPathGreedy() {
     clearMainPath();
 
-    std::vector<Edge *> &edgesInPath = mainPath.edges;
-    std::string &stringPath = mainPath.path;
+    auto &edgesInPath = mainPath.edges;
+    auto &stringPath = mainPath.path;
 
     // Extend to the right
     {
@@ -552,7 +552,9 @@ void ConsensusGraph::clearMainPath() {
                              mainPath.edges.end());
     }
     if (mainPath.path.size() > rightMostUnchangedNodeOffset + 1)
-        mainPath.path.erase(rightMostUnchangedNodeOffset + 1);
+        mainPath.path.erase(mainPath.path.begin() +
+                                rightMostUnchangedNodeOffset + 1,
+                            mainPath.path.end());
     // Now we erase the left tail
     for (size_t i = 0; i < leftMostUnchangedNodeOffset; ++i) {
         Node *currentNode = mainPath.edges[i]->source;
@@ -563,7 +565,9 @@ void ConsensusGraph::clearMainPath() {
         mainPath.edges.erase(mainPath.edges.begin(),
                              mainPath.edges.begin() +
                                  leftMostUnchangedNodeOffset);
-        mainPath.path.erase(0, leftMostUnchangedNodeOffset);
+        mainPath.path.erase(mainPath.path.begin(),
+                            mainPath.path.begin() +
+                                leftMostUnchangedNodeOffset);
         rightMostUnchangedNodeOffset -= leftMostUnchangedNodeOffset;
     }
     leftMostUnchangedNodeOffset = 0;
@@ -803,7 +807,7 @@ void ConsensusGraph::writeMainPath(const std::string &filename) {
     std::ofstream f;
     std::string genomeFileName = tempDir + filename + ".genome";
     f.open(genomeFileName);
-    f << mainPath.path << std::endl;
+    f << std::string(mainPath.path.begin(), mainPath.path.end()) << std::endl;
     f.close();
     // std::string compressedGenomeFileName =
     //     compressedTempDir + filename + ".genomeCompressed";

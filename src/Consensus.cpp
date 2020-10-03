@@ -26,8 +26,13 @@ void Consensus::generateConsensus() {
 
         auto addRelatedReads = [&cG, this, &curPos, len]() {
             // Find reads likely to have overlaps
-            const std::string &s =
-                cG->mainPath.path.substr(curPos - cG->startPos, len);
+            auto stringBegin =
+                cG->mainPath.path.begin() + curPos - cG->startPos;
+            auto stringEnd =
+                (ssize_t)cG->mainPath.path.size() > curPos - cG->startPos + len
+                    ? stringBegin + len
+                    : cG->mainPath.path.end();
+            const std::string s(stringBegin, stringEnd);
             // std::cout << curPos << "\n";
             std::vector<size_t> results;
             rF->getFilteredReads(s, results);
@@ -71,13 +76,13 @@ void Consensus::generateConsensus() {
             cG->printStatus();
             curPos += offset;
             // std::cout << "curPos " << curPos << " len " << len << " endPos "
-            //           << cG->endPos << '\n';
+            //          << cG->endPos << '\n';
             if (curPos + len > cG->endPos)
                 break;
         }
 
-        /// TODO: consensusgraph doesn't really support adding reads from the
-        /// left,,,
+        // TODO: consensusgraph doesn't really support adding reads from the
+        // left,,,
         curPos = initialStartPos - offset;
         while (true) {
             std::cout << "left\n";

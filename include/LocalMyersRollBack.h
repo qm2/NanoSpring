@@ -88,7 +88,6 @@ protected:
                            const size_t max, std::vector<Edit> &editScript,
                            size_t &editDis);
 
-private:
     /**
      * @brief Performs global alignment algorithm once
      *
@@ -111,5 +110,27 @@ private:
                    const ssize_t offsetGuess, ssize_t &beginOffset,
                    ssize_t &endOffset, std::vector<Edit> &editScript,
                    size_t &editDis);
+
+    /**
+     * @brief Performs local alignment, advances Abegin and Bbegin, and report
+     * whether we should continue
+     *
+     * @tparam RItA
+     * @tparam RItB
+     * @param Abegin
+     * @param Aend
+     * @param Bbegin
+     * @param Bend
+     * @param lenAString
+     * @param lenBString
+     * @param dirSuccess Whether we should continue based on maxEditDis and the
+     * current editDis
+     * @param editDis
+     * @param max Maximum edit distance in a single alignment
+     */
+    template <typename RItA, typename RItB>
+    void advance(RItA &Abegin, RItA Aend, RItB &Bbegin, RItB Bend,
+                 const size_t lenAString, const size_t lenBString,
+                 bool &dirSuccess, size_t &editDis, const size_t max);
 };
 #endif /* F1ADC39F_6A7F_4671_B4B5_77EF545E2B5C */

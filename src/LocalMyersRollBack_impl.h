@@ -402,28 +402,6 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::align(
     bool dir1Success = true;
     bool dir2Success = true;
     const size_t max = std::min(this->lenA, this->lenB) * 2;
-    auto const advance = [max,
-                          this](RandomAccessItA &Abegin, RandomAccessItA Aend,
-                                RandomAccessItB &Bbegin, RandomAccessItB Bend,
-                                size_t lenAString, size_t lenBString,
-                                bool &dirSuccess, size_t &editDis) {
-        RandomAccessItA ALocalEnd =
-            Aend - Abegin > lenAString ? Abegin + lenAString : Aend;
-        RandomAccessItB BLocalEnd =
-            Bend - Bbegin > lenBString ? Bbegin + lenBString : Bend;
-        std::vector<Edit> localEditScript;
-        size_t localEditDis;
-        bool success = localAlign(Abegin, ALocalEnd, Bbegin, BLocalEnd, max,
-                                  localEditScript, localEditDis /*, true*/);
-        if (success) {
-            editDis += localEditDis;
-            if (editDis + errorRate * std::min(Aend - Abegin, Bend - Bbegin) >
-                maxEditDis)
-                dirSuccess = false;
-        } else {
-            dirSuccess = false;
-        }
-    };
     while (Abegin1 < Aend && Bbegin1 < Bend && Abegin2 < Aend &&
            Bbegin2 < Bend && (dir1Success || dir2Success)) {
         double expectedEditDis1 =
@@ -435,16 +413,16 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::align(
             (dir1Success && expectedEditDis1 < expectedEditDis2)) {
 
             advance(Abegin1, Aend, Bbegin1, Bend, this->lenA, this->lenB,
-                    dir1Success, editDis1);
+                    dir1Success, editDis1, max);
         } else {
             advance(Bbegin2, Bend, Abegin2, Aend, this->lenA, this->lenB,
-                    dir2Success, editDis2);
+                    dir2Success, editDis2, max);
         }
     }
     if (!dir1Success && !dir2Success) {
-#ifdef DEBUG
-        std::cerr << "initial alignment failed\n";
-#endif
+        //#ifdef DEBUG
+        // std::cerr << "initial alignment failed\n";
+        //#endif
         return false;
     }
 
@@ -505,4 +483,26 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::align(
 #endif
     return false;
 }
+template <typename RandomAccessItA, typename RandomAccessItB>
+template <typename RItA, typename RItB>
+void LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::advance(
+    RItA &Abegin, RItA Aend, RItB &Bbegin, RItB Bend, const size_t lenAString,
+    const size_t lenBString, bool &dirSuccess, size_t &editDis,
+    const size_t max) {
+    RItA ALocalEnd = Aend - Abegin > lenAString ? Abegin + lenAString : Aend;
+    RItB BLocalEnd = Bend - Bbegin > lenBString ? Bbegin + lenBString : Bend;
+    std::vector<Edit> localEditScript;
+    size_t localEditDis;
+    bool success = localAlign(Abegin, ALocalEnd, Bbegin, BLocalEnd, max,
+                              localEditScript, localEditDis /*, true*/);
+    if (success) {
+        editDis += localEditDis;
+        if (editDis + errorRate * std::min(Aend - Abegin, Bend - Bbegin) >
+            maxEditDis)
+            dirSuccess = false;
+    } else {
+        dirSuccess = false;
+    }
+};
+
 #endif /* A1AFCAE9_C3D5_433B_8650_E2AFA990F0A1 */

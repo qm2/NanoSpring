@@ -5,6 +5,7 @@
 #include "Edits.h"
 #include "ReadData.h"
 #include "StringAligner.h"
+#include <deque>
 #include <map>
 #include <set>
 #include <vector>
@@ -111,8 +112,8 @@ public:
  */
 class Path {
 public:
-    std::vector<Edge *> edges;
-    std::string path;
+    std::deque<Edge *> edges;
+    std::deque<char> path;
 
     /**
      * Returns the average weight of the edges on path
@@ -136,7 +137,7 @@ public:
  */
 class ConsensusGraph {
 public:
-    typedef const char *RAItA;
+    typedef std::deque<char>::const_iterator RAItA;
     typedef const char *RAItB;
     typedef StringAligner<RAItA, RAItB> StringAligner_t;
 
