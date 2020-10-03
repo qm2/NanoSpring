@@ -80,13 +80,15 @@ protected:
      * @param editScript
      * @param editDis This will store the Levenshtein distance used, i.e.,
      * insertions, deletions, and substitutions all have edit distance 1.
+     * @param forward whether we are aligning in the forward direction or the
+     * reverse direction
      * @return true
      * @return false
      */
     template <typename RItA, typename RItB>
-    static bool localAlign(RItA &Abegin, RItA Aend, RItB &Bbegin, RItB Bend,
+    static bool localAlign(RItA &Abegin, RItA &Aend, RItB &Bbegin, RItB &Bend,
                            const size_t max, std::vector<Edit> &editScript,
-                           size_t &editDis);
+                           size_t &editDis, bool forward);
 
 private:
     /**
@@ -106,10 +108,10 @@ private:
      * @return true
      * @return false
      */
-    template <typename RIt>
-    bool alignOnce(RIt Abegin, RIt Aend, RIt Bbegin, RIt Bend,
-                   const ssize_t offsetGuess, ssize_t &beginOffset,
-                   ssize_t &endOffset, std::vector<Edit> &editScript,
-                   size_t &editDis);
+    bool alignReverse(RandomAccessItA Abegin, RandomAccessItA Aend,
+                      RandomAccessItB Bbegin, RandomAccessItB Bend,
+                      const ssize_t offsetGuess, ssize_t &beginOffset,
+                      ssize_t &endOffset, std::vector<Edit> &editScript,
+                      size_t &editDis);
 };
 #endif /* F1ADC39F_6A7F_4671_B4B5_77EF545E2B5C */

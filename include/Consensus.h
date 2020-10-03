@@ -5,6 +5,7 @@
 #include "Contig.h"
 #include "Edits.h"
 #include "ReadData.h"
+#include "StringAligner.h"
 #include <memory>
 #include <string>
 #include <vector>
@@ -25,7 +26,7 @@ public:
      * @brief The detailed aligner that aligns reads to the consensus senquence.
      *
      */
-    StringAligner *aligner;
+    ConsensusGraph::StringAligner_t *aligner;
 
     // Directory for storing the temp files (.genome, .pos, .type, .id metaData)
     std::string tempDir = "tempRaw/";

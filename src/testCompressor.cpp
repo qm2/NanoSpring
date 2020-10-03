@@ -1,12 +1,14 @@
 #include "Compressor.h"
 #include "LocalMyersRollBack.h"
+#include "LocalMyersRollBack_impl.h"
 #include "ReadData.h"
 #include "ReadFilter.h"
+#include "StringAligner.h"
 #include <ctime>
-// #include <gperftools/heap-profiler.h>
-// #include <gperftools/profiler.h>
+#include <gperftools/profiler.h>
 #include <iostream>
 #include <omp.h>
+// #include <gperftools/heap-profiler.h>
 
 int main(int argc, char **argv) {
     omp_set_nested(1);
@@ -14,7 +16,7 @@ int main(int argc, char **argv) {
     // if (!fork())
     //     return -1;
     std::srand(unsigned(std::time(0)));
-    // ProfilerStart("testCompressor.prof");
+    ProfilerStart("testCompressor.prof");
     if (argc < 2) {
         std::cout << "Usage ./testCompressor filename" << std::endl;
         return 1;
@@ -26,8 +28,9 @@ int main(int argc, char **argv) {
         if (k == 0)
             return 0;
         MergeSortReadAligner rA(21, 10);
-        LocalMyersRollBack localMyersRollBackAligner(100, 200, 3200);
-        StringAligner *aligner = &localMyersRollBackAligner;
+        LocalMyersRollBack<ConsensusGraph::RAItA, ConsensusGraph::RAItB>
+            localMyersRollBackAligner(100, 200, 6400);
+        ConsensusGraph::StringAligner_t *aligner = &localMyersRollBackAligner;
         Compressor compressor;
         compressor.k = k;
         compressor.n = n;
@@ -36,5 +39,5 @@ int main(int argc, char **argv) {
         compressor.aligner = aligner;
         compressor.compress(argv[1]);
     }
-    // ProfilerStop();
+    ProfilerStop();
 }

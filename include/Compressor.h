@@ -1,8 +1,10 @@
 #ifndef D5822833_5BFC_4986_B7F9_20EEA68B3568
 #define D5822833_5BFC_4986_B7F9_20EEA68B3568
 
+#include "Consensus.h"
 #include "Edits.h"
 #include "ReadAligner.h"
+#include "StringAligner.h"
 #include <string>
 
 class Compressor {
@@ -11,7 +13,7 @@ public:
     size_t k, n, overlapSketchThreshold;
     ReadAligner *rA;
     // Parameters for consensus
-    StringAligner *aligner;
+    ConsensusGraph::StringAligner_t *aligner;
     // The temp directories
     std::string tempDir = "tempRaw/";
     // The output filenames to use in temp directories

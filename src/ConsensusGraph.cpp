@@ -123,8 +123,12 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
     const ssize_t offsetGuess = originalString.length() - endPos + pos;
     size_t editDis;
 
-    bool success = aligner->align(originalString, s, offsetGuess, beginOffset,
-                                  endOffset, editScript, editDis);
+    RAItA Abegin = originalString.c_str();
+    RAItA Aend = Abegin + originalString.length();
+    RAItB Bbegin = s.c_str();
+    RAItB Bend = Bbegin + s.length();
+    bool success = aligner->align(Abegin, Aend, Bbegin, Bend, offsetGuess,
+                                  beginOffset, endOffset, editScript, editDis);
     //    std::cout << "success ? " << success << std::endl;
     if (!success) {
         // std::cout << "Failed to add"
@@ -1041,7 +1045,7 @@ size_t ConsensusGraph::writeRead(std::ofstream &f, Read &r, size_t id) {
     return editDis;
 }
 
-ConsensusGraph::ConsensusGraph(StringAligner *aligner) : aligner(aligner) {}
+ConsensusGraph::ConsensusGraph(StringAligner_t *aligner) : aligner(aligner) {}
 
 ConsensusGraph::Read::Read(long pos, Node *start, size_t len)
     : pos(pos), start(start), len(len) {}

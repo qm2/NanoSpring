@@ -4,6 +4,7 @@
 #include "Contig.h"
 #include "Edits.h"
 #include "ReadData.h"
+#include "StringAligner.h"
 #include <map>
 #include <set>
 #include <vector>
@@ -135,6 +136,10 @@ public:
  */
 class ConsensusGraph {
 public:
+    typedef const char *RAItA;
+    typedef const char *RAItB;
+    typedef StringAligner<RAItA, RAItB> StringAligner_t;
+
     // Starting and ending positions of mainPath in contig
     ssize_t startPos, endPos;
 
@@ -167,7 +172,7 @@ public:
         Read(long pos, Node *start, size_t len);
     };
 
-    ConsensusGraph(StringAligner *aligner);
+    ConsensusGraph(StringAligner_t *aligner);
 
     /**
      * Initializes the graph from a seeding read
@@ -250,9 +255,9 @@ public:
      */
     void printStatus();
 
-    size_t getNumReads()
+    size_t getNumReads();
 
-        ~ConsensusGraph();
+    ~ConsensusGraph();
 
 private:
     Node *startingNode;
@@ -267,7 +272,7 @@ private:
     // of the read)
     std::map<size_t, Read> readsInGraph;
 
-    StringAligner *aligner;
+    StringAligner_t *aligner;
     // Maps ID of reads that cannot be successfully aligned to actual strings
     std::map<size_t, std::string> unalignedReads;
 
