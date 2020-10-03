@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
     // if (!fork())
     //     return -1;
     std::srand(unsigned(std::time(0)));
-    ProfilerStart("testCompressor.prof");
+    // ProfilerStart("testCompressor.prof");
     if (argc < 2) {
         std::cout << "Usage ./testCompressor filename" << std::endl;
         return 1;
@@ -39,5 +39,5 @@ int main(int argc, char **argv) {
         compressor.aligner = aligner;
         compressor.compress(argv[1]);
     }
-    ProfilerStop();
+    // ProfilerStop();
 }

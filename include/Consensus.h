@@ -4,8 +4,10 @@
 #include "ConsensusGraph.h"
 #include "Contig.h"
 #include "Edits.h"
+#include "OmpMutex.h"
 #include "ReadData.h"
 #include "StringAligner.h"
+#include "omp.h"
 #include <memory>
 #include <string>
 #include <vector>
@@ -37,6 +39,8 @@ public:
 
     void writeConsensus();
 
+    Consensus();
+
     ~Consensus();
 
 private:
@@ -51,6 +55,11 @@ private:
      *
      */
     size_t firstUnaddedRead;
+    /**
+     * @brief Protects inGraph and firstUnaddedRead
+     *
+     */
+    OmpNestMutex readStatusLock;
     size_t numReads;
 
     std::vector<std::unique_ptr<ConsensusGraph>> graphs;
@@ -95,6 +104,15 @@ private:
      * @return false
      */
     bool addRead(size_t read);
+
+    /**
+     * @brief Add reads overlapping with the mainPath of cG at position curPos
+     *
+     * @param cG
+     * @param curPos
+     * @param len The length of the mainPath used to get filtered reads
+     */
+    void addRelatedReads(ConsensusGraph *cG, ssize_t curPos, size_t len);
 
     ConsensusGraph *createGraph();
 };

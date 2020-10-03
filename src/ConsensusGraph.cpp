@@ -789,8 +789,8 @@ void ConsensusGraph::removeConnectedNodes(Node *n) {
 
 void ConsensusGraph::printStatus() {
     std::cout << unalignedReads.size() << " unaligned reads "
-              << readsInGraph.size() << " reads in graph, " << numNodes
-              << " nodes, and " << numEdges << " edges."
+              << readsInGraph.size() << " reads in graph " << this << ", "
+              << numNodes << " nodes, and " << numEdges << " edges."
               << "\n";
     std::cout << "mainPath len " << mainPath.edges.size() + 1 << " "
               << mainPath.path.size() << " avg weight "

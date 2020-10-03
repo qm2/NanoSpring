@@ -84,6 +84,7 @@ add_library(NanoporeCompressionLib
         src/ReadData.cpp
         src/ReadFilter.cpp
         src/ConsensusGraph.cpp
+        src/OmpMutex.cpp
         include/AlignerTester.h
         include/bsc_helper.h
         include/Compressor.h
@@ -100,6 +101,7 @@ add_library(NanoporeCompressionLib
         include/ReadFilter.h
         include/testAligner.h
         include/ConsensusGraph.h
+        include/OmpMutex.h
         )
 
 target_include_directories(NanoporeCompressionLib 
