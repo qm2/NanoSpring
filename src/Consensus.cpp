@@ -51,7 +51,7 @@ void Consensus::generateConsensus() {
 void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
                                 size_t len) {
     // Find reads likely to have overlaps
-    auto stringBegin = cG->mainPath.path.begin() + curPos - cG->startPos;
+    auto stringBegin = cG->mainPath.path.begin() + (curPos - cG->startPos);
     auto stringEnd =
         (ssize_t)cG->mainPath.path.size() > curPos - cG->startPos + (ssize_t)len
             ? stringBegin + len

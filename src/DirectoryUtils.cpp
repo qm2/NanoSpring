@@ -29,8 +29,8 @@ void combineFilesWithExt(const std::string &filestem,
 void unpack(const std::string &filepath, const std::string &outputDir) {
     std::ifstream inFile(filepath);
     boost::filesystem::path path(filepath);
-    const std::string &stem = path.filename().stem().string();
-    const std::string &ext = path.filename().extension().string();
+    const std::string stem = path.filename().stem().string();
+    const std::string ext = path.filename().extension().string();
     std::ofstream outFile;
     std::string line;
     bool need2CreateFile = true;
