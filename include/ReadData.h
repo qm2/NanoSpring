@@ -1,6 +1,8 @@
 #ifndef C3C2DD2A_9114_4E1C_B89E_18F31D007DCB
 #define C3C2DD2A_9114_4E1C_B89E_18F31D007DCB
 
+#include "Types.h"
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -22,9 +24,9 @@ public:
     /**
      * @brief Get the number of reads
      *
-     * @return size_t
+     * @return read_t
      */
-    size_t getNumReads();
+    read_t getNumReads();
 
     /**
      * @brief Returns the read with readId as a string
@@ -32,7 +34,7 @@ public:
      * @param readId
      * @return std::string
      */
-    std::string &getRead(size_t readId);
+    std::string &getRead(read_t readId);
 
     /// TODO: don't expose these three funcitons. change the interface to hide
     /// the raw data.
@@ -43,7 +45,7 @@ public:
     std::vector<std::unique_ptr<std::string>> &getReadData();
 
 private:
-    size_t numReads;
+    read_t numReads;
     std::vector<std::unique_ptr<std::string>> readData;
 
     // The following are for testing

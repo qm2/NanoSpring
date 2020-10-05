@@ -6,13 +6,13 @@
 #include <iostream>
 #include <stack>
 
-Edge::Edge(Node *source, Node *sink, size_t read) : source(source), sink(sink) {
+Edge::Edge(Node *source, Node *sink, read_t read) : source(source), sink(sink) {
     count = 1;
     // insert into sorted vector
     reads.insert(std::lower_bound(reads.begin(),reads.end(),read), read);
 }
 
-void Edge::addRead(size_t read) {
+void Edge::addRead(read_t read) {
     count++;
     // insert into sorted vector
     reads.insert(std::lower_bound(reads.begin(),reads.end(),read), read);
@@ -46,7 +46,7 @@ Edge *Node::getEdgeToSide(char base) {
 
 Edge *Node::getBestEdgeOut() {
     Edge *bestEdge = NULL;
-    size_t bestCount = 0;
+    read_t bestCount = 0;
     const auto &end = edgesOut.end();
     for (auto it = edgesOut.begin(); it != end; ++it) {
         Edge *e = it->second;
@@ -60,7 +60,7 @@ Edge *Node::getBestEdgeOut() {
 
 Edge *Node::getBestEdgeIn() {
     Edge *bestEdge = NULL;
-    size_t bestCount = 0;
+    read_t bestCount = 0;
     const auto &end = edgesIn.end();
     for (auto it = edgesIn.begin(); it != end; ++it) {
         Edge *e = *it;
@@ -92,7 +92,7 @@ void Path::clear() {
     path.clear();
 }
 
-void ConsensusGraph::initialize(const std::string &seed, size_t readId,
+void ConsensusGraph::initialize(const std::string &seed, read_t readId,
                                 long pos) {
 
     unalignedReads.clear();
@@ -185,12 +185,12 @@ void ConsensusGraph::addReads(
         // Then we add all reads that should overlap with mainPath
         auto endRead2Add =
             readsInContig.lower_bound(std::make_pair(endPos - len - 100, 0));
-        // size_t count = 0;
+        // read_t count = 0;
         std::vector<std::pair<long, read_t>> reads2Add(readsInContig.begin(),
                                                        endRead2Add);
-        size_t num = reads2Add.size();
+        read_t num = reads2Add.size();
 #pragma omp parallel for
-        for (size_t i = 0; i < num; ++i) {
+        for (read_t i = 0; i < num; ++i) {
             auto read2Add = reads2Add[i];
             std::vector<Edit> editScript;
             ssize_t beginOffset, endOffset;
@@ -221,7 +221,7 @@ void ConsensusGraph::addReads(
 void ConsensusGraph::updateGraph(const std::string &s,
                                  std::vector<Edit> &editScript,
                                  ssize_t beginOffset, ssize_t endOffset,
-                                 size_t readId, long pos) {
+                                 read_t readId, long pos) {
 
     auto edgeInPath = mainPath.edges.begin();
     const auto &edgeInPathEnd = mainPath.edges.end();
@@ -448,9 +448,9 @@ Path &ConsensusGraph::calculateMainPath() {
         }
     }
 
-    size_t startingReadId = *edgesInPath.front()->reads.begin();
+    read_t startingReadId = *edgesInPath.front()->reads.begin();
     startPos = readsInGraph.at(startingReadId).pos;
-    size_t endingReadId = *edgesInPath.back()->reads.begin();
+    read_t endingReadId = *edgesInPath.back()->reads.begin();
     Read &endingRead = readsInGraph.at(endingReadId);
     endPos = endingRead.pos + endingRead.len;
     //    printStatus();
@@ -506,7 +506,7 @@ Path &ConsensusGraph::calculateMainPathGreedy() {
             currentNode->onMainPath = true;
             stringPath.push_back(currentNode->base);
         }
-        size_t endingReadId = *edgesInPath.back()->reads.begin();
+        read_t endingReadId = *edgesInPath.back()->reads.begin();
         Read &endingRead = readsInGraph.at(endingReadId);
         endPos = endingRead.pos + endingRead.len;
     }
@@ -524,7 +524,7 @@ Path &ConsensusGraph::calculateMainPathGreedy() {
             leftMostUnchangedNodeOffset++;
             rightMostUnchangedNodeOffset++;
         }
-        size_t startingReadId = *edgesInPath.front()->reads.begin();
+        read_t startingReadId = *edgesInPath.front()->reads.begin();
         startPos = readsInGraph.at(startingReadId).pos;
     }
 
@@ -632,9 +632,9 @@ void ConsensusGraph::walkAndPrune(Edge *e) {
 }
 
 void ConsensusGraph::splitPath(Node *newPre, Edge *e,
-                               std::vector<size_t> const &reads2Split) {
+                               std::vector<read_t> const &reads2Split) {
     // The reads that need to be split going down this path
-    std::vector<size_t> readsInPath2Split;
+    std::vector<read_t> readsInPath2Split;
     std::set_intersection(
         reads2Split.begin(), reads2Split.end(), e->reads.begin(),
         e->reads.end(),
@@ -691,7 +691,7 @@ Node *ConsensusGraph::createNode(char base) {
     return n;
 }
 
-Edge *ConsensusGraph::createEdge(Node *source, Node *sink, size_t read) {
+Edge *ConsensusGraph::createEdge(Node *source, Node *sink, read_t read) {
     Edge *e = new Edge(source, sink, read);
     source->edgesOut.insert(std::make_pair(sink, e));
     sink->edgesIn.insert(e);
@@ -700,8 +700,8 @@ Edge *ConsensusGraph::createEdge(Node *source, Node *sink, size_t read) {
 }
 
 void ConsensusGraph::removeReadsFromEdge(Edge *e,
-                                         std::vector<size_t> const &reads) {
-    std::vector<size_t> updatedReadsInOldEdge;
+                                         std::vector<read_t> const &reads) {
+    std::vector<read_t> updatedReadsInOldEdge;
     std::set_difference(
         e->reads.begin(), e->reads.end(), reads.begin(), reads.end(),
         std::inserter(updatedReadsInOldEdge, updatedReadsInOldEdge.begin()));
@@ -836,7 +836,7 @@ void ConsensusGraph::writeReads(const std::string &filename) {
     editTypeFile.open(editTypeFileName);
     editBaseFile.open(editBaseFileName);
     idFile.open(idFileName);
-    size_t pasId = 0;
+    read_t pasId = 0;
     for (auto it : readsInGraph) {
         {
             idFile << it.first - pasId << ':';
@@ -879,7 +879,7 @@ void ConsensusGraph::writeUnalignedReads(const std::string &filename) {
     std::ofstream unalignedReadsFile, unalignedIdsFile;
     unalignedReadsFile.open(unalignedReadsFileName);
     unalignedIdsFile.open(unalignedIdsFileName);
-    size_t pastId = 0;
+    read_t pastId = 0;
     for (auto it : unalignedReads) {
         unalignedIdsFile << it.first - pastId << ":";
         pastId = it.first;
@@ -897,9 +897,9 @@ void ConsensusGraph::writeUnalignedReads(const std::string &filename) {
     //                   unalignedIdsFileCompressedName.c_str());
 }
 
-size_t ConsensusGraph::getNumReads() { return readsInGraph.size(); }
+read_t ConsensusGraph::getNumReads() { return readsInGraph.size(); }
 
-size_t ConsensusGraph::read2EditScript(ConsensusGraph::Read &r, size_t id,
+size_t ConsensusGraph::read2EditScript(ConsensusGraph::Read &r, read_t id,
                                        std::vector<Edit> &editScript,
                                        size_t &pos) {
     editScript.clear();
@@ -955,7 +955,7 @@ size_t ConsensusGraph::read2EditScript(ConsensusGraph::Read &r, size_t id,
 size_t ConsensusGraph::writeRead(std::ofstream &posFile,
                                  std::ofstream &editTypeFile,
                                  std::ofstream &editBaseFile, Read &r,
-                                 size_t id) {
+                                 read_t id) {
 
     size_t offset;
     std::vector<Edit> editScript;
@@ -1019,7 +1019,7 @@ void ConsensusGraph::writeReads(std::ofstream &f) {
               << std::endl;
 }
 
-size_t ConsensusGraph::writeRead(std::ofstream &f, Read &r, size_t id) {
+size_t ConsensusGraph::writeRead(std::ofstream &f, Read &r, read_t id) {
 
     std::vector<Edit> editScript;
     size_t pos;

@@ -87,9 +87,9 @@ class Edge {
 public:
     Node *source;
     Node *sink;
-    size_t count;
+    read_t count;
     // always maintained in sorted order
-    std::vector<size_t> reads;
+    std::vector<read_t> reads;
 
     /**
      * Initializes the Edge from a source, a sink, and a single read.
@@ -97,14 +97,14 @@ public:
      * @param sink
      * @param read
      */
-    Edge(Node *source, Node *sink, size_t read);
+    Edge(Node *source, Node *sink, read_t read);
 
     /**
      * Adds a read to the edge. Basically just increases count by 1 and add read
      * to the internal vector (while maintaining sorting).
      * @param read
      */
-    void addRead(size_t read);
+    void addRead(read_t read);
 };
 
 /**
@@ -182,7 +182,7 @@ public:
      * @param readId id of the seeding read
      * @param pos Relative position in contig
      */
-    void initialize(const std::string &seed, size_t readId, long pos);
+    void initialize(const std::string &seed, read_t readId, long pos);
 
     /**
      * Adds a read to the consensus graph. Does not update mainPath.
@@ -210,7 +210,7 @@ public:
      * @param pos The relative position of the read in contig
      */
     void updateGraph(const std::string &s, std::vector<Edit> &editScript,
-                     ssize_t beginOffset, ssize_t endOffset, size_t readId,
+                     ssize_t beginOffset, ssize_t endOffset, read_t readId,
                      long pos);
 
     /**
@@ -243,7 +243,7 @@ public:
      * main path must store their positions on main path (starting with 0)
      * @param pos outputs the relative position in mainPath
      */
-    size_t read2EditScript(Read &r, size_t id, std::vector<Edit> &editScript,
+    size_t read2EditScript(Read &r, read_t id, std::vector<Edit> &editScript,
                            size_t &pos);
 
     /**
@@ -267,7 +267,7 @@ public:
      */
     void printStatus();
 
-    size_t getNumReads();
+    read_t getNumReads();
 
     ~ConsensusGraph();
 
@@ -282,18 +282,18 @@ private:
     size_t numEdges = 0;
     // Maps ID of read to (relative position of read in contig, beginning node
     // of the read)
-    std::map<size_t, Read> readsInGraph;
+    std::map<read_t, Read> readsInGraph;
 
     StringAligner_t *aligner;
     // Maps ID of reads that cannot be successfully aligned to actual strings
-    std::map<size_t, std::string> unalignedReads;
+    std::map<read_t, std::string> unalignedReads;
 
     Node *createNode(char base);
 
-    Edge *createEdge(Node *source, Node *sink, size_t read);
+    Edge *createEdge(Node *source, Node *sink, read_t read);
 
     // reads must be a sorted vector
-    void removeReadsFromEdge(Edge *e, std::vector<size_t> const &reads);
+    void removeReadsFromEdge(Edge *e, std::vector<read_t> const &reads);
 
     /**
      * Removes an edge from the graph
@@ -355,7 +355,7 @@ private:
      * newPre. In particular, newPre will have a new edge going out. The newly
      * created nodes are guaranteed to have at most one Edge going in.
      */
-    void splitPath(Node *newPre, Edge *e, std::vector<size_t> const &reads2Split);
+    void splitPath(Node *newPre, Edge *e, std::vector<read_t> const &reads2Split);
 
     /**
      * Write the edits trings of the reads into a single file
@@ -364,7 +364,7 @@ private:
      * @param id
      * @return Edit distance
      */
-    size_t writeRead(std::ofstream &f, Read &r, size_t id);
+    size_t writeRead(std::ofstream &f, Read &r, read_t id);
 
     /**
      * @brief
@@ -386,7 +386,7 @@ private:
      * @return size_t
      */
     size_t writeRead(std::ofstream &posFile, std::ofstream &editTypeFile,
-                     std::ofstream &editBaseFile, Read &r, size_t id);
+                     std::ofstream &editBaseFile, Read &r, read_t id);
 
     /**
      * @brief Stores the reads in filename.unalignedReads and the ids in

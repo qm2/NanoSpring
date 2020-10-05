@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <limits>       // std::numeric_limits
+#include <stdexcept>
 
 void ReadData::loadFromFile(const char *fileName) {
     numReads = 0;
@@ -28,6 +30,9 @@ void ReadData::loadFromFile(const char *fileName) {
             readData.push_back(std::move(ptr));
         }
         numReads++;
+        if (numReads == std::numeric_limits<read_t>::max()) {
+            throw std::runtime_error("Too many reads for read_t type to handle.");
+        }
     }
     readLen = readData[0]->length();
     readPosSorted = readPos;
@@ -38,9 +43,9 @@ void ReadData::loadFromFile(const char *fileName) {
 #endif
 }
 
-size_t ReadData::getNumReads() { return numReads; }
+read_t ReadData::getNumReads() { return numReads; }
 
-std::string &ReadData::getRead(size_t readId) { return *readData[readId]; }
+std::string &ReadData::getRead(read_t readId) { return *readData[readId]; }
 
 std::vector<unsigned long> &ReadData::getReadPos() { return readPos; }
 

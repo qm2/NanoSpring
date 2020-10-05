@@ -53,7 +53,7 @@ void MinHashReadFilter::initialize(ReadData &rD) {
     generateRandomNumbers(n);
 
 #pragma omp parallel for
-    for (size_t i = 0; i < numReads; ++i)
+    for (read_t i = 0; i < numReads; ++i)
         string2Sketch(rD.getRead(i), sketches + i * n);
 
     populateHashTables();
@@ -75,18 +75,18 @@ void MinHashReadFilter::generateRandomNumbers(size_t n) {
     }
 }
 
-void MinHashReadFilter::getFilteredReads(size_t readToFind,
-                                         std::vector<size_t> &results) {
+void MinHashReadFilter::getFilteredReads(read_t readToFind,
+                                         std::vector<read_t> &results) {
     getFilteredReads(sketches + readToFind * n, results);
 }
 
 void MinHashReadFilter::getFilteredReads(kMer_t *sketch,
-                                         std::vector<size_t> &results) {
-    std::vector<size_t> matches;
+                                         std::vector<read_t> &results) {
+    std::vector<read_t> matches;
     results.clear();
     for (size_t sketchIndex = 0; sketchIndex < n; ++sketchIndex) {
         kMer_t curHash = sketch[sketchIndex];
-        // std::vector<size_t> &m = hashTables[sketchIndex].at(curHash);
+        // std::vector<read_t> &m = hashTables[sketchIndex].at(curHash);
         auto m = hashTables[sketchIndex].find(curHash);
         if (m == hashTables[sketchIndex].end())
             continue;
@@ -105,7 +105,7 @@ void MinHashReadFilter::getFilteredReads(kMer_t *sketch,
 }
 
 void MinHashReadFilter::getFilteredReads(const std::string &s,
-                                         std::vector<size_t> &results) {
+                                         std::vector<read_t> &results) {
     kMer_t sketch[n];
     string2Sketch(s, sketch);
     getFilteredReads(sketch, results);
@@ -120,9 +120,9 @@ filterStats MinHashReadFilter::getFilterStats(size_t overlapBaseThreshold,
 
     size_t numOverlaps = 0;
 #pragma omp parallel for reduction(+ : numOverlaps)
-    for (size_t i = 0; i < numReads; ++i) {
+    for (read_t i = 0; i < numReads; ++i) {
         long curTh = (*readPosSorted)[i] + readLen - overlapBaseThreshold;
-        for (size_t j = i + 1; j < numReads; ++j) {
+        for (read_t j = i + 1; j < numReads; ++j) {
             if (((long)(*readPosSorted)[j]) <= curTh)
                 numOverlaps++;
             else
@@ -137,8 +137,8 @@ filterStats MinHashReadFilter::getFilterStats(size_t overlapBaseThreshold,
     size_t totalPositive = 0;
     size_t falsePositives = 0;
 #pragma omp parallel for reduction(+ : totalPositive, falsePositives)
-    for (size_t i = 0; i < numReads; ++i) {
-        std::multiset<size_t> matches;
+    for (read_t i = 0; i < numReads; ++i) {
+        std::multiset<read_t> matches;
         unsigned long curPos = (*readPos)[i];
         long th = readLen - overlapBaseThreshold;
         for (size_t sketchIndex = 0; sketchIndex < n; ++sketchIndex) {
@@ -149,7 +149,7 @@ filterStats MinHashReadFilter::getFilterStats(size_t overlapBaseThreshold,
             //                std::cout << p.first << " ";
             //            }
             //            std::cout << std::endl;
-            std::vector<size_t> &m = hashTables[sketchIndex].at(curHash);
+            std::vector<read_t> &m = hashTables[sketchIndex].at(curHash);
             matches.insert(m.begin(), m.end());
         }
         auto end = matches.end();
@@ -267,13 +267,13 @@ void MinHashReadFilter::populateHashTables() {
     std::cout << "Starting to populate hash tables" << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < n; ++i) {
-        hashTables.push_back(std::map<kMer_t, std::vector<size_t>>());
+        hashTables.push_back(std::map<kMer_t, std::vector<read_t>>());
     }
 #pragma omp parallel for
     for (size_t i = 0; i < n; ++i) {
-        std::map<kMer_t, std::vector<size_t>> &hT = hashTables[i];
+        std::map<kMer_t, std::vector<read_t>> &hT = hashTables[i];
         size_t currentIndex = i;
-        for (size_t j = 0; j < numReads; ++j) {
+        for (read_t j = 0; j < numReads; ++j) {
             hT[sketches[currentIndex]].push_back(j);
             //            std::cout << "Inserting " << j << " to " <<
             //            sketches[currentIndex] << std::endl;

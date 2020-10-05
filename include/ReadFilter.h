@@ -24,11 +24,11 @@ public:
  */
 class ReadFilter {
 public:
-    virtual void getFilteredReads(size_t readToFind,
-                                  std::vector<size_t> &results) = 0;
+    virtual void getFilteredReads(read_t readToFind,
+                                  std::vector<read_t> &results) = 0;
 
     virtual void getFilteredReads(const std::string &s,
-                                  std::vector<size_t> &results) = 0;
+                                  std::vector<read_t> &results) = 0;
 
     virtual void initialize(ReadData &rD) = 0;
 
@@ -89,11 +89,11 @@ public:
      * @param readToFind
      * @param results
      */
-    void getFilteredReads(size_t readToFind,
-                          std::vector<size_t> &results) override;
+    void getFilteredReads(read_t readToFind,
+                          std::vector<read_t> &results) override;
 
     void getFilteredReads(const std::string &s,
-                          std::vector<size_t> &results) override;
+                          std::vector<read_t> &results) override;
 
     /**
      * @brief Finds out how will the filter does with the given parameters
@@ -140,9 +140,9 @@ private:
     size_t readLen;
     std::vector<unsigned long> *readPos;
     std::vector<unsigned long> *readPosSorted;
-    size_t numReads;
+    read_t numReads;
     kMer_t *sketches = nullptr;
-    std::vector<std::map<kMer_t, std::vector<size_t>>> hashTables;
+    std::vector<std::map<kMer_t, std::vector<read_t>>> hashTables;
     kMer_t *randNumbers = nullptr;
 
     /**
@@ -159,7 +159,7 @@ private:
      * @param sketch
      * @param results
      */
-    void getFilteredReads(kMer_t *sketch, std::vector<size_t> &results);
+    void getFilteredReads(kMer_t *sketch, std::vector<read_t> &results);
 
     /**
      * @brief Calculates "MinHash" sketches based on the hashes provided.

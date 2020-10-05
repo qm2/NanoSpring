@@ -58,16 +58,16 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
             : cG->mainPath.path.end();
     const std::string s(stringBegin, stringEnd);
     // std::cout << curPos << "\n";
-    std::vector<size_t> results;
+    std::vector<read_t> results;
     rF->getFilteredReads(s, results);
 
     // std::cout << "Found " << results.size() << " reads\n";
-    // for (size_t r : results)
+    // for (read_t r : results)
     //     std::cout << r << " ";
     // std::cout << '\n';
 
     // Try to add them one by one
-    for (const size_t r : results) {
+    for (const read_t r : results) {
         // std::cout << "Working on read " << r << '\n';
         if (!addRead(r))
             continue;
@@ -123,7 +123,7 @@ void Consensus::writeConsensus() {
 
 ConsensusGraph *Consensus::createGraph() {
     std::lock_guard<OmpNestMutex> lg(readStatusLock);
-    size_t read;
+    read_t read;
     if (!getRead(read))
         return nullptr;
     ConsensusGraph *cG = new ConsensusGraph(aligner);
@@ -146,7 +146,7 @@ bool Consensus::hasReadsLeft() {
     return firstUnaddedRead < numReads;
 }
 
-bool Consensus::getRead(size_t &read) {
+bool Consensus::getRead(read_t &read) {
     std::lock_guard<OmpNestMutex> lg(readStatusLock);
     if (firstUnaddedRead >= numReads)
         return false;
@@ -157,13 +157,13 @@ bool Consensus::getRead(size_t &read) {
     return true;
 }
 
-void Consensus::putReadBack(size_t read) {
+void Consensus::putReadBack(read_t read) {
     std::lock_guard<OmpNestMutex> lg(readStatusLock);
     inGraph[read] = false;
     firstUnaddedRead = std::min(read, firstUnaddedRead);
 }
 
-bool Consensus::addRead(size_t read) {
+bool Consensus::addRead(read_t read) {
     std::lock_guard<OmpNestMutex> lg(readStatusLock);
     if (inGraph[read])
         return false;

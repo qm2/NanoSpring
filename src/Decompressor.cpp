@@ -95,7 +95,7 @@ void Decompressor::generateReads(const char *outputFileName) const {
         generateReads(reads, i);
     std::ofstream outFile;
     outFile.open(outputFileName);
-    for (size_t i = 0; i < numReads; ++i)
+    for (read_t i = 0; i < numReads; ++i)
         outFile << reads[i] << '\n';
 }
 
@@ -115,9 +115,9 @@ void Decompressor::generateReads(std::string *reads, size_t contigId) const {
     posFile.open(currentFilename + ".pos");
     editTypeFile.open(currentFilename + ".type");
     editBaseFile.open(currentFilename + ".base");
-    size_t id = 0;
+    read_t id = 0;
     while (true) {
-        size_t idInc;
+        read_t idInc;
         idFile >> idInc;
         char c;
         idFile.get(c);
@@ -137,7 +137,7 @@ void Decompressor::generateReads(std::string *reads, size_t contigId) const {
     // unalignedIdsFile.open(currentFilename + ".unalignedIds",
     // std::ios::binary); unalignedReadsFile.open(currentFilename +
     // ".unalignedReads"); id = 0; while (true) {
-    //     size_t idInc;
+    //     read_t idInc;
     //     unalignedIdsFile >> idInc;
     //     char c;
     //     unalignedIdsFile.get(c);

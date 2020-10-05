@@ -104,6 +104,7 @@ add_library(NanoporeCompressionLib
         include/ConsensusGraph.h
         include/OmpMutex.h
         include/DirectoryUtils.h
+        include/Types.h
         )
 
 target_include_directories(NanoporeCompressionLib 

@@ -59,13 +59,13 @@ private:
      * @brief Index of the first read that has not been added to any graph
      *
      */
-    size_t firstUnaddedRead;
+    read_t firstUnaddedRead;
     /**
      * @brief Protects inGraph and firstUnaddedRead
      *
      */
     OmpNestMutex readStatusLock;
-    size_t numReads;
+    read_t numReads;
 
     std::vector<std::unique_ptr<ConsensusGraph>> graphs;
 
@@ -90,7 +90,7 @@ private:
      * @return true
      * @return false
      */
-    bool getRead(size_t &read);
+    bool getRead(read_t &read);
 
     /**
      * @brief Sets a read to unadded
@@ -99,7 +99,7 @@ private:
      * @return true
      * @return false
      */
-    void putReadBack(size_t read);
+    void putReadBack(read_t read);
 
     /**
      * @brief Sets an unadded read to added
@@ -108,7 +108,7 @@ private:
      * @return true
      * @return false
      */
-    bool addRead(size_t read);
+    bool addRead(read_t read);
 
     /**
      * @brief Add reads overlapping with the mainPath of cG at position curPos

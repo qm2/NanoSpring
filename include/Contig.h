@@ -4,12 +4,10 @@
 #include "ReadAligner.h"
 #include "ReadData.h"
 #include "ReadFilter.h"
+#include "Types.h"
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
-
-// We use the indices of the reads to represent them
-typedef size_t read_t;
 
 /**
  * A contig is just an ordered set of reads along with their positions

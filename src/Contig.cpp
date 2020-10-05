@@ -77,10 +77,10 @@ void ContigGenerator::initialize() {
 
 bool ContigGenerator::addRelatedReads(const std::pair<long, read_t> r) {
     //            std::cout << "Adding related reads" << std::endl;
-    std::vector<size_t> results;
+    std::vector<read_t> results;
     rF->getFilteredReads(r.second, results);
     bool addedRead = false;
-    size_t const resultLen = results.size();
+    read_t const resultLen = results.size();
     bool merged = false;
     long relPosInMerge;
     Contig *contig2MergeWith;
@@ -89,8 +89,8 @@ bool ContigGenerator::addRelatedReads(const std::pair<long, read_t> r) {
     omp_init_lock(&lock);
 #pragma omp parallel for shared(lock, results, addedRead, merged,              \
                                 contig2MergeWith, relPosInMerge)
-    for (size_t i = 0; i < resultLen; i++) {
-        size_t it = results[i];
+    for (read_t i = 0; i < resultLen; i++) {
+        read_t it = results[i];
         long relPos;
         omp_set_lock(&lock);
         auto findRead = readsInContig.find(it);
@@ -138,7 +138,7 @@ void ContigGenerator::mergeContigs(Contig *c1, Contig *c2, long pos) {
     auto it = c1->reads.end();
     it--;
     long biggestPos = it->first;
-    for (const std::pair<long, size_t> &r : c2->reads) {
+    for (const std::pair<long, read_t> &r : c2->reads) {
         long pos2Add = r.first + pos;
         if (pos2Add > biggestPos)
             hasActiveContig = true;

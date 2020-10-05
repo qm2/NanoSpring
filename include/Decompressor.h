@@ -3,6 +3,7 @@
 
 #include "Edits.h"
 #include "ReadAligner.h"
+#include "Types.h"
 #include <string>
 
 class Decompressor {
@@ -19,7 +20,7 @@ public:
 private:
     // Number of contigs and number of reads; initialized by bscDecompress
     size_t numContigs;
-    size_t numReads;
+    read_t numReads;
 
     /**
      * @brief Unpack the files in tempDir; i.e., break it up by ".\n"
