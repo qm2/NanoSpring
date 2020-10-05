@@ -1,14 +1,16 @@
 #include "Decompressor.h"
 #include "Consensus.h"
+#include "DirectoryUtils.h"
 #include "bsc_helper.h"
 #include <boost/filesystem.hpp>
 #include <cassert>
 #include <fstream>
 #include <iostream>
+#include <set>
 
 void Decompressor::decompress(const char *inputFileName,
                               const char *outputFileName) {
-    prepareTempDirs();
+    DirectoryUtils::clearDir(tempDir);
 
     // bsc::BSC_decompress(inputFileName, tarFileName.c_str());
 
@@ -73,39 +75,18 @@ void Decompressor::unpack() {
         }
     }
 
-    const char *const extensions[] = {".genome", ".base", ".id", ".pos",
-                                      ".type"};
-    const size_t numExtensions = sizeof(extensions) / sizeof(extensions[0]);
-    for (size_t extId = 0; extId < numExtensions; extId++) {
-        size_t i = 0;
-        std::ifstream inFile;
-        inFile.open(tempDir + tempFilename + extensions[extId]);
-        std::ofstream outFile;
-        std::string line;
-        bool need2CreateFile = true;
-        while (std::getline(inFile, line)) {
-            if (need2CreateFile) {
-                need2CreateFile = false;
-                outFile.open(tempDir + tempFilename + std::to_string(i) +
-                             extensions[extId]);
-                ++i;
-                outFile << line << '\n';
-            } else {
-                if (line == ".") {
-                    outFile.close();
-                    need2CreateFile = true;
-                } else
-                    outFile << line << '\n';
-            }
-        }
+    // Unpack all files in directory with extensions
+    boost::filesystem::directory_iterator endIt;
+    for (boost::filesystem::directory_iterator it(tempDir); it != endIt; ++it) {
+        if (!boost::filesystem::is_regular_file(*it))
+            continue;
+        boost::filesystem::path fullPath = it->path();
+        std::string filename = fullPath.filename().string();
+        const auto &ext = fullPath.extension();
+        if (ext.empty())
+            continue;
+        DirectoryUtils::unpack(fullPath.string());
     }
-}
-
-void Decompressor::prepareTempDirs() const {
-    boost::system::error_code ec;
-    const boost::filesystem::path tempDirPath(tempDir);
-    boost::filesystem::remove_all(tempDirPath, ec);
-    boost::filesystem::create_directory(tempDirPath, ec);
 }
 
 void Decompressor::generateReads(const char *outputFileName) const {

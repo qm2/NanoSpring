@@ -37,6 +37,11 @@ public:
 
     void generateConsensus();
 
+    /**
+     * @brief Calls writeReads and writeMainPath on each of the consensus
+     * graphs, and combines their otuput
+     *
+     */
     void writeConsensus();
 
     Consensus();
@@ -44,9 +49,9 @@ public:
     ~Consensus();
 
 private:
-    // TODO: make this threadsafe
     /**
      * @brief Whether the reads have been added to a graph
+     *
      * !!vector<bool> is not thread safe!!
      */
     std::vector<bool> inGraph;

@@ -27,12 +27,6 @@ private:
      */
     void unpack();
 
-    /**
-     * @brief  We clear the temp directories and create them if they do not
-     * exist
-     *
-     */
-    void prepareTempDirs() const;
 
     /**
      * @brief This function generates the outputfile from the files in tempDir

@@ -141,10 +141,10 @@ public:
     typedef const char *RAItB;
     typedef StringAligner<RAItA, RAItB> StringAligner_t;
 
-    // Starting and ending positions of mainPath in contig
+    /** Starting and ending positions of mainPath in contig **/
     ssize_t startPos, endPos;
 
-    // Directory for storing the temp files (.genome, .pos, .type)
+    /** Directory for storing the temp files (.genome, .pos, .type) **/
     std::string tempDir = "tempRaw/";
 
     Path mainPath;
@@ -197,6 +197,17 @@ public:
     void addReads(const std::set<std::pair<long, read_t>> &reads,
                   std::vector<std::unique_ptr<std::string>> &readData);
 
+    /**
+     * @brief Updates the graph with the new read s, and the alignment results
+     * editScript, beginOffset, and endOffset
+     *
+     * @param s
+     * @param editScript
+     * @param beginOffset
+     * @param endOffset
+     * @param readId
+     * @param pos The relative position of the read in contig
+     */
     void updateGraph(const std::string &s, std::vector<Edit> &editScript,
                      ssize_t beginOffset, ssize_t endOffset, size_t readId,
                      long pos);
@@ -218,7 +229,7 @@ public:
     Path &calculateMainPathGreedy();
 
     /**
-     * @brief
+     * @brief Prints the mainPath to file tempDir/filename.genome
      *
      * @param filename
      */
@@ -243,8 +254,7 @@ public:
 
     /**
      * @brief Write the raw data into tempDir with file names .pos, .genome,
-     * .type, .base, .id, .unalignedReads, .unalignedIds; compresses them into
-     * tempCompressedDir;
+     * .type, .base, .id, .unalignedReads, .unalignedIds;
      * The .id file is delta encoded
      *
      * @param filename

@@ -1,6 +1,7 @@
 #include "Compressor.h"
 #include "Consensus.h"
 #include "Contig.h"
+#include "DirectoryUtils.h"
 #include "ReadData.h"
 #include "ReadFilter.h"
 #include "bsc_helper.h"
@@ -30,10 +31,7 @@ void Compressor::compress(const char *inputFileName) const {
 
     // We clear the temp directories and create them if they do not
     // exist
-    boost::system::error_code ec;
-    const boost::filesystem::path tempDirPath(tempDir);
-    boost::filesystem::remove_all(tempDirPath, ec);
-    boost::filesystem::create_directory(tempDirPath, ec);
+    DirectoryUtils::clearDir(tempDir);
 
     Consensus consensus;
     {
@@ -54,7 +52,6 @@ void Compressor::compress(const char *inputFileName) const {
 #ifdef DEBUG
         std::cout << "bsc compression starts" << std::endl;
 #endif
-        boost::filesystem::path tempPath(tempDir);
         boost::filesystem::directory_iterator endIt;
         for (boost::filesystem::directory_iterator it(tempDir); it != endIt;
              ++it) {

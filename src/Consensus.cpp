@@ -1,4 +1,5 @@
 #include "Consensus.h"
+#include "DirectoryUtils.h"
 #include "bsc_helper.h"
 #include <algorithm>
 #include <arpa/inet.h>
@@ -9,6 +10,7 @@
 #include <iterator>
 #include <memory>
 #include <mutex>
+#include <set>
 
 void Consensus::generateConsensus() {
     initialize();
@@ -109,25 +111,13 @@ void Consensus::writeConsensus() {
     metaData << '\n';
     metaData.close();
 
+    std::set<std::string> extensions;
+    DirectoryUtils::getAllExtensions(
+        tempDir, std::inserter(extensions, extensions.end()));
+
     // Now we combine the files, deliminated by ".\n"
-    const char *const extensions[] = {".genome", ".base", ".id", ".pos",
-                                      ".type"};
-    const size_t numExtensions = sizeof(extensions) / sizeof(extensions[0]);
-    for (size_t i = 0; i < numExtensions; ++i) {
-        std::ofstream outFile(tempDir + tempFileName + extensions[i],
-                              std::ios_base::binary);
-        for (size_t j = 0; j < size; j++) {
-            std::string fileName =
-                tempDir + tempFileName + std::to_string(j) + extensions[i];
-            std::ifstream inFile(fileName, std::ios_base::binary);
-            outFile << inFile.rdbuf();
-            outFile << ".\n";
-            inFile.close();
-            boost::system::error_code ec;
-            const boost::filesystem::path filePath(fileName);
-            boost::filesystem::remove(filePath, ec);
-        }
-        outFile.close();
+    for (const std::string &ext : extensions) {
+        DirectoryUtils::combineFilesWithExt(tempDir + tempFileName, ext, size);
     }
 }
 

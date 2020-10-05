@@ -9,20 +9,26 @@
 
 class Compressor {
 public:
-    // Parameters for filtering
+    /** Parameters for filtering **/
     size_t k, n, overlapSketchThreshold;
     ReadAligner *rA;
-    // Parameters for consensus
+    /** Parameters for consensus **/
     ConsensusGraph::StringAligner_t *aligner;
-    // The temp directories
+    /** The temp directories **/
     std::string tempDir = "tempRaw/";
-    // The output filenames to use in temp directories
+    /** The output filenames to use in temp directories **/
     std::string tempFileName = "Contig";
 
     std::string outputFileName = "compressedFile";
 
     // std::string tarFileName = "originalFile";
 
+    /**
+     * @brief Compresses the read data file inputFileName and stores the result
+     * in this->outputFileName
+     *
+     * @param inputFileName
+     */
     void compress(const char *inputFileName) const;
 };
 
