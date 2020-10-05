@@ -88,7 +88,8 @@ public:
     Node *source;
     Node *sink;
     size_t count;
-    std::set<size_t> reads;
+    // always maintained in sorted order
+    std::vector<size_t> reads;
 
     /**
      * Initializes the Edge from a source, a sink, and a single read.
@@ -100,7 +101,7 @@ public:
 
     /**
      * Adds a read to the edge. Basically just increases count by 1 and add read
-     * to the internal vector.
+     * to the internal vector (while maintaining sorting).
      * @param read
      */
     void addRead(size_t read);
@@ -291,7 +292,8 @@ private:
 
     Edge *createEdge(Node *source, Node *sink, size_t read);
 
-    void removeReadsFromEdge(Edge *e, std::set<size_t> const &reads);
+    // reads must be a sorted vector
+    void removeReadsFromEdge(Edge *e, std::vector<size_t> const &reads);
 
     /**
      * Removes an edge from the graph
@@ -342,7 +344,7 @@ private:
      * Move everything below e to newPre->newNode.
      * @details
      * "Everything" means all the reads in reads2Split until the mainPath or a
-     * leaf node is reached.
+     * leaf node is reached. reads2Split must be sorted vector.
      *
      * - Nodes and Edges that will be deleted: \n
      *  e will be erased if it only has reads in reads2Split; e->sink will be
@@ -353,7 +355,7 @@ private:
      * newPre. In particular, newPre will have a new edge going out. The newly
      * created nodes are guaranteed to have at most one Edge going in.
      */
-    void splitPath(Node *newPre, Edge *e, std::set<size_t> const &reads2Split);
+    void splitPath(Node *newPre, Edge *e, std::vector<size_t> const &reads2Split);
 
     /**
      * Write the edits trings of the reads into a single file

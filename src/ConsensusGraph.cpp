@@ -8,12 +8,14 @@
 
 Edge::Edge(Node *source, Node *sink, size_t read) : source(source), sink(sink) {
     count = 1;
-    reads.insert(read);
+    // insert into sorted vector
+    reads.insert(std::lower_bound(reads.begin(),reads.end(),read), read);
 }
 
 void Edge::addRead(size_t read) {
     count++;
-    reads.insert(read);
+    // insert into sorted vector
+    reads.insert(std::lower_bound(reads.begin(),reads.end(),read), read);
 }
 
 Node::Node(const char base) : base(base) {}
@@ -630,9 +632,9 @@ void ConsensusGraph::walkAndPrune(Edge *e) {
 }
 
 void ConsensusGraph::splitPath(Node *newPre, Edge *e,
-                               std::set<size_t> const &reads2Split) {
+                               std::vector<size_t> const &reads2Split) {
     // The reads that need to be split going down this path
-    std::set<size_t> readsInPath2Split;
+    std::vector<size_t> readsInPath2Split;
     std::set_intersection(
         reads2Split.begin(), reads2Split.end(), e->reads.begin(),
         e->reads.end(),
@@ -698,8 +700,8 @@ Edge *ConsensusGraph::createEdge(Node *source, Node *sink, size_t read) {
 }
 
 void ConsensusGraph::removeReadsFromEdge(Edge *e,
-                                         std::set<size_t> const &reads) {
-    std::set<size_t> updatedReadsInOldEdge;
+                                         std::vector<size_t> const &reads) {
+    std::vector<size_t> updatedReadsInOldEdge;
     std::set_difference(
         e->reads.begin(), e->reads.end(), reads.begin(), reads.end(),
         std::inserter(updatedReadsInOldEdge, updatedReadsInOldEdge.begin()));
@@ -905,7 +907,7 @@ size_t ConsensusGraph::read2EditScript(ConsensusGraph::Read &r, size_t id,
     Node *curNode = r.start;
     auto advanceInRead = [id](Node *n) -> Node * {
         for (auto e : n->edgesOut) {
-            if (e.second->reads.find(id) != e.second->reads.end()) {
+            if (std::binary_search(e.second->reads.begin(),e.second->reads.end(),id)) {
                 return e.first;
             }
         }
