@@ -57,6 +57,7 @@ public:
     size_t snakeLen;
 
     EditPath(int xStart, int yStart, int xMid, int yMid, size_t snakeLen);
+    EditPath() {}; // default constructor needed for initialization of matrix
 };
 
 #endif // EXPERIMENTS_EDITS_H

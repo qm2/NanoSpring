@@ -5,6 +5,10 @@
 #include "LocalMyers.h"
 #include "StringAligner.h"
 
+// define types for matrices used in localAlign
+typedef std::vector<std::vector<EditPath>> EditInfoMat_t;
+typedef std::vector<std::vector<uint8_t>> EditInfoAccessedMat_t;
+
 /**
  * This class basically runs the local myers algorithm from left the right to
  * obtain a good alignment at the right most end, and then uses that alignment
@@ -80,13 +84,18 @@ protected:
      * @param editScript
      * @param editDis This will store the Levenshtein distance used, i.e.,
      * insertions, deletions, and substitutions all have edit distance 1.
+     * @param editInfo Stores edit path in 2d array, preallocated elsewhere
+     * for speed
+     * @param editInfoAccessed Used to denote filled positions in editInfo,
+     * preallocated elsewhere for speed
      * @return true
      * @return false
      */
     template <typename RItA, typename RItB>
     static bool localAlign(RItA &Abegin, RItA Aend, RItB &Bbegin, RItB Bend,
                            const size_t max, std::vector<Edit> &editScript,
-                           size_t &editDis);
+                           size_t &editDis, EditInfoMat_t &editInfo,
+                           EditInfoAccessedMat_t &editInfoAccessed);
 
     /**
      * @brief Performs global alignment algorithm once
@@ -126,11 +135,16 @@ protected:
      * @param dirSuccess Whether we should continue based on maxEditDis and the
      * current editDis
      * @param editDis
+     * @param editInfo Stores edit path in 2d array, preallocated elsewhere
+     * for speed (passed to localAlign as it is)
+     * @param editInfoAccessed Used to denote filled positions in editInfo,
+     * preallocated elsewhere for speed (passed to localAlign as it is)
      * @param max Maximum edit distance in a single alignment
      */
     template <typename RItA, typename RItB>
     void advance(RItA &Abegin, RItA Aend, RItB &Bbegin, RItB Bend,
                  const size_t lenAString, const size_t lenBString,
-                 bool &dirSuccess, size_t &editDis, const size_t max);
+                 bool &dirSuccess, size_t &editDis, const size_t max,
+                 EditInfoMat_t &editInfo, EditInfoAccessedMat_t &editInfoAccessed);
 };
 #endif /* F1ADC39F_6A7F_4671_B4B5_77EF545E2B5C */

@@ -5,6 +5,7 @@
 #include "LocalMyers_impl.h"
 #include <algorithm>
 #include <cassert>
+#include <cstring> // memset
 #include <iostream>
 #include <iterator>
 #include <map>
@@ -13,7 +14,8 @@ template <typename RandomAccessItA, typename RandomAccessItB>
 template <typename RItA, typename RItB>
 bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::localAlign(
     RItA &Abegin, RItA Aend, RItB &Bbegin, RItB Bend, const size_t max,
-    std::vector<Edit> &editScript, size_t &editDis) {
+    std::vector<Edit> &editScript, size_t &editDis, 
+    EditInfoMat_t &editInfo, EditInfoAccessedMat_t &editInfoAccessed) {
     assert(Abegin < Aend);
     assert(Bbegin < Bend);
     unsigned const int lenAString = Aend - Abegin;
@@ -31,15 +33,19 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::localAlign(
     //    std::cout << *it;
     // std::cout << std::endl;
 
-    // Each member maps end point to a portion of the path leading to that end
-    // point
-    std::map<std::pair<int, int>, EditPath> editInfo;
+    // Each member of editInfomaps end point to a portion of the path leading 
+    // to that end point
+
+    // editInfoAccessed stores which elements of editInfo have been filled.
+    // We initialize with zeros here:
+    for(auto& v : editInfoAccessed)
+        std::memset(&v[0], 0, sizeof(v[0]) * v.size());
 
     int Xreached = 0;
     int Yreached = 0;
     auto findEdit = [lenAString, lenBString, Abegin, Bbegin,
                      /*Aend, Bend, forward,*/ max, &Xreached, &Yreached,
-                     &editInfo, &editDis, &foundEdit]() {
+                     &editInfo, &editInfoAccessed, &editDis, &foundEdit]() {
         const size_t VSize = max + 1;
         // std::cout << "VSize " << VSize << std::endl;
         int VTemp[VSize * 4];
@@ -51,7 +57,7 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::localAlign(
         }
         auto findSnakeAndUpdate =
             [lenAString, lenBString, V, Abegin, Bbegin, /*Aend, Bend, forward,*/
-             &Xreached, &Yreached, &editInfo,
+             &Xreached, &Yreached, &editInfo, &editInfoAccessed, 
              &foundEdit](const int xStart, const int yStart, const int xMid,
                          const int yMid, const int d, const int k) {
                 // end point
@@ -71,9 +77,14 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::localAlign(
                 // we save this furthest reaching end point
                 V[d % 4][k] = xEnd;
 
-                editInfo.insert(std::make_pair(
-                    std::make_pair(xEnd, yEnd),
-                    EditPath(xStart, yStart, xMid, yMid, snakeLen)));
+                // note: if position already filled, do not replace
+                // If we don't overwrite, we will always be using the shortest path 
+                // that reaches that point; but if we do, the original shorter path 
+                // will be overwritten by a longer path.
+                if (!editInfoAccessed[xEnd][yEnd]) {
+                    editInfo[xEnd][yEnd] = EditPath(xStart, yStart, xMid, yMid, snakeLen);
+                    editInfoAccessed[xEnd][yEnd] = 1;
+                }
 
                 // std::cout << d << ',' << k << ':' << xStart << ' ' << yStart
                 //          << ' ' << xMid << ' ' << yMid << ' ' << xEnd << ' '
@@ -229,7 +240,7 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::localAlign(
     editScript.reserve(max);
     while (currentX > 0 || currentY > 0) {
         // std::cout << currentX << " " << currentY << std::endl;
-        EditPath &e = editInfo.at(std::make_pair(currentX, currentY));
+        EditPath &e = editInfo[currentX][currentY];
         if (e.snakeLen > 0) {
             // If there is a snake (a series of diagonals)
             editScript.push_back(Edit(SAME, e.snakeLen));
@@ -320,7 +331,9 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::alignOnce(
         Bbegin += (-offsetGuess);
     }
     const size_t max = std::min(this->lenA, this->lenB) * 2;
-
+    // preallocating for speed
+    std::vector<std::vector<EditPath>> editInfo(this->lenA+1, std::vector<EditPath>(this->lenB+1));
+    std::vector<std::vector<uint8_t>> editInfoAccessed(this->lenA+1, std::vector<uint8_t>(this->lenB+1));
     while (Abegin != Aend && Bbegin != Bend) {
         // RItA ALocalBegin =
         // Aend - Abegin > (ssize_t)this->lenA ? Aend - this->lenA : Abegin;
@@ -337,7 +350,8 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::alignOnce(
         // bool success = localAlign(ALocalBegin, Aend, BLocalBegin, Bend, max,
         // localEditScript, localEditDis, false);
         bool success = localAlign(Abegin, ALocalEnd, Bbegin, BLocalEnd, max,
-                                  localEditScript, localEditDis);
+                                  localEditScript, localEditDis, 
+                                  editInfo, editInfoAccessed);
         // std::cout << "320" << std::endl;
         if (!success) {
             // std::cout << "326" << std::endl;
@@ -402,6 +416,9 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::align(
     bool dir1Success = true;
     bool dir2Success = true;
     const size_t max = std::min(this->lenA, this->lenB) * 2;
+    // preallocating for speed
+    std::vector<std::vector<EditPath>> editInfo(this->lenA+1, std::vector<EditPath>(this->lenB+1));
+    std::vector<std::vector<uint8_t>> editInfoAccessed(this->lenA+1, std::vector<uint8_t>(this->lenB+1));
     while (Abegin1 < Aend && Bbegin1 < Bend && Abegin2 < Aend &&
            Bbegin2 < Bend && (dir1Success || dir2Success)) {
         double expectedEditDis1 =
@@ -413,10 +430,10 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::align(
             (dir1Success && expectedEditDis1 < expectedEditDis2)) {
 
             advance(Abegin1, Aend, Bbegin1, Bend, this->lenA, this->lenB,
-                    dir1Success, editDis1, max);
+                    dir1Success, editDis1, max, editInfo, editInfoAccessed);
         } else {
             advance(Bbegin2, Bend, Abegin2, Aend, this->lenA, this->lenB,
-                    dir2Success, editDis2, max);
+                    dir2Success, editDis2, max, editInfo, editInfoAccessed);
         }
     }
     if (!dir1Success && !dir2Success) {
@@ -488,13 +505,15 @@ template <typename RItA, typename RItB>
 void LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::advance(
     RItA &Abegin, RItA Aend, RItB &Bbegin, RItB Bend, const size_t lenAString,
     const size_t lenBString, bool &dirSuccess, size_t &editDis,
-    const size_t max) {
+    const size_t max, EditInfoMat_t &editInfo, 
+    EditInfoAccessedMat_t &editInfoAccessed) {
     RItA ALocalEnd = Aend - Abegin > lenAString ? Abegin + lenAString : Aend;
     RItB BLocalEnd = Bend - Bbegin > lenBString ? Bbegin + lenBString : Bend;
     std::vector<Edit> localEditScript;
     size_t localEditDis;
     bool success = localAlign(Abegin, ALocalEnd, Bbegin, BLocalEnd, max,
-                              localEditScript, localEditDis /*, true*/);
+                              localEditScript, localEditDis, 
+                              editInfo, editInfoAccessed);
     if (success) {
         editDis += localEditDis;
         if (editDis + errorRate * std::min(Aend - Abegin, Bend - Bbegin) >
