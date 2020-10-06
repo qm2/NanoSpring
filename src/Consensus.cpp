@@ -15,11 +15,9 @@
 void Consensus::generateConsensus() {
     initialize();
 
-#pragma omp parallel
-    while (hasReadsLeft()) {
-        ConsensusGraph *cG = createGraph();
-        if (!cG)
-            break;
+    ConsensusGraph *cG = nullptr;
+#pragma omp parallel private(cG)
+    while ((cG = createGraph())) {
         ssize_t initialStartPos = cG->startPos;
         ssize_t initialEndPos = cG->endPos;
         const ssize_t len = initialEndPos - initialStartPos;
