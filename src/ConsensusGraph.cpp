@@ -745,12 +745,12 @@ void ConsensusGraph::removeConnectedNodes(Node *n) {
     {
         // This code segment makes sure that the graph is connected and
         // traverseAndCall is working as desired
-        size_t count = 0;
-        traverseAndCall(n, false, [&count](Node *) { ++count; });
-        assert(count == numNodes);
-        count = 0;
-        traverseAndCall(n, true, [&count](Node *) { ++count; });
-        assert(count == numNodes);
+        // size_t count = 0;
+        // traverseAndCall(n, false, [&count](Node *) { ++count; });
+        // assert(count == numNodes);
+        // count = 0;
+        // traverseAndCall(n, true, [&count](Node *) { ++count; });
+        // assert(count == numNodes);
     }
 
     /** Nodes that have no edges in **/
