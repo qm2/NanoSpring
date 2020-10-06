@@ -1,6 +1,7 @@
 #include "ConsensusGraph.h"
 #include "bsc_helper.h"
 #include <algorithm>
+#include <cassert>
 #include <deque>
 #include <fstream>
 #include <iostream>
@@ -9,13 +10,13 @@
 Edge::Edge(Node *source, Node *sink, read_t read) : source(source), sink(sink) {
     count = 1;
     // insert into sorted vector
-    reads.insert(std::lower_bound(reads.begin(),reads.end(),read), read);
+    reads.insert(std::lower_bound(reads.begin(), reads.end(), read), read);
 }
 
 void Edge::addRead(read_t read) {
     count++;
     // insert into sorted vector
-    reads.insert(std::lower_bound(reads.begin(),reads.end(),read), read);
+    reads.insert(std::lower_bound(reads.begin(), reads.end(), read), read);
 }
 
 Node::Node(const char base) : base(base) {}
@@ -371,7 +372,7 @@ Path &ConsensusGraph::calculateMainPath() {
     mainPath.clear();
 
     // First we set all the hasReached fields to false
-    clearHasReached(startingNode);
+    traverseAndCall(startingNode, true, [](Node *) {});
 
     std::deque<Node *> unfinishedNodes;
     size_t globalMaxWeight = 0;
@@ -456,37 +457,6 @@ Path &ConsensusGraph::calculateMainPath() {
     //    printStatus();
     removeCycles();
     return mainPath;
-}
-
-void ConsensusGraph::clearHasReached(Node *n) {
-    std::deque<Node *> unfinishedNodes;
-    unfinishedNodes.push_back(n);
-    while (!unfinishedNodes.empty()) {
-        Node *currentNode = unfinishedNodes.front();
-        // We don't do anything if it has already been set to false
-        if (!currentNode->hasReached) {
-            unfinishedNodes.pop_front();
-            continue;
-        }
-        // if (unfinishedNodes.size() > 1000000) {
-        //     std::cout << unfinishedNodes.size() << ' ';
-        //     std::raise(SIGINT);
-        // }
-        currentNode->hasReached = false;
-        unfinishedNodes.pop_front();
-
-        for (auto edgeIt : currentNode->edgesOut) {
-            Node *n = edgeIt.second->sink;
-            if (n->hasReached) {
-                unfinishedNodes.push_front(n);
-            }
-        }
-
-        for (auto edgeIt : currentNode->edgesIn) {
-            if (edgeIt->source->hasReached)
-                unfinishedNodes.push_back(edgeIt->source);
-        }
-    }
 }
 
 Path &ConsensusGraph::calculateMainPathGreedy() {
@@ -681,8 +651,13 @@ ConsensusGraph::~ConsensusGraph() {
     // std::cerr << "Removing" << std::endl;
 
     removeConnectedNodes(startingNode);
-    // std::cerr << std::to_string(numEdges) << " edges "
-    //           << std::to_string(numNodes) << " nodes left\n";
+    if (numEdges || numNodes)
+        std::cerr << "graph " << this << " " << std::to_string(numEdges)
+                  << " edges " << std::to_string(numNodes) << " nodes left"
+                  << std::endl;
+
+    assert(numEdges == 0);
+    assert(numNodes == 0);
 }
 
 Node *ConsensusGraph::createNode(char base) {
@@ -765,27 +740,38 @@ void ConsensusGraph::removeAbove(Node *n) {
 }
 
 void ConsensusGraph::removeConnectedNodes(Node *n) {
-    clearHasReached(n);
-    std::stack<Node *> nodesToRemove;
-    nodesToRemove.push(n);
-    n->hasReached = true;
-    while (!nodesToRemove.empty()) {
-        Node *curNode = nodesToRemove.top();
-        if (curNode->edgesOut.empty()) {
-            nodesToRemove.pop();
-            for (auto edgeIt : curNode->edgesIn) {
-                Node *source = edgeIt->source;
-                if (!source->hasReached && source->edgesOut.size() == 1) {
-                    nodesToRemove.push(source);
-                    source->hasReached = true;
-                }
+    traverseAndCall(n, true, [](Node *) {});
+
+    {
+        // This code segment makes sure that the graph is connected and
+        // traverseAndCall is working as desired
+        size_t count = 0;
+        traverseAndCall(n, false, [&count](Node *) { ++count; });
+        assert(count == numNodes);
+        count = 0;
+        traverseAndCall(n, true, [&count](Node *) { ++count; });
+        assert(count == numNodes);
+    }
+
+    /** Nodes that have no edges in **/
+    std::stack<Node *> leafNodes;
+    traverseAndCall(n, false, [&leafNodes](Node *node) {
+        if (node->edgesOut.empty())
+            leafNodes.push(node);
+    });
+#ifdef DEBUG
+    std::cerr << "Num of leaf Nodes " << leafNodes.size() << std::endl;
+#endif
+    while (!leafNodes.empty()) {
+        Node *curNode = leafNodes.top();
+        leafNodes.pop();
+        for (auto edgeIt : curNode->edgesIn) {
+            Node *source = edgeIt->source;
+            if (source->edgesOut.size() == 1) {
+                leafNodes.push(source);
             }
-            removeNode(curNode);
-        } else {
-            Node *node2Add = curNode->edgesOut.begin()->first;
-            nodesToRemove.push(node2Add);
-            node2Add->hasReached = true;
         }
+        removeNode(curNode);
     }
 }
 
@@ -907,7 +893,8 @@ size_t ConsensusGraph::read2EditScript(ConsensusGraph::Read &r, read_t id,
     Node *curNode = r.start;
     auto advanceInRead = [id](Node *n) -> Node * {
         for (auto e : n->edgesOut) {
-            if (std::binary_search(e.second->reads.begin(),e.second->reads.end(),id)) {
+            if (std::binary_search(e.second->reads.begin(),
+                                   e.second->reads.end(), id)) {
                 return e.first;
             }
         }
@@ -1055,3 +1042,33 @@ ConsensusGraph::ConsensusGraph(StringAligner_t *aligner) : aligner(aligner) {}
 
 ConsensusGraph::Read::Read(long pos, Node *start, size_t len)
     : pos(pos), start(start), len(len) {}
+
+template <typename Functor>
+void ConsensusGraph::traverseAndCall(Node *n, bool status, Functor f) {
+    std::deque<Node *> unfinishedNodes;
+    unfinishedNodes.push_back(n);
+    while (!unfinishedNodes.empty()) {
+        Node *currentNode = unfinishedNodes.front();
+        // We don't do anything if it has already been set to !status
+        if (currentNode->hasReached != status) {
+            unfinishedNodes.pop_front();
+            continue;
+        }
+
+        currentNode->hasReached = !status;
+        unfinishedNodes.pop_front();
+        f(currentNode);
+
+        for (auto edgeIt : currentNode->edgesOut) {
+            Node *n = edgeIt.second->sink;
+            if (n->hasReached == status) {
+                unfinishedNodes.push_front(n);
+            }
+        }
+
+        for (auto edgeIt : currentNode->edgesIn) {
+            if (edgeIt->source->hasReached == status)
+                unfinishedNodes.push_back(edgeIt->source);
+        }
+    }
+}

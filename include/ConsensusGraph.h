@@ -6,6 +6,7 @@
 #include "ReadData.h"
 #include "StringAligner.h"
 #include <deque>
+#include <functional>
 #include <map>
 #include <set>
 #include <vector>
@@ -308,7 +309,23 @@ private:
 
     void removeConnectedNodes(Node *n);
 
-    void clearHasReached(Node *n);
+    /**
+     * @brief Traverses the graph starting at Node n and calls the function f on
+     * each Node
+     *
+     * Assumes that the graph is connected; assumes that originally some portion
+     * of the graph connected to Node n has hasReached == status, and the rest
+     * has hasReached == !status. Will call f on all the Nodes connected to n
+     * with hasReached == status, and will set their hasReached to !status when
+     * the call returns.
+     *
+     * @tparam Functor
+     * @param n
+     * @param f
+     * @param status
+     */
+    template <typename Functor>
+    void traverseAndCall(Node *n, bool status, Functor f);
 
     /**
      * @brief
