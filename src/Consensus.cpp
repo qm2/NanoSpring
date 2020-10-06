@@ -177,4 +177,10 @@ bool Consensus::addRead(read_t read) {
 
 Consensus::Consensus() {}
 
-Consensus::~Consensus() {}
+Consensus::~Consensus() {
+    // We should call the destructors of the ConsensusGraphs in parallel
+    size_t numGraphs = graphs.size();
+#pragma omp parallel for
+    for (size_t i = 0; i < numGraphs; ++i)
+        graphs[i].reset();
+}
