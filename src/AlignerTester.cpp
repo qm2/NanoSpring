@@ -90,6 +90,7 @@ void AlignerTester::profile(StringAligner<const char *> *aligner,
     auto start = std::chrono::high_resolution_clock::now();
 
     size_t numReads = readsA.size();
+#pragma omp parallel for reduction(+:numSuccess, totalEditDis, totalBeginOffset, totalEndOffset)
     for (size_t i = 0; i < numReads; ++i) {
         std::vector<Edit> editScript;
         size_t editDis;
@@ -154,46 +155,54 @@ void AlignerTester::profile(StringAligner<const char *> *aligner,
 
 bool AlignerTester::validate(StringAligner<const char *> *aligner) {
     size_t numReads = readsA.size();
-    for (size_t i = 0; i < numReads; ++i) {
-        std::vector<Edit> editScript;
-        size_t editDis;
-        ssize_t beginOffset, endOffset;
-        // std::cout << readsA[i] << '\n';
-        // std::cout << readsB[i] << '\n';
+    bool result = true;
+#pragma omp parallel
+    {
+#pragma omp for
+        for (size_t i = 0; i < numReads; ++i) {
+            std::vector<Edit> editScript;
+            size_t editDis;
+            ssize_t beginOffset, endOffset;
+            // std::cout << readsA[i] << '\n';
+            // std::cout << readsB[i] << '\n';
 
-        const char *Abegin = readsA[i].c_str();
-        const char *Aend = Abegin + readsA[i].length();
-        const char *Bbegin = readsB[i].c_str();
-        const char *Bend = Bbegin + readsB[i].length();
-        bool success =
-            aligner->align(Abegin, Aend, Bbegin, Bend, 0, beginOffset,
-                           endOffset, editScript, editDis);
-        if (!success)
-            return false;
-        std::string result;
-        // std::cout << "beginOffset" << beginOffset << std::endl;
-        // std::cout << "endOffset" << endOffset << std::endl;
-        // std::cout << aligner->name << std::endl;
-        std::string origString = readsA[i].substr(
-            beginOffset > 0 ? beginOffset : 0,
-            readsA[i].length() - (beginOffset > 0 ? beginOffset : 0) +
-                (endOffset > 0 ? 0 : endOffset));
-        std::string targetString = readsB[i].substr(
-            beginOffset > 0 ? 0 : -beginOffset,
-            readsB[i].length() - (beginOffset > 0 ? 0 : -beginOffset) -
-                (endOffset > 0 ? endOffset : 0));
+            const char *Abegin = readsA[i].c_str();
+            const char *Aend = Abegin + readsA[i].length();
+            const char *Bbegin = readsB[i].c_str();
+            const char *Bend = Bbegin + readsB[i].length();
+            bool success =
+                aligner->align(Abegin, Aend, Bbegin, Bend, 0, beginOffset,
+                               endOffset, editScript, editDis);
+            if (!success) {
+                result = false;
+#pragma omp cancel for
+            }
+            std::string result;
+            // std::cout << "beginOffset" << beginOffset << std::endl;
+            // std::cout << "endOffset" << endOffset << std::endl;
+            // std::cout << aligner->name << std::endl;
+            std::string origString = readsA[i].substr(
+                beginOffset > 0 ? beginOffset : 0,
+                readsA[i].length() - (beginOffset > 0 ? beginOffset : 0) +
+                    (endOffset > 0 ? 0 : endOffset));
+            std::string targetString = readsB[i].substr(
+                beginOffset > 0 ? 0 : -beginOffset,
+                readsB[i].length() - (beginOffset > 0 ? 0 : -beginOffset) -
+                    (endOffset > 0 ? endOffset : 0));
 
-        applyEditsToString(origString, editScript, result);
-        if (result.compare(targetString)) {
-            std::cout << "Begin Offset " << beginOffset << " EndOffset "
-                      << endOffset << '\n';
-            std::cout << readsA[i] << std::endl;
-            std::cout << readsB[i].length() << readsB[i] << std::endl;
-            std::cout << result.length() << result << std::endl;
-            return false;
+            applyEditsToString(origString, editScript, result);
+            if (result.compare(targetString)) {
+                std::cout << "Begin Offset " << beginOffset << " EndOffset "
+                          << endOffset << '\n';
+                std::cout << readsA[i] << std::endl;
+                std::cout << readsB[i].length() << readsB[i] << std::endl;
+                std::cout << result.length() << result << std::endl;
+                result = false;
+#pragma omp cancel for
+            }
         }
     }
-    return true;
+    return result;
 }
 
 void AlignerTester::applyEditsToString(const std::string &origString,
