@@ -186,10 +186,9 @@ public:
     void initialize(const std::string &seed, read_t readId, long pos);
 
     /**
-     * Adds a read to the consensus graph. Does not update mainPath.
+     * Adds a read to the consensus graph. Does not update mainPath or list of
+     * reads.
      * @param s String of read to add
-     * @param readId id of the read to add (id right now just means the position
-     * in all the reads read)
      * @param pos Relative position of read in contig
      */
     __attribute__((warn_unused_result)) bool
@@ -372,7 +371,8 @@ private:
      * newPre. In particular, newPre will have a new edge going out. The newly
      * created nodes are guaranteed to have at most one Edge going in.
      */
-    void splitPath(Node *newPre, Edge *e, std::vector<read_t> const &reads2Split);
+    void splitPath(Node *newPre, Edge *e,
+                   std::vector<read_t> const &reads2Split);
 
     /**
      * Write the edits trings of the reads into a single file

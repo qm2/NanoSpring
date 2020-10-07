@@ -468,7 +468,7 @@ Path &ConsensusGraph::calculateMainPathGreedy() {
     // Extend to the right
     {
         Node *currentNode = rightMostUnchangedNode;
-        currentNode->onMainPath = true;
+        assert(currentNode->onMainPath);
         Edge *edgeToAdd;
         while ((edgeToAdd = currentNode->getBestEdgeOut())) {
             edgesInPath.push_back(edgeToAdd);
@@ -503,7 +503,7 @@ Path &ConsensusGraph::calculateMainPathGreedy() {
     // printStatus();
     removeCycles();
     rightMostUnchangedNode = edgesInPath.back()->sink;
-    rightMostUnchangedNodeOffset = edgesInPath.size() + 1;
+    rightMostUnchangedNodeOffset = edgesInPath.size();
     leftMostUnchangedNode = edgesInPath.front()->source;
     leftMostUnchangedNodeOffset = 0;
     return mainPath;
