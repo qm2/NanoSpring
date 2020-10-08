@@ -240,9 +240,12 @@ void ConsensusGraph::updateGraph(const std::string &s,
                                  ssize_t beginOffset, ssize_t endOffset,
                                  read_t readId, long pos) {
 
-    auto edgeInPath = mainPath.edges.begin();
     const auto &edgeInPathEnd = mainPath.edges.end();
+    auto edgeInPath = mainPath.edges.begin();
+    /** nodeInPath should always be set to edgeInPath.source, unless it is the
+    last node, in which case edgeInPath should be edgeInPathEnd **/
     Node *nodeInPath = (*edgeInPath)->source;
+    /** The last node of this read that has been added **/
     Node *currentNode = nullptr;
     Node *initialNode = nullptr;
 
@@ -261,7 +264,7 @@ void ConsensusGraph::updateGraph(const std::string &s,
         leftMostUnchangedNodeOffset =
             std::min(rightMostUnchangedNodeOffset,
                      std::max(leftMostUnchangedNodeOffset,
-                              mainPath.path.size() + endOffset));
+                              mainPath.path.size() - 1 + endOffset));
         if (leftMostUnchangedNodeOffset > 0)
             leftMostUnchangedNode =
                 mainPath.edges[leftMostUnchangedNodeOffset - 1]->sink;
@@ -500,7 +503,7 @@ Path &ConsensusGraph::calculateMainPathGreedy() {
     // Extend to the left
     {
         Node *currentNode = leftMostUnchangedNode;
-        currentNode->onMainPath = true;
+        assert(currentNode->onMainPath);
         Edge *edgeToAdd;
         while ((edgeToAdd = currentNode->getBestEdgeIn())) {
             edgesInPath.insert(edgesInPath.begin(), edgeToAdd);
@@ -548,8 +551,7 @@ void ConsensusGraph::clearMainPath() {
         Node *currentNode = mainPath.edges[i]->source;
         currentNode->onMainPath = false;
     }
-    if (leftMostUnchangedNodeOffset > 0 &&
-        leftMostUnchangedNodeOffset <= mainPath.edges.size()) {
+    if (leftMostUnchangedNodeOffset > 0) {
         mainPath.edges.erase(mainPath.edges.begin(),
                              mainPath.edges.begin() +
                                  leftMostUnchangedNodeOffset);
@@ -566,9 +568,9 @@ void ConsensusGraph::removeCycles() {
     // We first iterate over all nodes on mainPath on the right
     auto edgeOnPath = mainPath.edges.begin() + rightMostUnchangedNodeOffset;
     auto edgeOnPathEnd = mainPath.edges.end();
-    Node *nodeOnPath =
-        edgeOnPath < edgeOnPathEnd ? (*edgeOnPath)->source : nullptr;
-    while (edgeOnPath < edgeOnPathEnd) {
+    Node *nodeOnPath = edgeOnPath < edgeOnPathEnd ? (*edgeOnPath)->source
+                                                  : edgeOnPath[-1]->sink;
+    while (true) {
         // Then we iterate over all edges pointing to side nodes that have
         // other edges in
         auto end = nodeOnPath->edgesOut.end();
@@ -776,7 +778,7 @@ void ConsensusGraph::removeConnectedNodes(Node *n) {
             leafNodes.push(node);
     });
 #ifdef DEBUG
-    std::cerr << "Num of leaf Nodes " << leafNodes.size() << std::endl;
+    // std::cerr << "Num of leaf Nodes " << leafNodes.size() << std::endl;
 #endif
     while (!leafNodes.empty()) {
         Node *curNode = leafNodes.top();

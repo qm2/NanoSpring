@@ -310,8 +310,10 @@ private:
     Node *startingNode;
     // These are stored such that the path only needs to be updated locally
     Node *rightMostUnchangedNode;
+    /** An offset for the Node (not Edge) indexed from 0 **/
     size_t rightMostUnchangedNodeOffset = 0;
     Node *leftMostUnchangedNode;
+    /** An offset for the Node (not Edge) indexed from 0 **/
     size_t leftMostUnchangedNodeOffset = 0;
     size_t numNodes = 0;
     size_t numEdges = 0;
@@ -448,6 +450,13 @@ private:
      */
     void writeUnalignedReads(const std::string &filename);
 
+    /**
+     * @brief Deletes the parts of mainPath strictly to the left of
+     * leftMostUnchangedNode and strictly to the right of rightMostUnchangedNode
+     *
+     * Sets onMainPath to false for the relatvent nodes and deletes the relevant
+     * portions of mainPath.edges and mainPath.path
+     */
     void clearMainPath();
 
     // void writeGraph(std::ofstream &f);
