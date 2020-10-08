@@ -88,6 +88,7 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
         }
         cG->updateGraph(readStr, editScript, beginOffset, endOffset, r, pos);
         // assert(checkRead(cG, r));
+        assert(cG->checkNoCycle());
         cG->calculateMainPathGreedy();
         // std::cout << "Added read " << r << " first unadded read "
         //           << firstUnaddedRead << '\n';

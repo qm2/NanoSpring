@@ -815,10 +815,6 @@ void ConsensusGraph::writeMainPath(const std::string &filename) {
     f.open(genomeFileName);
     f << std::string(mainPath.path.begin(), mainPath.path.end()) << std::endl;
     f.close();
-    // std::string compressedGenomeFileName =
-    //     compressedTempDir + filename + ".genomeCompressed";
-    // bsc::BSC_compress(genomeFileName.c_str(),
-    // compressedGenomeFileName.c_str());
 }
 
 void ConsensusGraph::writeReads(const std::string &filename) {
@@ -857,22 +853,6 @@ void ConsensusGraph::writeReads(const std::string &filename) {
     std::cout << "AvgEditDis " << totalEditDis / (double)readsInGraph.size()
               << std::endl;
     printStatus();
-    // const std::string posFileCompressedName =
-    //     compressedTempDir + filename + ".pos" + "Compressed";
-    // const std::string editTypeFileCompressedName =
-    //     compressedTempDir + filename + ".type" + "Compressed";
-    // const std::string editBaseFileCompressedName =
-    //     compressedTempDir + filename + ".base" + "Compressed";
-    // const std::string idFileCompressedName =
-    //     compressedTempDir + filename + ".id" + "Compressed";
-    // bsc::BSC_compress(posFileName.c_str(), posFileCompressedName.c_str());
-    // bsc::BSC_compress(editTypeFileName.c_str(),
-    //                   editTypeFileCompressedName.c_str());
-    // bsc::BSC_compress(editBaseFileName.c_str(),
-    //                   editBaseFileCompressedName.c_str());
-    // bsc::BSC_compress(idFileName.c_str(), idFileCompressedName.c_str());
-
-    // writeUnalignedReads(filename);
 }
 
 void ConsensusGraph::writeUnalignedReads(const std::string &filename) {
@@ -891,14 +871,6 @@ void ConsensusGraph::writeUnalignedReads(const std::string &filename) {
     }
     unalignedIdsFile.close();
     unalignedReadsFile.close();
-    // const std::string unalignedReadsFileCompressedName =
-    //     compressedTempDir + filename + ".unalignedReads" + "Compressed";
-    // const std::string unalignedIdsFileCompressedName =
-    //     compressedTempDir + filename + ".unalignedIds" + "Compressed";
-    // bsc::BSC_compress(unalignedReadsFileName.c_str(),
-    //                   unalignedReadsFileCompressedName.c_str());
-    // bsc::BSC_compress(unalignedIdsFileName.c_str(),
-    //                   unalignedIdsFileCompressedName.c_str());
 }
 
 read_t ConsensusGraph::getNumReads() { return readsInGraph.size(); }
@@ -1051,6 +1023,55 @@ ConsensusGraph::ConsensusGraph(StringAligner_t *aligner) : aligner(aligner) {}
 
 ConsensusGraph::Read::Read(long pos, Node *start, size_t len)
     : pos(pos), start(start), len(len) {}
+
+bool ConsensusGraph::checkNoCycle() {
+    size_t countNodes = 0;
+    size_t countEdges = 0;
+    // In this function cumulativeWeight == 1 means is parent of current Node,
+    // and cumulativeWeight == 0 means otherwise
+    std::vector<Node *> sourceNodes;
+    traverseAndCall(startingNode, false,
+                    [&sourceNodes, &countNodes, &countEdges](Node *node) {
+                        ++countNodes;
+                        countEdges += node->edgesIn.size();
+                        node->cumulativeWeight = 0;
+                        if (node->edgesIn.empty())
+                            sourceNodes.push_back(node);
+                    });
+    assert(countNodes == numNodes);
+    assert(countEdges == numEdges);
+    assert(!sourceNodes.empty());
+    // Here all the .hasReached has been set to true
+    bool status = true;
+    for (Node *node : sourceNodes) {
+        std::stack<Node *> nodes2Visit;
+        nodes2Visit.push(node);
+        node->hasReached = !status;
+        while (!nodes2Visit.empty()) {
+            Node *currentNode = nodes2Visit.top();
+            currentNode->cumulativeWeight = 1;
+            bool hasUnvisitedChild = false;
+            for (auto it : currentNode->edgesOut) {
+                // A back edge
+                if (it.first->cumulativeWeight == 1)
+                    return false;
+                // == status means has not visited
+                if (it.first->hasReached == status) {
+                    nodes2Visit.push(it.first);
+                    it.first->hasReached = !status;
+                    hasUnvisitedChild = true;
+                    continue;
+                }
+            }
+            if (hasUnvisitedChild)
+                continue;
+            // All children has been visited
+            currentNode->cumulativeWeight = 0;
+            nodes2Visit.pop();
+        }
+    }
+    return true;
+}
 
 template <typename Functor>
 void ConsensusGraph::traverseAndCall(Node *n, bool status, Functor f) {

@@ -293,6 +293,26 @@ public:
     read_t getNumReads();
 
     /**
+     * @brief Does a sanity check on the graph structure.
+     *
+     * Checks that
+     * - The graph is connected
+     * - The graph has no cycles
+     *
+     * Preconditions:
+     * - Assumes that the hasReached field of each Node is false.
+     *
+     * PostConditions:
+     * - The hasReached field of each Node will be set to false,
+     * - and the cumulativeWeight field of each Node will be set to random
+     * stuff.
+     *
+     * @return true
+     * @return false
+     */
+    bool checkNoCycle();
+
+    /**
      * @brief Gets the read identified by read and stores the bases into
      * inserter.
      *
