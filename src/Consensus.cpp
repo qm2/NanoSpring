@@ -87,11 +87,11 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
             continue;
         }
         cG->updateGraph(readStr, editScript, beginOffset, endOffset, r, pos);
-        assert(checkRead(cG, r));
+        // assert(checkRead(cG, r));
         cG->calculateMainPathGreedy();
         // std::cout << "Added read " << r << " first unadded read "
         //           << firstUnaddedRead << '\n';
-        assert(checkRead(cG, r));
+        // assert(checkRead(cG, r));
     }
 }
 
