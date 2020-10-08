@@ -288,7 +288,7 @@ void ConsensusGraph::updateGraph(const std::string &s,
             nodeInPath = (*edgeInPath)->sink;
             edgeInPath++;
 
-        } else {
+        } else if (beginOffset <= -1) {
             // We need to insert the initial parts of the read
             // This number must be positive
             size_t numOfNodes2Insert = -beginOffset;
