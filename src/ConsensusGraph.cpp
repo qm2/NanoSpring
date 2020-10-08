@@ -72,6 +72,22 @@ Edge *Node::getBestEdgeIn() {
     }
     return bestEdge;
 }
+
+Edge *Node::getEdgeInRead(read_t read) const {
+    for (auto e : edgesOut) {
+        if (std::binary_search(e.second->reads.begin(), e.second->reads.end(),
+                               read)) {
+            return e.second;
+        }
+    }
+    return nullptr;
+}
+
+Node *Node::getNextNodeInRead(read_t read) const {
+    Edge *e = getEdgeInRead(read);
+    return e ? e->sink : nullptr;
+}
+
 double Path::getAverageWeight() {
     size_t totalWeight = 0;
     for (Edge *e : edges)
@@ -891,17 +907,8 @@ size_t ConsensusGraph::read2EditScript(ConsensusGraph::Read &r, read_t id,
     editScript.clear();
     // First we store the initial position
     Node *curNode = r.start;
-    auto advanceInRead = [id](Node *n) -> Node * {
-        for (auto e : n->edgesOut) {
-            if (std::binary_search(e.second->reads.begin(),
-                                   e.second->reads.end(), id)) {
-                return e.first;
-            }
-        }
-        return NULL;
-    };
     while (!curNode->onMainPath)
-        curNode = advanceInRead(curNode);
+        curNode = curNode->getNextNodeInRead(id);
 
     pos = curNode->cumulativeWeight;
 
@@ -932,7 +939,7 @@ size_t ConsensusGraph::read2EditScript(ConsensusGraph::Read &r, read_t id,
             editScript.push_back(Edit(INSERT, curNode->base));
             editDis++;
         }
-    } while ((curNode = advanceInRead(curNode)));
+    } while ((curNode = curNode->getNextNodeInRead(id)));
 
     dealWithUnchanged();
 

@@ -63,6 +63,25 @@ public:
     Edge *getBestEdgeIn();
 
     /**
+     * @brief Finds an edge going out containing the given read. Returns nullptr
+     * is no such read is found.
+     *
+     * Assumes that the reads are already sorted.
+     *
+     * @param read
+     * @return Edge*
+     */
+    Edge *getEdgeInRead(read_t read) const;
+
+    /**
+     * @brief Finds the node next in read. Returns nullptr if not found.
+     *
+     * @param read
+     * @return Node*
+     */
+    Node *getNextNodeInRead(read_t read) const;
+
+    /**
      * Adds an edge starting from this node
      * @param e The edge to add.
      */
