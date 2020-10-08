@@ -12,3 +12,4 @@
 !**/*.cpp
 !**/*.h
 !Doxyfile
+!*.sh
