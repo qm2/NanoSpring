@@ -98,7 +98,10 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
 
 bool Consensus::checkRead(ConsensusGraph *cG, read_t read) {
     std::string result;
-    assert(cG->getRead(read, std::inserter(result, result.end())));
+    bool temp = cG->getRead(read, std::inserter(result, result.end()));
+    assert(temp);
+    if (!temp)
+        return false;
     return result == rD->getRead(read);
 }
 

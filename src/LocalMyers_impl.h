@@ -24,6 +24,7 @@ bool LocalMyers<RandomAccessItA, RandomAccessItB>::align(
     RandomAccessItA s1Begin, RandomAccessItA s1End, RandomAccessItB s2Begin,
     RandomAccessItB s2End, const ssize_t offsetGuess, ssize_t &beginOffset,
     ssize_t &endOffset, std::vector<Edit> &editScript, size_t &editDis) {
+    (void)offsetGuess;
     beginOffset = 0;
     endOffset = 0;
     RandomAccessItA Abegin = s1Begin;
@@ -34,8 +35,10 @@ bool LocalMyers<RandomAccessItA, RandomAccessItB>::align(
     editScript.clear();
     while (Abegin < Aend && Bbegin < Bend) {
         const size_t max = std::min(lenA, lenB) * 2;
-        RandomAccessItA ALocalEnd = Aend - Abegin > lenA ? Abegin + lenA : Aend;
-        RandomAccessItB BLocalEnd = Bend - Bbegin > lenB ? Bbegin + lenB : Bend;
+        RandomAccessItA ALocalEnd =
+            Aend - Abegin > (ssize_t)lenA ? Abegin + lenA : Aend;
+        RandomAccessItB BLocalEnd =
+            Bend - Bbegin > (ssize_t)lenB ? Bbegin + lenB : Bend;
         std::vector<Edit> localEditScript;
         size_t localEditDis;
         bool success = localAlign(Abegin, ALocalEnd, Bbegin, BLocalEnd, max,

@@ -14,8 +14,8 @@ template <typename RandomAccessItA, typename RandomAccessItB>
 template <typename RItA, typename RItB>
 bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::localAlign(
     RItA &Abegin, RItA Aend, RItB &Bbegin, RItB Bend, const size_t max,
-    std::vector<Edit> &editScript, size_t &editDis, 
-    EditInfoMat_t &editInfo, EditInfoAccessedMat_t &editInfoAccessed) {
+    std::vector<Edit> &editScript, size_t &editDis, EditInfoMat_t &editInfo,
+    EditInfoAccessedMat_t &editInfoAccessed) {
     assert(Abegin < Aend);
     assert(Bbegin < Bend);
     unsigned const int lenAString = Aend - Abegin;
@@ -33,12 +33,12 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::localAlign(
     //    std::cout << *it;
     // std::cout << std::endl;
 
-    // Each member of editInfomaps end point to a portion of the path leading 
+    // Each member of editInfomaps end point to a portion of the path leading
     // to that end point
 
     // editInfoAccessed stores which elements of editInfo have been filled.
     // We initialize with zeros here:
-    for(auto& v : editInfoAccessed)
+    for (auto &v : editInfoAccessed)
         std::memset(&v[0], 0, sizeof(v[0]) * v.size());
 
     int Xreached = 0;
@@ -57,7 +57,7 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::localAlign(
         }
         auto findSnakeAndUpdate =
             [lenAString, lenBString, V, Abegin, Bbegin, /*Aend, Bend, forward,*/
-             &Xreached, &Yreached, &editInfo, &editInfoAccessed, 
+             &Xreached, &Yreached, &editInfo, &editInfoAccessed,
              &foundEdit](const int xStart, const int yStart, const int xMid,
                          const int yMid, const int d, const int k) {
                 // end point
@@ -78,11 +78,12 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::localAlign(
                 V[d % 4][k] = xEnd;
 
                 // note: if position already filled, do not replace
-                // If we don't overwrite, we will always be using the shortest path 
-                // that reaches that point; but if we do, the original shorter path 
-                // will be overwritten by a longer path.
+                // If we don't overwrite, we will always be using the shortest
+                // path that reaches that point; but if we do, the original
+                // shorter path will be overwritten by a longer path.
                 if (!editInfoAccessed[xEnd][yEnd]) {
-                    editInfo[xEnd][yEnd] = EditPath(xStart, yStart, xMid, yMid, snakeLen);
+                    editInfo[xEnd][yEnd] =
+                        EditPath(xStart, yStart, xMid, yMid, snakeLen);
                     editInfoAccessed[xEnd][yEnd] = 1;
                 }
 
@@ -332,8 +333,10 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::alignOnce(
     }
     const size_t max = std::min(this->lenA, this->lenB) * 2;
     // preallocating for speed
-    std::vector<std::vector<EditPath>> editInfo(this->lenA+1, std::vector<EditPath>(this->lenB+1));
-    std::vector<std::vector<uint8_t>> editInfoAccessed(this->lenA+1, std::vector<uint8_t>(this->lenB+1));
+    std::vector<std::vector<EditPath>> editInfo(
+        this->lenA + 1, std::vector<EditPath>(this->lenB + 1));
+    std::vector<std::vector<uint8_t>> editInfoAccessed(
+        this->lenA + 1, std::vector<uint8_t>(this->lenB + 1));
     while (Abegin != Aend && Bbegin != Bend) {
         // RItA ALocalBegin =
         // Aend - Abegin > (ssize_t)this->lenA ? Aend - this->lenA : Abegin;
@@ -350,8 +353,8 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::alignOnce(
         // bool success = localAlign(ALocalBegin, Aend, BLocalBegin, Bend, max,
         // localEditScript, localEditDis, false);
         bool success = localAlign(Abegin, ALocalEnd, Bbegin, BLocalEnd, max,
-                                  localEditScript, localEditDis, 
-                                  editInfo, editInfoAccessed);
+                                  localEditScript, localEditDis, editInfo,
+                                  editInfoAccessed);
         // std::cout << "320" << std::endl;
         if (!success) {
             // std::cout << "326" << std::endl;
@@ -417,8 +420,10 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::align(
     bool dir2Success = true;
     const size_t max = std::min(this->lenA, this->lenB) * 2;
     // preallocating for speed
-    std::vector<std::vector<EditPath>> editInfo(this->lenA+1, std::vector<EditPath>(this->lenB+1));
-    std::vector<std::vector<uint8_t>> editInfoAccessed(this->lenA+1, std::vector<uint8_t>(this->lenB+1));
+    std::vector<std::vector<EditPath>> editInfo(
+        this->lenA + 1, std::vector<EditPath>(this->lenB + 1));
+    std::vector<std::vector<uint8_t>> editInfoAccessed(
+        this->lenA + 1, std::vector<uint8_t>(this->lenB + 1));
     while (Abegin1 < Aend && Bbegin1 < Bend && Abegin2 < Aend &&
            Bbegin2 < Bend && (dir1Success || dir2Success)) {
         double expectedEditDis1 =
@@ -505,15 +510,17 @@ template <typename RItA, typename RItB>
 void LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::advance(
     RItA &Abegin, RItA Aend, RItB &Bbegin, RItB Bend, const size_t lenAString,
     const size_t lenBString, bool &dirSuccess, size_t &editDis,
-    const size_t max, EditInfoMat_t &editInfo, 
+    const size_t max, EditInfoMat_t &editInfo,
     EditInfoAccessedMat_t &editInfoAccessed) {
-    RItA ALocalEnd = Aend - Abegin > lenAString ? Abegin + lenAString : Aend;
-    RItB BLocalEnd = Bend - Bbegin > lenBString ? Bbegin + lenBString : Bend;
+    RItA ALocalEnd =
+        Aend - Abegin > (ssize_t)lenAString ? Abegin + lenAString : Aend;
+    RItB BLocalEnd =
+        Bend - Bbegin > (ssize_t)lenBString ? Bbegin + lenBString : Bend;
     std::vector<Edit> localEditScript;
     size_t localEditDis;
-    bool success = localAlign(Abegin, ALocalEnd, Bbegin, BLocalEnd, max,
-                              localEditScript, localEditDis, 
-                              editInfo, editInfoAccessed);
+    bool success =
+        localAlign(Abegin, ALocalEnd, Bbegin, BLocalEnd, max, localEditScript,
+                   localEditDis, editInfo, editInfoAccessed);
     if (success) {
         editDis += localEditDis;
         if (editDis + errorRate * std::min(Aend - Abegin, Bend - Bbegin) >
