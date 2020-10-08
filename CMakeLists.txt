@@ -117,7 +117,7 @@ target_compile_options(NanoporeCompressionLib
 
 target_compile_options(NanoporeCompressionLib 
     PRIVATE 
-    $<$<CONFIG:Release>:-O3>)
+    $<$<CONFIG:Release>:-O3 -DNDEBUG>)
 target_compile_options(NanoporeCompressionLib 
     PRIVATE 
     $<$<CONFIG:RelWithDebInfo>:-g -O3>)
