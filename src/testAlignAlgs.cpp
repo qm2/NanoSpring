@@ -26,15 +26,15 @@ int main(int argc, char **argv) {
     size_t maxEditDis = 3200;
     //    aligners.push_back(new LocalMyers(32, 64));
     // aligners.push_back(new LocalMyersRollBack(32, 64, maxEditDis));
-    aligners.push_back(new LocalMyers<const char *>(50, 100));
-    aligners.push_back(
-        new LocalMyersRollBack<const char *>(50, 100, maxEditDis));
-    aligners.push_back(
-        new LocalMyersRollBack<const char *>(50, 100, maxEditDis * 2));
+    // aligners.push_back(new LocalMyers<const char *>(50, 100));
+    // aligners.push_back(
+    // new LocalMyersRollBack<const char *>(50, 100, maxEditDis));
+    // aligners.push_back(
+    // new LocalMyersRollBack<const char *>(50, 100, maxEditDis * 2));
     aligners.push_back(
         new LocalMyersRollBack<const char *>(100, 200, maxEditDis));
-    aligners.push_back(
-        new LocalMyersRollBack<const char *>(100, 200, maxEditDis * 2));
+    // aligners.push_back(
+    // new LocalMyersRollBack<const char *>(100, 200, maxEditDis * 2));
 
     //    aligners.push_back(new LocalMyersRollBack(100, 50, maxEditDis));
     //    aligners.push_back(new LocalMyers(100, 200));
@@ -51,22 +51,24 @@ void testAlg(std::vector<StringAligner<const char *> *> aligners) {
     // ssize_t offsets2Test[] = {0,    100, -100, 200,  -200, 400,
     //                           -400, 800, -800, 1600, -1600};
     // ssize_t offsets2Test[] = {0, -5, 5, -10, 10, -20, 20, -40, 40};
-    size_t offsets2Test[] = {0, 100};
+    ssize_t offsets2Test[] = {0, 100, -100, 200, -200};
 
-    aT.generateData(10000, 0, 1, 0.03, 0.03, 0.04);
     const size_t algW = 35;
-    for (StringAligner<const char *> *aligner : aligners) {
-        if (aT.validate(aligner)) {
-            std::cout << "Validation of " << std::setw(algW) << aligner->name
-                      << " succeeded." << std::endl;
-        } else {
-            std::cout << "Validation of " << std::setw(algW) << aligner->name
-                      << " failed." << std::endl;
+    for (ssize_t offset : offsets2Test) {
+        aT.generateData(10000, offset, 100000, 0.03, 0.03, 0.04);
+        for (StringAligner<const char *> *aligner : aligners) {
+            if (aT.validate(aligner)) {
+                std::cout << "Validation of " << std::setw(algW)
+                          << aligner->name << " succeeded." << std::endl;
+            } else {
+                std::cout << "Validation of " << std::setw(algW)
+                          << aligner->name << " failed." << std::endl;
+            }
         }
     }
     std::cout << std::endl;
     for (ssize_t offset : offsets2Test) {
-        aT.generateData(10000, offset, 16, 0.03, 0.03, 0.04);
+        aT.generateData(10000, offset, 1, 0.03, 0.03, 0.04);
         //        aT.generateData(10000, offset, 8, 0.01, 0.01, 0);
         std::cout << std::setw(algW) << "Algorithm"
                   << " " << std::setw(6) << "Offset"

@@ -51,9 +51,10 @@ void Consensus::generateConsensus() {
 void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
                                 size_t len) {
     // Find reads likely to have overlaps
-    auto stringBegin = cG->mainPath.path.begin() + (curPos - cG->startPos);
+    ssize_t offsetInMainPath = curPos - cG->startPos;
+    auto stringBegin = cG->mainPath.path.begin() + offsetInMainPath;
     auto stringEnd =
-        (ssize_t)cG->mainPath.path.size() > curPos - cG->startPos + (ssize_t)len
+        (ssize_t)cG->mainPath.path.size() > offsetInMainPath + (ssize_t)len
             ? stringBegin + len
             : cG->mainPath.path.end();
     const std::string s(stringBegin, stringEnd);
@@ -86,10 +87,19 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
             continue;
         }
         cG->updateGraph(readStr, editScript, beginOffset, endOffset, r, pos);
+        // assert(checkRead(cG, r));
+        assert(cG->checkNoCycle());
         cG->calculateMainPathGreedy();
         // std::cout << "Added read " << r << " first unadded read "
         //           << firstUnaddedRead << '\n';
+        // assert(checkRead(cG, r));
     }
+}
+
+bool Consensus::checkRead(ConsensusGraph *cG, read_t read) {
+    std::string result;
+    assert(cG->getRead(read, std::inserter(result, result.end())));
+    return result == rD->getRead(read);
 }
 
 void Consensus::writeConsensus() {

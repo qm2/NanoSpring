@@ -43,7 +43,7 @@ public:
 
     /**
      * Returns an edge to a node that is not on mainPath with given base.
-     * Returns NULL if not found.
+     * Returns nullptr if not found.
      * @param base
      * @return
      */
@@ -62,6 +62,25 @@ public:
      * edge goes in to this node.
      */
     Edge *getBestEdgeIn();
+
+    /**
+     * @brief Finds an edge going out containing the given read. Returns nullptr
+     * is no such read is found.
+     *
+     * Assumes that the reads are already sorted.
+     *
+     * @param read
+     * @return Edge*
+     */
+    Edge *getEdgeInRead(read_t read) const;
+
+    /**
+     * @brief Finds the node next in read. Returns nullptr if not found.
+     *
+     * @param read
+     * @return Node*
+     */
+    Node *getNextNodeInRead(read_t read) const;
 
     /**
      * Adds an edge starting from this node
@@ -176,6 +195,10 @@ public:
         Read(long pos, Node *start, size_t len);
     };
 
+    /** Maps ID of read to (relative position of read in contig, beginning node
+     of the read) **/
+    std::map<read_t, Read> readsInGraph;
+
     ConsensusGraph(StringAligner_t *aligner);
 
     /**
@@ -187,10 +210,9 @@ public:
     void initialize(const std::string &seed, read_t readId, long pos);
 
     /**
-     * Adds a read to the consensus graph. Does not update mainPath.
+     * Adds a read to the consensus graph. Does not update mainPath or list of
+     * reads.
      * @param s String of read to add
-     * @param readId id of the read to add (id right now just means the position
-     * in all the reads read)
      * @param pos Relative position of read in contig
      */
     __attribute__((warn_unused_result)) bool
@@ -271,20 +293,51 @@ public:
 
     read_t getNumReads();
 
+    /**
+     * @brief Does a sanity check on the graph structure.
+     *
+     * Checks that
+     * - The graph is connected
+     * - The graph has no cycles
+     *
+     * Preconditions:
+     * - Assumes that the hasReached field of each Node is false.
+     *
+     * PostConditions:
+     * - The hasReached field of each Node will be set to false,
+     * - and the cumulativeWeight field of each Node will be set to random
+     * stuff.
+     *
+     * @return true
+     * @return false
+     */
+    bool checkNoCycle();
+
+    /**
+     * @brief Gets the read identified by read and stores the bases into
+     * inserter.
+     *
+     * @tparam Inserter And insert iterator that dereferences to char
+     * @param read
+     * @param inserter
+     * @return true If read was found.
+     * @return false If read was not found.
+     */
+    template <typename Inserter> bool getRead(read_t read, Inserter inserter);
+
     ~ConsensusGraph();
 
 private:
     Node *startingNode;
     // These are stored such that the path only needs to be updated locally
     Node *rightMostUnchangedNode;
+    /** An offset for the Node (not Edge) indexed from 0 **/
     size_t rightMostUnchangedNodeOffset = 0;
     Node *leftMostUnchangedNode;
+    /** An offset for the Node (not Edge) indexed from 0 **/
     size_t leftMostUnchangedNodeOffset = 0;
     size_t numNodes = 0;
     size_t numEdges = 0;
-    // Maps ID of read to (relative position of read in contig, beginning node
-    // of the read)
-    std::map<read_t, Read> readsInGraph;
 
     StringAligner_t *aligner;
     // Maps ID of reads that cannot be successfully aligned to actual strings
@@ -375,7 +428,8 @@ private:
      * newPre. In particular, newPre will have a new edge going out. The newly
      * created nodes are guaranteed to have at most one Edge going in.
      */
-    void splitPath(Node *newPre, Edge *e, std::vector<read_t> const &reads2Split);
+    void splitPath(Node *newPre, Edge *e,
+                   std::vector<read_t> const &reads2Split);
 
     /**
      * Write the edits trings of the reads into a single file
@@ -419,9 +473,31 @@ private:
      */
     void writeUnalignedReads(const std::string &filename);
 
+    /**
+     * @brief Deletes the parts of mainPath strictly to the left of
+     * leftMostUnchangedNode and strictly to the right of rightMostUnchangedNode
+     *
+     * Sets onMainPath to false for the relatvent nodes and deletes the relevant
+     * portions of mainPath.edges and mainPath.path
+     */
     void clearMainPath();
 
     // void writeGraph(std::ofstream &f);
 };
+
+/******************************************************************************/
+/* Implementations of templates */
+template <typename Inserter>
+bool ConsensusGraph::getRead(read_t read, Inserter inserter) {
+    auto readIt = readsInGraph.find(read);
+    if (readIt == readsInGraph.end())
+        return false;
+    Node *curNode = readIt->second.start;
+    while (curNode) {
+        *(inserter++) = curNode->base;
+        curNode = curNode->getNextNodeInRead(read);
+    }
+    return true;
+}
 
 #endif /* CCCEF0A4_30C3_49E3_999D_C948EA366BEF */

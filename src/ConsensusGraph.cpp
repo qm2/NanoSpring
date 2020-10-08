@@ -31,7 +31,7 @@ Edge *Node::getEdgeTo(Node *n) {
                 return (p.first == n);
     });
     if (it == edgesOut.end()) {
-        return NULL;
+        return nullptr;
     } else {
         return it->second;
     }
@@ -45,11 +45,11 @@ Edge *Node::getEdgeToSide(char base) {
         if (!n->onMainPath && n->base == base)
             return e;
     }
-    return NULL;
+    return nullptr;
 }
 
 Edge *Node::getBestEdgeOut() {
-    Edge *bestEdge = NULL;
+    Edge *bestEdge = nullptr;
     read_t bestCount = 0;
     const auto &end = edgesOut.end();
     for (auto it = edgesOut.begin(); it != end; ++it) {
@@ -63,7 +63,7 @@ Edge *Node::getBestEdgeOut() {
 }
 
 Edge *Node::getBestEdgeIn() {
-    Edge *bestEdge = NULL;
+    Edge *bestEdge = nullptr;
     read_t bestCount = 0;
     const auto &end = edgesIn.end();
     for (auto it = edgesIn.begin(); it != end; ++it) {
@@ -75,6 +75,22 @@ Edge *Node::getBestEdgeIn() {
     }
     return bestEdge;
 }
+
+Edge *Node::getEdgeInRead(read_t read) const {
+    for (auto e : edgesOut) {
+        if (std::binary_search(e.second->reads.begin(), e.second->reads.end(),
+                               read)) {
+            return e.second;
+        }
+    }
+    return nullptr;
+}
+
+Node *Node::getNextNodeInRead(read_t read) const {
+    Edge *e = getEdgeInRead(read);
+    return e ? e->sink : nullptr;
+}
+
 double Path::getAverageWeight() {
     size_t totalWeight = 0;
     for (Edge *e : edges)
@@ -227,11 +243,14 @@ void ConsensusGraph::updateGraph(const std::string &s,
                                  ssize_t beginOffset, ssize_t endOffset,
                                  read_t readId, long pos) {
 
-    auto edgeInPath = mainPath.edges.begin();
     const auto &edgeInPathEnd = mainPath.edges.end();
+    auto edgeInPath = mainPath.edges.begin();
+    /** nodeInPath should always be set to edgeInPath.source, unless it is the
+    last node, in which case edgeInPath should be edgeInPathEnd **/
     Node *nodeInPath = (*edgeInPath)->source;
-    Node *currentNode = NULL;
-    Node *initialNode = NULL;
+    /** The last node of this read that has been added **/
+    Node *currentNode = nullptr;
+    Node *initialNode = nullptr;
 
     // First we update leftMostUnchangedNode and rightMostUnchangedNode
     if (beginOffset >= 0 || endOffset >= 0) {
@@ -248,7 +267,7 @@ void ConsensusGraph::updateGraph(const std::string &s,
         leftMostUnchangedNodeOffset =
             std::min(rightMostUnchangedNodeOffset,
                      std::max(leftMostUnchangedNodeOffset,
-                              mainPath.path.size() + endOffset));
+                              mainPath.path.size() - 1 + endOffset));
         if (leftMostUnchangedNodeOffset > 0)
             leftMostUnchangedNode =
                 mainPath.edges[leftMostUnchangedNodeOffset - 1]->sink;
@@ -275,7 +294,7 @@ void ConsensusGraph::updateGraph(const std::string &s,
             nodeInPath = (*edgeInPath)->sink;
             edgeInPath++;
 
-        } else {
+        } else if (beginOffset <= -1) {
             // We need to insert the initial parts of the read
             // This number must be positive
             size_t numOfNodes2Insert = -beginOffset;
@@ -379,7 +398,7 @@ Path &ConsensusGraph::calculateMainPath() {
 
     std::deque<Node *> unfinishedNodes;
     size_t globalMaxWeight = 0;
-    Node *globalMaxWeightNode = NULL;
+    Node *globalMaxWeightNode = nullptr;
     unfinishedNodes.push_back(startingNode);
     while (!unfinishedNodes.empty()) {
         Node *currentNode = unfinishedNodes.front();
@@ -471,7 +490,7 @@ Path &ConsensusGraph::calculateMainPathGreedy() {
     // Extend to the right
     {
         Node *currentNode = rightMostUnchangedNode;
-        currentNode->onMainPath = true;
+        assert(currentNode->onMainPath);
         Edge *edgeToAdd;
         while ((edgeToAdd = currentNode->getBestEdgeOut())) {
             edgesInPath.push_back(edgeToAdd);
@@ -487,7 +506,7 @@ Path &ConsensusGraph::calculateMainPathGreedy() {
     // Extend to the left
     {
         Node *currentNode = leftMostUnchangedNode;
-        currentNode->onMainPath = true;
+        assert(currentNode->onMainPath);
         Edge *edgeToAdd;
         while ((edgeToAdd = currentNode->getBestEdgeIn())) {
             edgesInPath.insert(edgesInPath.begin(), edgeToAdd);
@@ -506,7 +525,7 @@ Path &ConsensusGraph::calculateMainPathGreedy() {
     // printStatus();
     removeCycles();
     rightMostUnchangedNode = edgesInPath.back()->sink;
-    rightMostUnchangedNodeOffset = edgesInPath.size() + 1;
+    rightMostUnchangedNodeOffset = edgesInPath.size();
     leftMostUnchangedNode = edgesInPath.front()->source;
     leftMostUnchangedNodeOffset = 0;
     return mainPath;
@@ -535,8 +554,7 @@ void ConsensusGraph::clearMainPath() {
         Node *currentNode = mainPath.edges[i]->source;
         currentNode->onMainPath = false;
     }
-    if (leftMostUnchangedNodeOffset > 0 &&
-        leftMostUnchangedNodeOffset <= mainPath.edges.size()) {
+    if (leftMostUnchangedNodeOffset > 0) {
         mainPath.edges.erase(mainPath.edges.begin(),
                              mainPath.edges.begin() +
                                  leftMostUnchangedNodeOffset);
@@ -553,9 +571,9 @@ void ConsensusGraph::removeCycles() {
     // We first iterate over all nodes on mainPath on the right
     auto edgeOnPath = mainPath.edges.begin() + rightMostUnchangedNodeOffset;
     auto edgeOnPathEnd = mainPath.edges.end();
-    Node *nodeOnPath =
-        edgeOnPath < edgeOnPathEnd ? (*edgeOnPath)->source : nullptr;
-    while (edgeOnPath < edgeOnPathEnd) {
+    Node *nodeOnPath = edgeOnPath < edgeOnPathEnd ? (*edgeOnPath)->source
+                                                  : edgeOnPath[-1]->sink;
+    while (true) {
         // Then we iterate over all edges pointing to side nodes that have
         // other edges in
         //
@@ -574,8 +592,8 @@ void ConsensusGraph::removeCycles() {
         ++edgeOnPath;
     }
     // Now we iterate over all nodes on mainPath on the left
-    for (edgeOnPath = mainPath.edges.begin() + leftMostUnchangedNodeOffset;
-         edgeOnPath >= mainPath.edges.begin(); --edgeOnPath) {
+    edgeOnPath = mainPath.edges.begin() + leftMostUnchangedNodeOffset;
+    while (true) {
         // Then we iterate over all edges pointing to side nodes that have
         // other edges in
         nodeOnPath = (*edgeOnPath)->source;
@@ -588,6 +606,9 @@ void ConsensusGraph::removeCycles() {
             edgeIt++;
             walkAndPrune(e);
         }
+        if (edgeOnPath == mainPath.edges.begin())
+            break;
+        --edgeOnPath;
     }
 }
 
@@ -784,7 +805,7 @@ void ConsensusGraph::removeConnectedNodes(Node *n) {
             leafNodes.push(node);
     });
 #ifdef DEBUG
-    std::cerr << "Num of leaf Nodes " << leafNodes.size() << std::endl;
+    // std::cerr << "Num of leaf Nodes " << leafNodes.size() << std::endl;
 #endif
     while (!leafNodes.empty()) {
         Node *curNode = leafNodes.top();
@@ -821,10 +842,6 @@ void ConsensusGraph::writeMainPath(const std::string &filename) {
     f.open(genomeFileName);
     f << std::string(mainPath.path.begin(), mainPath.path.end()) << std::endl;
     f.close();
-    // std::string compressedGenomeFileName =
-    //     compressedTempDir + filename + ".genomeCompressed";
-    // bsc::BSC_compress(genomeFileName.c_str(),
-    // compressedGenomeFileName.c_str());
 }
 
 void ConsensusGraph::writeReads(const std::string &filename) {
@@ -863,22 +880,6 @@ void ConsensusGraph::writeReads(const std::string &filename) {
     std::cout << "AvgEditDis " << totalEditDis / (double)readsInGraph.size()
               << std::endl;
     printStatus();
-    // const std::string posFileCompressedName =
-    //     compressedTempDir + filename + ".pos" + "Compressed";
-    // const std::string editTypeFileCompressedName =
-    //     compressedTempDir + filename + ".type" + "Compressed";
-    // const std::string editBaseFileCompressedName =
-    //     compressedTempDir + filename + ".base" + "Compressed";
-    // const std::string idFileCompressedName =
-    //     compressedTempDir + filename + ".id" + "Compressed";
-    // bsc::BSC_compress(posFileName.c_str(), posFileCompressedName.c_str());
-    // bsc::BSC_compress(editTypeFileName.c_str(),
-    //                   editTypeFileCompressedName.c_str());
-    // bsc::BSC_compress(editBaseFileName.c_str(),
-    //                   editBaseFileCompressedName.c_str());
-    // bsc::BSC_compress(idFileName.c_str(), idFileCompressedName.c_str());
-
-    // writeUnalignedReads(filename);
 }
 
 void ConsensusGraph::writeUnalignedReads(const std::string &filename) {
@@ -897,14 +898,6 @@ void ConsensusGraph::writeUnalignedReads(const std::string &filename) {
     }
     unalignedIdsFile.close();
     unalignedReadsFile.close();
-    // const std::string unalignedReadsFileCompressedName =
-    //     compressedTempDir + filename + ".unalignedReads" + "Compressed";
-    // const std::string unalignedIdsFileCompressedName =
-    //     compressedTempDir + filename + ".unalignedIds" + "Compressed";
-    // bsc::BSC_compress(unalignedReadsFileName.c_str(),
-    //                   unalignedReadsFileCompressedName.c_str());
-    // bsc::BSC_compress(unalignedIdsFileName.c_str(),
-    //                   unalignedIdsFileCompressedName.c_str());
 }
 
 read_t ConsensusGraph::getNumReads() { return readsInGraph.size(); }
@@ -915,17 +908,8 @@ size_t ConsensusGraph::read2EditScript(ConsensusGraph::Read &r, read_t id,
     editScript.clear();
     // First we store the initial position
     Node *curNode = r.start;
-    auto advanceInRead = [id](Node *n) -> Node * {
-        for (auto e : n->edgesOut) {
-            if (std::binary_search(e.second->reads.begin(),
-                                   e.second->reads.end(), id)) {
-                return e.first;
-            }
-        }
-        return NULL;
-    };
     while (!curNode->onMainPath)
-        curNode = advanceInRead(curNode);
+        curNode = curNode->getNextNodeInRead(id);
 
     pos = curNode->cumulativeWeight;
 
@@ -956,7 +940,7 @@ size_t ConsensusGraph::read2EditScript(ConsensusGraph::Read &r, read_t id,
             editScript.push_back(Edit(INSERT, curNode->base));
             editDis++;
         }
-    } while ((curNode = advanceInRead(curNode)));
+    } while ((curNode = curNode->getNextNodeInRead(id)));
 
     dealWithUnchanged();
 
@@ -1066,6 +1050,55 @@ ConsensusGraph::ConsensusGraph(StringAligner_t *aligner) : aligner(aligner) {}
 
 ConsensusGraph::Read::Read(long pos, Node *start, size_t len)
     : pos(pos), start(start), len(len) {}
+
+bool ConsensusGraph::checkNoCycle() {
+    size_t countNodes = 0;
+    size_t countEdges = 0;
+    // In this function cumulativeWeight == 1 means is parent of current Node,
+    // and cumulativeWeight == 0 means otherwise
+    std::vector<Node *> sourceNodes;
+    traverseAndCall(startingNode, false,
+                    [&sourceNodes, &countNodes, &countEdges](Node *node) {
+                        ++countNodes;
+                        countEdges += node->edgesIn.size();
+                        node->cumulativeWeight = 0;
+                        if (node->edgesIn.empty())
+                            sourceNodes.push_back(node);
+                    });
+    assert(countNodes == numNodes);
+    assert(countEdges == numEdges);
+    assert(!sourceNodes.empty());
+    // Here all the .hasReached has been set to true
+    bool status = true;
+    for (Node *node : sourceNodes) {
+        std::stack<Node *> nodes2Visit;
+        nodes2Visit.push(node);
+        node->hasReached = !status;
+        while (!nodes2Visit.empty()) {
+            Node *currentNode = nodes2Visit.top();
+            currentNode->cumulativeWeight = 1;
+            bool hasUnvisitedChild = false;
+            for (auto it : currentNode->edgesOut) {
+                // A back edge
+                if (it.first->cumulativeWeight == 1)
+                    return false;
+                // == status means has not visited
+                if (it.first->hasReached == status) {
+                    nodes2Visit.push(it.first);
+                    it.first->hasReached = !status;
+                    hasUnvisitedChild = true;
+                    continue;
+                }
+            }
+            if (hasUnvisitedChild)
+                continue;
+            // All children has been visited
+            currentNode->cumulativeWeight = 0;
+            nodes2Visit.pop();
+        }
+    }
+    return true;
+}
 
 template <typename Functor>
 void ConsensusGraph::traverseAndCall(Node *n, bool status, Functor f) {
