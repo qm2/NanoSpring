@@ -586,8 +586,8 @@ void ConsensusGraph::removeCycles() {
         ++edgeOnPath;
     }
     // Now we iterate over all nodes on mainPath on the left
-    for (edgeOnPath = mainPath.edges.begin() + leftMostUnchangedNodeOffset;
-         edgeOnPath >= mainPath.edges.begin(); --edgeOnPath) {
+    edgeOnPath = mainPath.edges.begin() + leftMostUnchangedNodeOffset;
+    while (true) {
         // Then we iterate over all edges pointing to side nodes that have
         // other edges in
         nodeOnPath = (*edgeOnPath)->source;
@@ -598,6 +598,9 @@ void ConsensusGraph::removeCycles() {
             edgeIt++;
             walkAndPrune(e);
         }
+        if (edgeOnPath == mainPath.edges.begin())
+            break;
+        --edgeOnPath;
     }
 }
 
