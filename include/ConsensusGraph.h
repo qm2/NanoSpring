@@ -42,7 +42,7 @@ public:
 
     /**
      * Returns an edge to a node that is not on mainPath with given base.
-     * Returns NULL if not found.
+     * Returns nullptr if not found.
      * @param base
      * @return
      */

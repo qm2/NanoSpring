@@ -28,7 +28,7 @@ Node::Node(const char base) : base(base) {}
 Edge *Node::getEdgeTo(Node *n) {
     const auto &it = edgesOut.find(n);
     if (it == edgesOut.end()) {
-        return NULL;
+        return nullptr;
     } else {
         return it->second;
     }
@@ -42,11 +42,11 @@ Edge *Node::getEdgeToSide(char base) {
         if (!n->onMainPath && n->base == base)
             return e;
     }
-    return NULL;
+    return nullptr;
 }
 
 Edge *Node::getBestEdgeOut() {
-    Edge *bestEdge = NULL;
+    Edge *bestEdge = nullptr;
     read_t bestCount = 0;
     const auto &end = edgesOut.end();
     for (auto it = edgesOut.begin(); it != end; ++it) {
@@ -60,7 +60,7 @@ Edge *Node::getBestEdgeOut() {
 }
 
 Edge *Node::getBestEdgeIn() {
-    Edge *bestEdge = NULL;
+    Edge *bestEdge = nullptr;
     read_t bestCount = 0;
     const auto &end = edgesIn.end();
     for (auto it = edgesIn.begin(); it != end; ++it) {
@@ -243,8 +243,8 @@ void ConsensusGraph::updateGraph(const std::string &s,
     auto edgeInPath = mainPath.edges.begin();
     const auto &edgeInPathEnd = mainPath.edges.end();
     Node *nodeInPath = (*edgeInPath)->source;
-    Node *currentNode = NULL;
-    Node *initialNode = NULL;
+    Node *currentNode = nullptr;
+    Node *initialNode = nullptr;
 
     // First we update leftMostUnchangedNode and rightMostUnchangedNode
     if (beginOffset >= 0 || endOffset >= 0) {
@@ -392,7 +392,7 @@ Path &ConsensusGraph::calculateMainPath() {
 
     std::deque<Node *> unfinishedNodes;
     size_t globalMaxWeight = 0;
-    Node *globalMaxWeightNode = NULL;
+    Node *globalMaxWeightNode = nullptr;
     unfinishedNodes.push_back(startingNode);
     while (!unfinishedNodes.empty()) {
         Node *currentNode = unfinishedNodes.front();
