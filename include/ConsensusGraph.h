@@ -194,6 +194,10 @@ public:
         Read(long pos, Node *start, size_t len);
     };
 
+    /** Maps ID of read to (relative position of read in contig, beginning node
+     of the read) **/
+    std::map<read_t, Read> readsInGraph;
+
     ConsensusGraph(StringAligner_t *aligner);
 
     /**
@@ -288,6 +292,18 @@ public:
 
     read_t getNumReads();
 
+    /**
+     * @brief Gets the read identified by read and stores the bases into
+     * inserter.
+     *
+     * @tparam Inserter And insert iterator that dereferences to char
+     * @param read
+     * @param inserter
+     * @return true If read was found.
+     * @return false If read was not found.
+     */
+    template <typename Inserter> bool getRead(read_t read, Inserter inserter);
+
     ~ConsensusGraph();
 
 private:
@@ -299,9 +315,6 @@ private:
     size_t leftMostUnchangedNodeOffset = 0;
     size_t numNodes = 0;
     size_t numEdges = 0;
-    // Maps ID of read to (relative position of read in contig, beginning node
-    // of the read)
-    std::map<read_t, Read> readsInGraph;
 
     StringAligner_t *aligner;
     // Maps ID of reads that cannot be successfully aligned to actual strings
@@ -439,5 +452,20 @@ private:
 
     // void writeGraph(std::ofstream &f);
 };
+
+/******************************************************************************/
+/* Implementations of templates */
+template <typename Inserter>
+bool ConsensusGraph::getRead(read_t read, Inserter inserter) {
+    auto readIt = readsInGraph.find(read);
+    if (readIt == readsInGraph.end())
+        return false;
+    Node *curNode = readIt->second.start;
+    while (curNode) {
+        *(inserter++) = curNode->base;
+        curNode = curNode->getNextNodeInRead(read);
+    }
+    return true;
+}
 
 #endif /* CCCEF0A4_30C3_49E3_999D_C948EA366BEF */

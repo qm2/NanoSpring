@@ -44,6 +44,18 @@ public:
      */
     void writeConsensus();
 
+    /**
+     * @brief Checks that the read read in cG is equal to the read in ReadData
+     * rD
+     *
+     * Assumes read is contained inside cG
+     * @param cG
+     * @param read
+     * @return true
+     * @return false
+     */
+    bool checkRead(ConsensusGraph *cG, read_t read);
+
     Consensus();
 
     ~Consensus();
