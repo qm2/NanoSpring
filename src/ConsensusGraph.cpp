@@ -884,8 +884,29 @@ size_t ConsensusGraph::read2EditScript(ConsensusGraph::Read &r, read_t id,
     editScript.clear();
     // First we store the initial position
     Node *curNode = r.start;
-    while (!curNode->onMainPath)
+    assert(curNode);
+    bool intersectWithMainPath = true;
+    while (!curNode->onMainPath) {
         curNode = curNode->getNextNodeInRead(id);
+        if (!curNode) {
+            intersectWithMainPath = false;
+            break;
+        }
+    }
+
+    // When the read has no intersection with mainPath, we just store it as a
+    // bunch of inserts
+    if (!intersectWithMainPath) {
+        pos = 0;
+        size_t editDis = 0;
+        Node *curNode = r.start;
+        do {
+            editScript.push_back(Edit(INSERT, curNode->base));
+            ++editDis;
+        } while ((curNode = curNode->getNextNodeInRead(id)));
+
+        return editDis;
+    }
 
     pos = curNode->cumulativeWeight;
 
