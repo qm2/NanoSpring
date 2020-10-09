@@ -85,6 +85,8 @@ void createGraphFromReads(ConsensusGraph *cG, const std::string reads[3]) {
 }
 
 int main(int argc, char **argv) {
+    (void)argc;
+    (void)argv;
     LocalMyersRollBack<ConsensusGraph::RAItA, ConsensusGraph::RAItB>
         stringAligner(100, 200, 3200);
     ConsensusGraph cG(&stringAligner);
