@@ -9,6 +9,7 @@
 #include <functional>
 #include <map>
 #include <set>
+#include <utility> // std::pair
 #include <vector>
 
 class Node;
@@ -88,9 +89,9 @@ public:
     //    void addEdge(Edge *e);
 
     // The edges with this node as source
-    std::map<Node *, Edge *> edgesOut;
+    std::vector<std::pair<Node *, Edge *>> edgesOut;
 
-    std::set<Edge *> edgesIn;
+    std::vector<Edge *> edgesIn;
 
     size_t cumulativeWeight = 0;
     bool hasReached = false;
@@ -350,9 +351,11 @@ private:
     void removeReadsFromEdge(Edge *e, std::vector<read_t> const &reads);
 
     /**
-     * Removes an edge from the graph
+     * Removes an edge from the graph. Can optionally specify if we do not wish to
+     * remove from source or sink node (in case it is already deleted elsewhere
+     * (see removeNode))
      */
-    void removeEdge(Edge *e);
+    void removeEdge(Edge *e, bool dontRemoveFromSource = false, bool dontRemoveFromSink = false);
 
     void removeNode(Node *n);
 
