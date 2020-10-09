@@ -86,6 +86,7 @@ add_library(NanoporeCompressionLib
         src/ConsensusGraph.cpp
         src/OmpMutex.cpp
         src/DirectoryUtils.cpp
+        src/testNotOnMainPath.cpp
         include/AlignerTester.h
         include/bsc_helper.h
         include/Compressor.h
@@ -169,3 +170,6 @@ target_link_libraries(testMyers PRIVATE NanoporeCompressionLib profiler)
 
 add_executable(validateResult src/validateResult.cpp)
 target_link_libraries(validateResult PRIVATE NanoporeCompressionLib profiler)
+
+add_executable(testNotOnMainPath src/testNotOnMainPath.cpp)
+target_link_libraries(testNotOnMainPath PRIVATE NanoporeCompressionLib profiler)
