@@ -25,6 +25,9 @@ template <typename Inserter> void getRandomRead(size_t len, Inserter inserter) {
 
 /**
  * @brief Takes in three reads, and creates a ConsensusGraph of the three reads.
+ * The ConsensusGraph produced an error in the old code because some reads do
+ * not intersect mainPath.
+ *
  * Assumes all reads have length >= 4
  *
  * @param cG
