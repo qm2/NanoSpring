@@ -505,6 +505,7 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::align(
 #endif
     return false;
 }
+
 template <typename RandomAccessItA, typename RandomAccessItB>
 template <typename RItA, typename RItB>
 void LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::advance(

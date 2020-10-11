@@ -26,10 +26,9 @@ Node::Node(const char base) : base(base) {}
 //}
 
 Edge *Node::getEdgeTo(Node *n) {
-    const auto &it = std::find_if(edgesOut.begin(),edgesOut.end(),
-            [&](const std::pair<Node *, Edge *> &p) {
-                return (p.first == n);
-    });
+    const auto &it = std::find_if(
+        edgesOut.begin(), edgesOut.end(),
+        [&](const std::pair<Node *, Edge *> &p) { return (p.first == n); });
     if (it == edgesOut.end()) {
         return nullptr;
     } else {
@@ -579,13 +578,9 @@ void ConsensusGraph::removeCycles() {
         //
         // Work with copy to avoid iterator invalidation.
         auto edgesOutCopy = nodeOnPath->edgesOut;
-        auto end = edgesOutCopy.end();
-        for (auto edgeIt = edgesOutCopy.begin(); edgeIt != end;) {
-            // Node *sideNode = edgeIt->first;
-            Edge *e = edgeIt->second;
-            edgeIt++;
-            walkAndPrune(e);
-        }
+        for (const auto &edgeIt : edgesOutCopy)
+            walkAndPrune(edgeIt.second);
+
         if (edgeOnPath == edgeOnPathEnd)
             break;
         nodeOnPath = (*edgeOnPath)->sink;
@@ -599,13 +594,9 @@ void ConsensusGraph::removeCycles() {
         nodeOnPath = (*edgeOnPath)->source;
         // Work with copy to avoid iterator invalidation.
         auto edgesOutCopy = nodeOnPath->edgesOut;
-        auto end = edgesOutCopy.end();
-        for (auto edgeIt = edgesOutCopy.begin(); edgeIt != end;) {
-            // Node *sideNode = edgeIt->first;
-            Edge *e = edgeIt->second;
-            edgeIt++;
-            walkAndPrune(e);
-        }
+        for (const auto &edgeIt : edgesOutCopy)
+            walkAndPrune(edgeIt.second);
+
         if (edgeOnPath == mainPath.edges.begin())
             break;
         --edgeOnPath;
@@ -621,14 +612,11 @@ void ConsensusGraph::walkAndPrune(Edge *e) {
         splitPath(source, e, e->reads);
     // Work with copy to avoid iterator invalidation.
     auto edgesOutCopy = sink->edgesOut;
-    auto end = edgesOutCopy.end();
-    for (auto subEdge = edgesOutCopy.begin(); subEdge != end;) {
-        Edge *edge2WorkOn = subEdge->second;
-        subEdge++;
+    for (const auto &subEdge : edgesOutCopy) {
         // Here walkAndPrune will only change sink->edgesOut by 1. deleting
         // edge2WorkOn and 2. adding new edges that we don't need to prune. So
         // copying sink->edgesOut should work.
-        walkAndPrune(edge2WorkOn);
+        walkAndPrune(subEdge.second);
     }
 }
 
@@ -666,13 +654,10 @@ void ConsensusGraph::splitPath(Node *newPre, Edge *e,
 
     // Work with copy to avoid iterator invalidation.
     auto edgesOutCopy = oldCur->edgesOut;
-    auto end = edgesOutCopy.end();
-    for (auto subEdge = edgesOutCopy.begin(); subEdge != end;) {
-        Edge *edge2WorkOn = subEdge->second;
-        subEdge++;
+    for (auto subEdge : edgesOutCopy) {
         // Here, splitPath will only affect oldCur->edgesOut by deleting
         // edge2WorkOn. So again just copying everything should work.
-        splitPath(newCur, edge2WorkOn, readsInPath2Split);
+        splitPath(newCur, subEdge.second, readsInPath2Split);
     }
     if (oldCur->edgesIn.empty() && oldCur->edgesOut.empty())
         removeNode(oldCur);
@@ -720,17 +705,19 @@ void ConsensusGraph::removeReadsFromEdge(Edge *e,
     }
 }
 
-void ConsensusGraph::removeEdge(Edge *e, bool dontRemoveFromSource /* = false */, bool dontRemoveFromSink /* = false */) {
+void ConsensusGraph::removeEdge(Edge *e,
+                                bool dontRemoveFromSource /* = false */,
+                                bool dontRemoveFromSink /* = false */) {
     if (!dontRemoveFromSource)
         e->source->edgesOut.erase(
-            std::find_if(e->source->edgesOut.begin(),e->source->edgesOut.end(),
-            [&](const std::pair<Node *,Edge *> &p) {
-                return (p.first == e->sink);
-        }));
+            std::find_if(e->source->edgesOut.begin(), e->source->edgesOut.end(),
+                         [&](const std::pair<Node *, Edge *> &p) {
+                             return (p.first == e->sink);
+                         }));
 
     if (!dontRemoveFromSink)
         e->sink->edgesIn.erase(
-            std::find(e->sink->edgesIn.begin(),e->sink->edgesIn.end(),e));
+            std::find(e->sink->edgesIn.begin(), e->sink->edgesIn.end(), e));
     delete e;
     numEdges--;
 }
@@ -741,16 +728,16 @@ void ConsensusGraph::removeNode(Node *n) {
         auto end = n->edgesIn.end();
         while (edgeIt != end)
             removeEdge(*(edgeIt++), false, true);
-            // don't remove from sink node which is this node!
-            // Avoids iterator invalidation and speeds things up
+        // don't remove from sink node which is this node!
+        // Avoids iterator invalidation and speeds things up
     }
     {
         auto edgeIt = n->edgesOut.begin();
         auto end = n->edgesOut.end();
         while (edgeIt != end)
             removeEdge(edgeIt++->second, true, false);
-            // don't remove from source node which is this node!
-            // Avoids iterator invalidation and speeds things up
+        // don't remove from source node which is this node!
+        // Avoids iterator invalidation and speeds things up
     }
     delete n;
     numNodes--;
