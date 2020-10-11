@@ -64,3 +64,19 @@ std::vector<unsigned long> &ReadData::getReadPosSorted() {
 std::vector<std::unique_ptr<std::string>> &ReadData::getReadData() {
     return readData;
 }
+
+/// TODO: profile and maybe optimize
+char ReadData::toComplement(char base) {
+    switch (base) {
+    case 'A':
+        return 'T';
+    case 'T':
+        return 'A';
+    case 'C':
+        return 'G';
+    case 'G':
+        return 'C';
+    default:
+        return base;
+    }
+}

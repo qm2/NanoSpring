@@ -11,14 +11,14 @@
 #define HASH_C32 2654435769L
 #define KMER_BITS 64
 
-filterStats::filterStats(unsigned int overlapBaseThreshold,
+FilterStats::FilterStats(unsigned int overlapBaseThreshold,
                          unsigned int overlapSketchThreshold)
     : overlapBaseThreshold(overlapBaseThreshold),
       overlapSketchThreshold(overlapSketchThreshold), totalPositive(0),
       totalNegative(0), numOverlaps(0), numDisjoint(0), falsePositives(0),
       falseNegatives(0) {}
 
-std::ostream &operator<<(std::ostream &out, const filterStats &o) {
+std::ostream &operator<<(std::ostream &out, const FilterStats &o) {
     const int w = 13;
     out << std::setw(w) << "overlapBaseTh"
         << "," << std::setw(w) << "numKMerTh"
@@ -77,10 +77,11 @@ void MinHashReadFilter::generateRandomNumbers(size_t n) {
 
 void MinHashReadFilter::getFilteredReads(read_t readToFind,
                                          std::vector<read_t> &results) {
+    results.clear();
     getFilteredReads(sketches + readToFind * n, results);
 }
 
-void MinHashReadFilter::getFilteredReads(kMer_t *sketch,
+void MinHashReadFilter::getFilteredReads(kMer_t sketch[],
                                          std::vector<read_t> &results) {
     std::vector<read_t> matches;
     results.clear();
@@ -106,6 +107,7 @@ void MinHashReadFilter::getFilteredReads(kMer_t *sketch,
 
 void MinHashReadFilter::getFilteredReads(const std::string &s,
                                          std::vector<read_t> &results) {
+    results.clear();
     kMer_t sketch[n];
     string2Sketch(s, sketch);
     getFilteredReads(sketch, results);
@@ -113,9 +115,9 @@ void MinHashReadFilter::getFilteredReads(const std::string &s,
 
 MinHashReadFilter::MinHashReadFilter() {}
 
-filterStats MinHashReadFilter::getFilterStats(size_t overlapBaseThreshold,
+FilterStats MinHashReadFilter::getFilterStats(size_t overlapBaseThreshold,
                                               size_t overlapSketchThreshold) {
-    filterStats result(overlapBaseThreshold, overlapSketchThreshold);
+    FilterStats result(overlapBaseThreshold, overlapSketchThreshold);
     // First we calculate the number of overlaps and disjoints
 
     size_t numOverlaps = 0;

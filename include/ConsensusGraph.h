@@ -187,12 +187,18 @@ public:
         size_t len;
 
         /**
+         * Whether this read is stored as its reverse complement in the graph
+         */
+        bool reverseComplement;
+        /**
          *
          * @param pos Relative position of read in contig
          * @param start Starting node of read
          * @param len Length of read
+         * @param reverseComplement Whether this read is stored as its reverse
+         * complement in the graph
          */
-        Read(long pos, Node *start, size_t len);
+        Read(long pos, Node *start, size_t len, bool reverseComplement = false);
     };
 
     /** Maps ID of read to (relative position of read in contig, beginning node
@@ -210,7 +216,7 @@ public:
     void initialize(const std::string &seed, read_t readId, long pos);
 
     /**
-     * Adds a read to the consensus graph. Does not update mainPath or list of
+     * Adds a string to the consensus graph. Does not update mainPath or list of
      * reads.
      * @param s String of read to add
      * @param pos Relative position of read in contig
@@ -226,16 +232,19 @@ public:
      * @brief Updates the graph with the new read s, and the alignment results
      * editScript, beginOffset, and endOffset
      *
-     * @param s
+     * @param s the string of the read if !reverseComplement and its reverse
+     * complement otherwise
      * @param editScript
      * @param beginOffset
      * @param endOffset
      * @param readId
      * @param pos The relative position of the read in contig
+     * @param reverseComplement Whether s is the reverse complement or the
+     * actual read
      */
     void updateGraph(const std::string &s, std::vector<Edit> &editScript,
                      ssize_t beginOffset, ssize_t endOffset, read_t readId,
-                     long pos);
+                     long pos, bool reverseComplement);
 
     /**
      * Clears the old mainPath, calculates the new mainPath and adds it.

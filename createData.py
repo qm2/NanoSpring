@@ -122,7 +122,7 @@ def generateReads(fileName="test", coverage=25, readLen=10000, pIn=0.00, pDel=0.
     readFileName = fileName + ".reads"
     with open(readFileName, "w") as f:
         numReads = int(genomeLength * coverage / readLen)
-        for i in range(numReads):
+        for dummyI in range(numReads):
             (editString, read) = generateRead(genome, readLen, pIn, pDel, pS)
             reverse = random.choice([True, False]) and includeReverse
             reverseSymbol = 'c' if reverse else 'n'

@@ -10,6 +10,11 @@
 #include <unordered_set>
 
 /**
+ * The content of this file is no longer used
+ */
+/// TODO: Remove this file from the project
+
+/**
  * A contig is just an ordered set of reads along with their positions
  */
 class Contig {

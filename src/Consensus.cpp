@@ -57,42 +57,59 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
         (ssize_t)cG->mainPath.path.size() > offsetInMainPath + (ssize_t)len
             ? stringBegin + len
             : cG->mainPath.path.end();
-    const std::string s(stringBegin, stringEnd);
     // std::cout << curPos << "\n";
-    std::vector<read_t> results;
-    rF->getFilteredReads(s, results);
+    const std::string originalString(stringBegin, stringEnd);
+    std::string reverseComplementString;
+    ReadData::toReverseComplement(
+        stringBegin, stringEnd,
+        std::inserter(reverseComplementString, reverseComplementString.end()));
+    bool all[] = {false, true};
+    for (bool reverseComplement : all) {
+        std::vector<read_t> results;
+        rF->getFilteredReads(reverseComplement ? reverseComplementString
+                                               : originalString,
+                             results);
+        // std::cout << "Found " << results.size() << " reads\n";
+        // for (read_t r : results)
+        // std::cout << r << " ";
+        // std::cout << '\n';
 
-    // std::cout << "Found " << results.size() << " reads\n";
-    // for (read_t r : results)
-    //     std::cout << r << " ";
-    // std::cout << '\n';
+        // Try to add them one by one
+        for (const auto r : results) {
+            // std::cout << "Working on read " << r << '\n';
+            if (!addRead(r))
+                continue;
+            ssize_t relPos;
+            std::string readStr;
+            if (reverseComplement)
+                ReadData::toReverseComplement(
+                    rD->getRead(r).begin(), rD->getRead(r).end(),
+                    std::inserter(readStr, readStr.end()));
+            else
+                readStr = rD->getRead(r);
 
-    // Try to add them one by one
-    for (const read_t r : results) {
-        // std::cout << "Working on read " << r << '\n';
-        if (!addRead(r))
-            continue;
-        ssize_t relPos;
-        std::string &readStr = rD->getRead(r);
-        if (!rA->align(s, readStr, relPos)) {
-            putReadBack(r);
-            continue;
+            if (!rA->align(originalString, readStr, relPos)) {
+                putReadBack(r);
+                continue;
+            }
+
+            ssize_t pos = curPos + relPos;
+            std::vector<Edit> editScript;
+            ssize_t beginOffset, endOffset;
+            if (!cG->addRead(readStr, pos, editScript, beginOffset,
+                             endOffset)) {
+                putReadBack(r);
+                continue;
+            }
+            cG->updateGraph(readStr, editScript, beginOffset, endOffset, r, pos,
+                            reverseComplement);
+            // assert(checkRead(cG, r));
+            // assert(cG->checkNoCycle());
+            cG->calculateMainPathGreedy();
+            // std::cout << "Added read " << r << " first unadded read "
+            //           << firstUnaddedRead << '\n';
+            // assert(checkRead(cG, r));
         }
-
-        ssize_t pos = curPos + relPos;
-        std::vector<Edit> editScript;
-        ssize_t beginOffset, endOffset;
-        if (!cG->addRead(readStr, pos, editScript, beginOffset, endOffset)) {
-            putReadBack(r);
-            continue;
-        }
-        cG->updateGraph(readStr, editScript, beginOffset, endOffset, r, pos);
-        // assert(checkRead(cG, r));
-        // assert(cG->checkNoCycle());
-        cG->calculateMainPathGreedy();
-        // std::cout << "Added read " << r << " first unadded read "
-        //           << firstUnaddedRead << '\n';
-        // assert(checkRead(cG, r));
     }
 }
 

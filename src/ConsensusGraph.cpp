@@ -119,7 +119,7 @@ void ConsensusGraph::initialize(const std::string &seed, read_t readId,
     Node *currentNode = createNode(seed[0]);
     // We create a read that points to this node
     readsInGraph.insert(std::make_pair(
-        readId, ConsensusGraph::Read(pos, currentNode, seed.length())));
+        readId, ConsensusGraph::Read(pos, currentNode, seed.length(), false)));
     startingNode = currentNode;
     rightMostUnchangedNode = currentNode;
     rightMostUnchangedNodeOffset = 0;
@@ -240,7 +240,8 @@ void ConsensusGraph::addReads(
 void ConsensusGraph::updateGraph(const std::string &s,
                                  std::vector<Edit> &editScript,
                                  ssize_t beginOffset, ssize_t endOffset,
-                                 read_t readId, long pos) {
+                                 read_t readId, long pos,
+                                 bool reverseComplement) {
 
     const auto &edgeInPathEnd = mainPath.edges.end();
     auto edgeInPath = mainPath.edges.begin();
@@ -384,8 +385,8 @@ void ConsensusGraph::updateGraph(const std::string &s,
     }
 
     // Don't forget to add the read!
-    readsInGraph.insert(
-        std::make_pair(readId, Read(pos, initialNode, s.length())));
+    readsInGraph.insert(std::make_pair(
+        readId, Read(pos, initialNode, s.length(), reverseComplement)));
 }
 
 // TODO: Optimize this to only update the portion of the graph that has changed
@@ -845,25 +846,30 @@ void ConsensusGraph::writeReads(const std::string &filename) {
     const std::string editTypeFileName = tempDir + filename + ".type";
     const std::string editBaseFileName = tempDir + filename + ".base";
     const std::string idFileName = tempDir + filename + ".id";
-    std::ofstream posFile, editTypeFile, editBaseFile, idFile;
+    const std::string complementFileName = tempDir + filename + ".complement";
+    std::ofstream posFile, editTypeFile, editBaseFile, idFile, complementFile;
     posFile.open(posFileName);
     editTypeFile.open(editTypeFileName);
     editBaseFile.open(editBaseFileName);
     idFile.open(idFileName);
+    complementFile.open(complementFileName);
     read_t pasId = 0;
     for (auto it : readsInGraph) {
         {
             idFile << it.first - pasId << ':';
+            complementFile << (it.second.reverseComplement ? 'c' : 'n') << ':';
             pasId = it.first;
         }
         totalEditDis +=
             writeRead(posFile, editTypeFile, editBaseFile, it.second, it.first);
     }
     idFile << '\n';
+    complementFile << '\n';
     posFile.close();
     editTypeFile.close();
     editBaseFile.close();
     idFile.close();
+    complementFile.close();
     std::cout << "AvgEditDis " << totalEditDis / (double)readsInGraph.size()
               << std::endl;
     printStatus();
@@ -1056,8 +1062,9 @@ size_t ConsensusGraph::writeRead(std::ofstream &f, Read &r, read_t id) {
 
 ConsensusGraph::ConsensusGraph(StringAligner_t *aligner) : aligner(aligner) {}
 
-ConsensusGraph::Read::Read(long pos, Node *start, size_t len)
-    : pos(pos), start(start), len(len) {}
+ConsensusGraph::Read::Read(long pos, Node *start, size_t len,
+                           bool reverseComplement)
+    : pos(pos), start(start), len(len), reverseComplement(reverseComplement) {}
 
 bool ConsensusGraph::checkNoCycle() {
     size_t countNodes = 0;

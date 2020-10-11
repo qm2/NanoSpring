@@ -1,6 +1,7 @@
 #include "Decompressor.h"
 #include "Consensus.h"
 #include "DirectoryUtils.h"
+#include "ReadData.h"
 #include "bsc_helper.h"
 #include <boost/filesystem.hpp>
 #include <cassert>
@@ -110,11 +111,12 @@ void Decompressor::generateReads(std::string *reads, size_t contigId) const {
         genomeFile >> genome;
         genomeFile.close();
     }
-    std::ifstream idFile, posFile, editTypeFile, editBaseFile;
+    std::ifstream idFile, posFile, editTypeFile, editBaseFile, complementFile;
     idFile.open(currentFilename + ".id");
     posFile.open(currentFilename + ".pos");
     editTypeFile.open(currentFilename + ".type");
     editBaseFile.open(currentFilename + ".base");
+    complementFile.open(currentFilename + ".complement");
     read_t id = 0;
     while (true) {
         read_t idInc;
@@ -124,13 +126,15 @@ void Decompressor::generateReads(std::string *reads, size_t contigId) const {
         if (!idFile)
             break;
         id = id + idInc;
-        generateRead(genome, reads[id], posFile, editTypeFile, editBaseFile);
+        generateRead(genome, reads[id], posFile, editTypeFile, editBaseFile,
+                     complementFile);
         // std::cout << id << " ";
     }
     idFile.close();
     posFile.close();
     editTypeFile.close();
     editBaseFile.close();
+    complementFile.close();
 
     // Now we deal with unaligned reads
     // std::ifstream unalignedIdsFile, unalignedReadsFile;
@@ -154,11 +158,15 @@ void Decompressor::generateReads(std::string *reads, size_t contigId) const {
 void Decompressor::generateRead(const std::string &genome, std::string &read,
                                 std::ifstream &posFile,
                                 std::ifstream &editTypeFile,
-                                std::ifstream &editBaseFile) const {
+                                std::ifstream &editBaseFile,
+                                std::ifstream &complementFile) const {
     size_t curPos;
     char c;
     posFile >> curPos;
     posFile.get(c);
+    complementFile.get(c);
+    bool reverseComplement = (c == 'c');
+    complementFile.get(c);
     while (true) {
         // First we handle the unchanged bases
         size_t numUnchanged;
@@ -185,6 +193,12 @@ void Decompressor::generateRead(const std::string &genome, std::string &read,
             editBaseFile.get(editBase);
             read.push_back(editBase);
         }
+    }
+    if (reverseComplement) {
+        std::string temp;
+        temp.swap(read);
+        ReadData::toReverseComplement(temp.begin(), temp.end(),
+                                      std::inserter(read, read.end()));
     }
     // We need to read extra '\n'
     posFile.get(c);

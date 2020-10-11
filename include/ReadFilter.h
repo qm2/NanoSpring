@@ -6,16 +6,16 @@
 #include <string>
 #include <vector>
 
-class filterStats {
+class FilterStats {
 public:
     const unsigned int overlapBaseThreshold, overlapSketchThreshold;
     unsigned int totalPositive, totalNegative, numOverlaps, numDisjoint,
         falsePositives, falseNegatives;
 
-    filterStats(unsigned int overlapBaseThreshold,
+    FilterStats(unsigned int overlapBaseThreshold,
                 unsigned int overlapSketchThreshold);
 
-    friend std::ostream &operator<<(std::ostream &out, const filterStats &o);
+    friend std::ostream &operator<<(std::ostream &out, const FilterStats &o);
 };
 
 /**
@@ -24,16 +24,30 @@ public:
  */
 class ReadFilter {
 public:
+    /**
+     * @brief Rechieves reads that are likely to overlap with readToFind and
+     * stores them in results
+     *
+     * @param readToFind id to the read we want to find overlapping reads with
+     * @param results Vector where we store the results
+     */
     virtual void getFilteredReads(read_t readToFind,
                                   std::vector<read_t> &results) = 0;
 
+    /**
+     * @brief Rechieves reads that are likely to overlap with string s and
+     * stores them in results
+     *
+     * @param s string to find overlapping reads with
+     * @param results Vector where we store the results
+     */
     virtual void getFilteredReads(const std::string &s,
                                   std::vector<read_t> &results) = 0;
 
     virtual void initialize(ReadData &rD) = 0;
 
-    // For testing
-    virtual filterStats getFilterStats(size_t overlapBaseThreshold,
+    /** For testing **/
+    virtual FilterStats getFilterStats(size_t overlapBaseThreshold,
                                        size_t overlapSketchThreshold) = 0;
 
     virtual ~ReadFilter();
@@ -41,12 +55,14 @@ public:
 
 class MinHashReadFilter : public ReadFilter {
 public:
-    // We store all the k-mers as uint64s. This would work for all k<=32,
-    // which is definitely sufficient
+    /** We store all the k-mers as uint64s. This would work for all k<=32,
+     which is definitely sufficient **/
     typedef uint64_t kMer_t;
 
-    size_t k; // k-mer
-    size_t n; // size of sketch
+    /** [k]-mer **/
+    size_t k;
+    /** size of sketch **/
+    size_t n;
     size_t overlapSketchThreshold;
 
     /**
@@ -100,10 +116,11 @@ public:
      *
      * @param overlapBaseThreshold
      * @param overlapSketchThreshold
-     * @return filterStats
+     * @return FilterStats
      */
-    filterStats getFilterStats(size_t overlapBaseThreshold,
+    FilterStats getFilterStats(size_t overlapBaseThreshold,
                                size_t overlapSketchThreshold) override;
+
     MinHashReadFilter();
 
     ~MinHashReadFilter() override;
@@ -154,12 +171,12 @@ private:
 
     /**
      * @brief Get the Filtered Reads likely to overlap with the read represented
-     * by sketch
+     * by sketch and stores them in results
      *
      * @param sketch
      * @param results
      */
-    void getFilteredReads(kMer_t *sketch, std::vector<read_t> &results);
+    void getFilteredReads(kMer_t sketch[], std::vector<read_t> &results);
 
     /**
      * @brief Calculates "MinHash" sketches based on the hashes provided.

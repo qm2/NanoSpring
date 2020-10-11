@@ -50,6 +50,34 @@ public:
 
     std::vector<std::unique_ptr<std::string>> &getReadData();
 
+    /**
+     * @brief Turns a base to its complement base
+     *
+     * A <-> T
+     * C <-> G
+     *
+     * @param base
+     * @return char
+     */
+    static char toComplement(char base);
+
+    /**
+     * @brief Turns a DNA strand to its reverse complement.
+     *
+     * @tparam Iterator Bidirectional random access iterator that dereferences
+     * to char; in particular, dereferences to one of 'A', 'T', 'C', and 'G'
+     * @tparam Inserter Insert iterator used to store the reverse complement
+     * DNA. Should dereference to char.
+     * @param originalBegin Beginning of original string
+     * @param originalEnd End of original string (one past end)
+     * @param reverseComplement Insert iterator used to store the reverse
+     * complement string
+     */
+    template <typename Iterator, typename Inserter>
+    static void toReverseComplement(Iterator originalBegin,
+                                    Iterator originalEnd,
+                                    Inserter reverseComplement);
+
 private:
     read_t numReads;
     std::vector<std::unique_ptr<std::string>> readData;
@@ -63,5 +91,20 @@ private:
     size_t readLen;
     // End testing
 };
+
+/******************************************************************************/
+/* Implementation of public template functions */
+template <typename Iterator, typename Inserter>
+
+void ReadData::toReverseComplement(Iterator originalBegin, Iterator originalEnd,
+                              Inserter reverseComplement) {
+    if (originalBegin == originalEnd)
+        return;
+    Iterator it = originalEnd;
+    do {
+        --it;
+        *(reverseComplement++) = toComplement(*it);
+    } while (it != originalBegin);
+}
 
 #endif /* C3C2DD2A_9114_4E1C_B89E_18F31D007DCB */

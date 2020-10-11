@@ -74,7 +74,7 @@ add_library(NanoporeCompressionLib
         src/bsc.cpp
         src/Compressor.cpp
         src/Consensus.cpp
-        src/Contig.cpp
+        #src/Contig.cpp
         src/Decompressor.cpp
         src/Edits.cpp
         src/LocalMyers_impl.h
@@ -91,7 +91,7 @@ add_library(NanoporeCompressionLib
         include/bsc_helper.h
         include/Compressor.h
         include/Consensus.h
-        include/Contig.h
+        #include/Contig.h
         include/Decompressor.h
         include/Edits.h
         include/StringAligner.h
@@ -156,8 +156,8 @@ target_link_libraries(testAlignAlgs PRIVATE NanoporeCompressionLib profiler)
 add_executable(testCompressor src/testCompressor.cpp)
 target_link_libraries(testCompressor PRIVATE NanoporeCompressionLib profiler)
 
-add_executable(testContig src/testContigGenerator.cpp)
-target_link_libraries(testContig PRIVATE NanoporeCompressionLib profiler)
+# add_executable(testContig src/testContigGenerator.cpp)
+# target_link_libraries(testContig PRIVATE NanoporeCompressionLib profiler)
 
 add_executable(testDecompressor src/testDecompressor.cpp)
 target_link_libraries(testDecompressor PRIVATE NanoporeCompressionLib profiler)
