@@ -1,3 +1,4 @@
+import unittest
 import random
 
 base = ["A", "T", "C", "G"]
@@ -14,6 +15,15 @@ def createRandomGenome(fileName="test", length=5000000):
         f.write("%d\n" % length)
         f.write(''.join(random.choices(base, k=length)))
         f.write('\n')
+
+
+def reverseComplement(read):
+    """
+    Returns the reverse complemnt of read
+    :param read: a string consisting of only 'A', 'T', 'C', 'G's
+    """
+    complementDict = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C'}
+    return ''.join([complementDict[c] for c in read[::-1]])
 
 
 def generateRead(genome, readLen, pIn, pDel, pS):
@@ -121,3 +131,21 @@ def generateReads(fileName="test", coverage=25, readLen=10000, pIn=0.00, pDel=0.
 if __name__ == '__main__':
     createRandomGenome(length=100000)
     generateReads(readLen=10000)
+
+
+class TestReverseComplement(unittest.TestCase):
+
+    def test_single(self):
+        self.assertEqual(reverseComplement('A'), 'T')
+        self.assertEqual(reverseComplement('T'), 'A')
+        self.assertEqual(reverseComplement('C'), 'G')
+        self.assertEqual(reverseComplement('G'), 'C')
+
+    def test_multiple(self):
+        self.assertEqual(reverseComplement('ATTTCAGG'), 'CCTGAAAT')
+
+    def test_long(self):
+        length = 1000000
+        original = ''.join(random.choices(base, k=length))
+        transformed = reverseComplement(original)
+        self.assertEqual(reverseComplement(transformed), original)
