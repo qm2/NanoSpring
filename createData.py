@@ -91,13 +91,14 @@ def generateRead(genome, readLen, pIn, pDel, pS):
     return (editString, read)
 
 
-def generateReads(fileName="test", coverage=25, readLen=10000, pIn=0.00, pDel=0.00, pS=0.05):
+def generateReads(fileName="test", coverage=25, readLen=10000, pIn=0.00, pDel=0.00, pS=0.05, includeReverse=False):
     """
     Generate random reads of length readLen with given coverage from the genome
     in the file fileName.genome and stores the reads in fileName.reads. Each
     read is stored in two lines:
-    readPos:edit string
+    [cn]:readPos:edit string
     readData
+    c means reverse [c]omplement; n means [n]ormal
     readPos is the position in the original genome (index starting from 0) where
     the read starts
     edit string is the string of edits symbolizing how to get from the original
@@ -110,6 +111,7 @@ def generateReads(fileName="test", coverage=25, readLen=10000, pIn=0.00, pDel=0.
     :param pIn: Insertion error rate.
     :param pDel: Deletion error rate.
     :param pS: Substitution error rate.
+    :param includeReverse: whether to include reverse complements
     """
     genomeFileName = fileName + ".genome"
     genome = ''
@@ -122,9 +124,12 @@ def generateReads(fileName="test", coverage=25, readLen=10000, pIn=0.00, pDel=0.
         numReads = int(genomeLength * coverage / readLen)
         for i in range(numReads):
             (editString, read) = generateRead(genome, readLen, pIn, pDel, pS)
+            reverse = random.choice([True, False]) and includeReverse
+            reverseSymbol = 'c' if reverse else 'n'
+            f.write(reverseSymbol + ':')
             f.write(editString)
             f.write('\n')
-            f.write(read)
+            f.write(reverseComplement(read) if reverse else read)
             f.write('\n')
 
 

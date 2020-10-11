@@ -17,6 +17,12 @@ public:
     /**
      * @brief Loads the read data from a file
      *
+     * Assumes the file has format
+     * [nc]:readPos:editString
+     * read
+     *
+     * [nc] stands for [n]ormal and reverse [c]omplement
+     *
      * @param fileName
      */
     void loadFromFile(const char *fileName);
@@ -52,6 +58,8 @@ private:
     std::vector<unsigned long> readPos;
     std::vector<unsigned long> readPosSorted;
     std::vector<std::unique_ptr<std::string>> editStrings;
+    /** Whether the read is a reverse complement **/
+    std::vector<bool> reverse;
     size_t readLen;
     // End testing
 };
