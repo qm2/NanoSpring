@@ -225,9 +225,6 @@ public:
     addRead(const std::string &s, long pos, std::vector<Edit> &editScript,
             ssize_t &beginOffset, ssize_t &endOffset);
 
-    void addReads(const std::set<std::pair<long, read_t>> &reads,
-                  std::vector<std::unique_ptr<std::string>> &readData);
-
     /**
      * @brief Updates the graph with the new read s, and the alignment results
      * editScript, beginOffset, and endOffset
@@ -349,8 +346,6 @@ private:
     size_t numEdges = 0;
 
     StringAligner_t *aligner;
-    // Maps ID of reads that cannot be successfully aligned to actual strings
-    std::map<read_t, std::string> unalignedReads;
 
     Node *createNode(char base);
 
@@ -470,17 +465,6 @@ private:
      */
     size_t writeRead(std::ofstream &posFile, std::ofstream &editTypeFile,
                      std::ofstream &editBaseFile, Read &r, read_t id);
-
-    /**
-     * @brief Stores the reads in filename.unalignedReads and the ids in
-     * filename.unalignedIds.
-     *
-     * filename.unalignedIds is delta coded.
-     * filename.unalignedReads is just one line per read
-     *
-     * @param filename
-     */
-    void writeUnalignedReads(const std::string &filename);
 
     /**
      * @brief Deletes the parts of mainPath strictly to the left of

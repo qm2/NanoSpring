@@ -113,8 +113,6 @@ void Path::clear() {
 
 void ConsensusGraph::initialize(const std::string &seed, read_t readId,
                                 long pos) {
-
-    unalignedReads.clear();
     size_t len = seed.length();
     Node *currentNode = createNode(seed[0]);
     // We create a read that points to this node
@@ -161,80 +159,6 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
     }
     return true;
     // updateGraph(s, editScript, beginOffset, endOffset, readId, pos);
-}
-
-void ConsensusGraph::addReads(
-    const std::set<std::pair<long, read_t>> &reads,
-    std::vector<std::unique_ptr<std::string>> &readData) {
-    std::set<std::pair<long, read_t>> readsInContig(reads);
-    auto currentRead = readsInContig.begin();
-
-    initialize(*readData[currentRead->second], currentRead->second,
-               currentRead->first);
-    size_t len = (*readData[currentRead->second]).length();
-    readsInContig.erase(currentRead);
-    calculateMainPathGreedy();
-
-    while (!readsInContig.empty()) {
-
-        // First we lengthen mainPath by len/2
-        auto read2Lengthen = readsInContig.lower_bound(
-            std::make_pair(endPos - len + len / 2, 0));
-
-        if (read2Lengthen != readsInContig.begin()) {
-            read2Lengthen--;
-        }
-
-        {
-            std::vector<Edit> editScript;
-            ssize_t beginOffset, endOffset;
-            read_t readId = read2Lengthen->second;
-            ssize_t pos = read2Lengthen->first;
-            std::string &s = *readData[readId];
-            bool success = addRead(s, pos, editScript, beginOffset, endOffset);
-            if (success) {
-                updateGraph(s, editScript, beginOffset, endOffset, readId, pos);
-                calculateMainPathGreedy();
-            } else {
-                unalignedReads.insert(std::make_pair(readId, s));
-            }
-            readsInContig.erase(read2Lengthen);
-        }
-
-        // Then we add all reads that should overlap with mainPath
-        auto endRead2Add =
-            readsInContig.lower_bound(std::make_pair(endPos - len - 100, 0));
-        // read_t count = 0;
-        std::vector<std::pair<long, read_t>> reads2Add(readsInContig.begin(),
-                                                       endRead2Add);
-        read_t num = reads2Add.size();
-#pragma omp parallel for
-        for (read_t i = 0; i < num; ++i) {
-            auto read2Add = reads2Add[i];
-            std::vector<Edit> editScript;
-            ssize_t beginOffset, endOffset;
-            read_t readId = read2Add.second;
-            ssize_t pos = read2Add.first;
-            std::string &s = *readData[readId];
-            bool success = addRead(s, pos, editScript, beginOffset, endOffset);
-#pragma omp critical
-            {
-                if (success)
-                    updateGraph(s, editScript, beginOffset, endOffset, readId,
-                                pos);
-                else
-                    unalignedReads.insert(std::make_pair(readId, s));
-            }
-
-            // count++;
-            // if (count % 4 == 0)
-            // calculateMainPath();
-        }
-        calculateMainPathGreedy();
-        readsInContig.erase(readsInContig.begin(), endRead2Add);
-
-        printStatus();
-    }
 }
 
 void ConsensusGraph::updateGraph(const std::string &s,
@@ -809,8 +733,7 @@ void ConsensusGraph::removeConnectedNodes(Node *n) {
 }
 
 void ConsensusGraph::printStatus() {
-    std::cout << unalignedReads.size() << " unaligned reads "
-              << readsInGraph.size() << " reads in graph " << this << ", "
+    std::cout << readsInGraph.size() << " reads in graph " << this << ", "
               << numNodes << " nodes, and " << numEdges << " edges."
               << "\n";
     std::cout << "mainPath len " << mainPath.edges.size() + 1 << " "
@@ -873,24 +796,6 @@ void ConsensusGraph::writeReads(const std::string &filename) {
     std::cout << "AvgEditDis " << totalEditDis / (double)readsInGraph.size()
               << std::endl;
     printStatus();
-}
-
-void ConsensusGraph::writeUnalignedReads(const std::string &filename) {
-    const std::string unalignedReadsFileName =
-        tempDir + filename + ".unalignedReads";
-    const std::string unalignedIdsFileName =
-        tempDir + filename + ".unalignedIds";
-    std::ofstream unalignedReadsFile, unalignedIdsFile;
-    unalignedReadsFile.open(unalignedReadsFileName);
-    unalignedIdsFile.open(unalignedIdsFileName);
-    read_t pastId = 0;
-    for (auto it : unalignedReads) {
-        unalignedIdsFile << it.first - pastId << ":";
-        pastId = it.first;
-        unalignedReadsFile << it.second << '\n';
-    }
-    unalignedIdsFile.close();
-    unalignedReadsFile.close();
 }
 
 read_t ConsensusGraph::getNumReads() { return readsInGraph.size(); }
