@@ -6,11 +6,6 @@
 #include <random>
 #include <set>
 
-#define ROTATE_BITS 13
-#define HASH_C64 11400714819323198485ULL
-#define HASH_C32 2654435769L
-#define KMER_BITS 64
-
 FilterStats::FilterStats(unsigned int overlapBaseThreshold,
                          unsigned int overlapSketchThreshold)
     : overlapBaseThreshold(overlapBaseThreshold),
@@ -42,13 +37,12 @@ ReadFilter::~ReadFilter() {}
 void MinHashReadFilter::initialize(ReadData &rD) {
     this->rD = &rD;
     numReads = rD.getNumReads();
-    readLen = rD.getRead(0).length();
     readPos = &rD.getReadPos();
     readPosSorted = &rD.getReadPosSorted();
 
     if (sketches)
-        free(sketches);
-    sketches = (kMer_t *)malloc(n * numReads * sizeof(kMer_t));
+        delete[] sketches;
+    sketches = new kMer_t[n * numReads];
 
     generateRandomNumbers(n);
 
@@ -61,8 +55,8 @@ void MinHashReadFilter::initialize(ReadData &rD) {
 
 void MinHashReadFilter::generateRandomNumbers(size_t n) {
     if (randNumbers)
-        free(randNumbers);
-    randNumbers = (kMer_t *)malloc(n * sizeof(kMer_t));
+        delete[] randNumbers;
+    randNumbers = new kMer_t[n];
 
     std::random_device rd;
     std::mt19937_64 gen(rd());
@@ -123,7 +117,8 @@ FilterStats MinHashReadFilter::getFilterStats(size_t overlapBaseThreshold,
     size_t numOverlaps = 0;
 #pragma omp parallel for reduction(+ : numOverlaps)
     for (read_t i = 0; i < numReads; ++i) {
-        long curTh = (*readPosSorted)[i] + readLen - overlapBaseThreshold;
+        // long curTh = (*readPosSorted)[i] + readLen - overlapBaseThreshold;
+        long curTh = 0;
         for (read_t j = i + 1; j < numReads; ++j) {
             if (((long)(*readPosSorted)[j]) <= curTh)
                 numOverlaps++;
@@ -142,7 +137,8 @@ FilterStats MinHashReadFilter::getFilterStats(size_t overlapBaseThreshold,
     for (read_t i = 0; i < numReads; ++i) {
         std::multiset<read_t> matches;
         unsigned long curPos = (*readPos)[i];
-        long th = readLen - overlapBaseThreshold;
+        // long th = readLen - overlapBaseThreshold;
+        long th = 0;
         for (size_t sketchIndex = 0; sketchIndex < n; ++sketchIndex) {
             kMer_t curHash = sketches[i * n + sketchIndex];
             //            std::cout << i << " " << sketchIndex << " " << curHash
@@ -195,74 +191,42 @@ char MinHashReadFilter::baseToInt(const char base) {
     return (base & 0b10) | ((base & 0b100) >> 2);
 }
 
-template <class OutputIt>
-void MinHashReadFilter::string2KMers(const std::string &s, const size_t k,
-                                     OutputIt kMers) {
-    ssize_t maxI = s.length() - k + 1;
-    if (maxI <= 0)
-        return;
-    kMer_t currentKMer = kMerToInt(s.substr(0, k));
-    *kMers = currentKMer;
-    kMers++;
-    const unsigned long long mask = (1ull << (2 * k)) - 1;
-    for (size_t i = 1; i < (size_t)maxI; ++i) {
-        currentKMer =
-            ((currentKMer << 2) | MinHashReadFilter::baseToInt(s[i + k - 1])) &
-            mask;
-        *kMers = currentKMer;
-        kMers++;
-    }
-}
-
-template <class OutputIt>
-void MinHashReadFilter::hashKMer(kMer_t kMer, OutputIt hashes) {
-    kMer_t currentHash = kMer;
-    currentHash = (currentHash * (uint64_t)HASH_C64);
-    currentHash ^= randNumbers[0];
-    *hashes = currentHash;
-    ++hashes;
-    for (size_t l = 1; l < n; l++) {
-        kMer_t newHash = ((currentHash >> ROTATE_BITS) |
-                          (currentHash << (KMER_BITS - ROTATE_BITS))) ^
-                         0xABCD32108475AC38;
-        newHash = (newHash * (uint64_t)HASH_C64);
-        newHash ^= randNumbers[l];
-        newHash += currentHash;
-        currentHash = newHash;
-        *hashes = currentHash;
-        ++hashes;
-    }
-}
-
+template <typename InputIt, typename OutputIt>
 void MinHashReadFilter::calcSketch(const size_t numKMers, const size_t n,
-                                   kMer_t *hashes, kMer_t *sketches) {
-    // #pragma omp parallel for
-    for (size_t hashIndex = 0; hashIndex < n; ++hashIndex) {
-        kMer_t currentMin = ~(kMer_t)0;
-        //#pragma omp parallel for reduction(min:currentMin)
-        for (size_t l = 0; l < numKMers * n; l += n) {
-            kMer_t temp = hashes[hashIndex + l];
-            currentMin = std::min(currentMin, temp);
-        }
-        sketches[hashIndex] = currentMin;
+                                   InputIt hashes, OutputIt sketches) {
+    // This code has been optimized such that
+    // 1. we are accessing memory in sequence
+    // 2. We only try to increment pointers
+    OutputIt sketchesEnd = sketches + n;
+    for (OutputIt tempSketches = sketches; tempSketches != sketchesEnd;
+         ++tempSketches)
+        *tempSketches = ~(kMer_t)0;
+    InputIt hashesEnd = hashes + numKMers * n;
+    OutputIt tempSketches = sketches;
+    for (InputIt tempHashes = hashes; tempHashes != hashesEnd;
+         ++tempHashes, ++tempSketches) {
+        tempSketches = tempSketches == sketchesEnd ? sketches : tempSketches;
+        *tempSketches = std::min(*tempSketches, *tempHashes);
     }
 }
 
 void MinHashReadFilter::string2Sketch(const std::string &s, kMer_t *sketch) {
-    size_t numKMers = s.length() - k + 1;
-    kMer_t kMers[numKMers];
-    string2KMers(s, k, kMers);
-    kMer_t hashes[numKMers * n];
-    for (size_t i = 0; i < numKMers; ++i)
-        hashKMer(kMers[i], hashes + i * n);
-    calcSketch(numKMers, n, hashes, sketch);
+    ssize_t numKMers = s.length() - k + 1;
+    if (numKMers < 0)
+        return;
+    std::vector<kMer_t> kMers(numKMers);
+    string2KMers(s, k, kMers.begin());
+    std::vector<kMer_t> hashes(numKMers * n);
+    for (size_t i = 0; i < (size_t)numKMers; ++i)
+        hashKMer(kMers[i], hashes.begin() + i * n);
+    calcSketch(numKMers, n, hashes.begin(), sketch);
 }
 
 MinHashReadFilter::~MinHashReadFilter() {
     if (randNumbers)
-        free(randNumbers);
+        delete[] randNumbers;
     if (sketches)
-        free(sketches);
+        delete[] sketches;
 }
 
 void MinHashReadFilter::populateHashTables() {

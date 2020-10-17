@@ -58,6 +58,10 @@ public:
     /** We store all the k-mers as uint64s. This would work for all k<=32,
      which is definitely sufficient **/
     typedef uint64_t kMer_t;
+    static const size_t ROTATE_BITS = 13;
+    static const uint64_t HASH_C64 = 11400714819323198485ULL;
+    static const uint32_t HASH_C32 = 2654435769L;
+    static const size_t KMER_BITS = 64;
 
     /** [k]-mer **/
     size_t k;
@@ -154,7 +158,6 @@ public:
 
 private:
     ReadData *rD;
-    size_t readLen;
     std::vector<unsigned long> *readPos;
     std::vector<unsigned long> *readPosSorted;
     read_t numReads;
@@ -181,6 +184,10 @@ private:
     /**
      * @brief Calculates "MinHash" sketches based on the hashes provided.
      *
+     * @tparam InputIt an input random access iterator that dereferences to
+     * kMer_t
+     * @tparam OutputIt an output random access iterator that dereferences to
+     * kMer_t
      * @param numReads The number of reads to calculate sketches for.
      * @param numKMers The number of kMers that are calculated per read
      * @param n The size of the sketch
@@ -189,8 +196,53 @@ private:
      * @param sketches The location to store the sketches. Should have enough
      * space to store (numReads * n) kMer_ts. Indexed by (readId, id in sketch)
      */
+    template <typename InputIt, typename OutputIt>
     static void calcSketch(const size_t numKMers, const size_t n,
-                           kMer_t *hashes, kMer_t *sketches);
+                           InputIt hashes, OutputIt sketches);
 };
+
+/******************************************************************************/
+/* public template methods */
+
+template <class OutputIt>
+void MinHashReadFilter::string2KMers(const std::string &s, const size_t k,
+                                     OutputIt kMers) {
+    ssize_t maxI = s.length() - k + 1;
+    if (maxI <= 0)
+        return;
+    kMer_t currentKMer = kMerToInt(s.substr(0, k));
+    *kMers = currentKMer;
+    kMers++;
+    const unsigned long long mask = (1ull << (2 * k)) - 1;
+    for (size_t i = 1; i < (size_t)maxI; ++i) {
+        currentKMer =
+            ((currentKMer << 2) | MinHashReadFilter::baseToInt(s[i + k - 1])) &
+            mask;
+        *kMers = currentKMer;
+        kMers++;
+    }
+}
+
+template <class OutputIt>
+void MinHashReadFilter::hashKMer(kMer_t kMer, OutputIt hashes) {
+    kMer_t currentHash = kMer;
+    currentHash = (currentHash * (uint64_t)HASH_C64);
+    currentHash ^= randNumbers[0];
+    *hashes = currentHash;
+    ++hashes;
+    for (size_t l = 1; l < n; l++) {
+        kMer_t newHash = ((currentHash >> ROTATE_BITS) |
+                          (currentHash << (KMER_BITS - ROTATE_BITS))) ^
+                         0xABCD32108475AC38;
+        newHash = (newHash * (uint64_t)HASH_C64);
+        newHash ^= randNumbers[l];
+        newHash += currentHash;
+        currentHash = newHash;
+        *hashes = currentHash;
+        ++hashes;
+    }
+}
+
+/******************************************************************************/
 
 #endif /* DE8B470D_E48E_48C7_809A_B4368CEC172C */
