@@ -14,6 +14,9 @@
  */
 class ReadData {
 public:
+    /** The average length of the reads **/
+    size_t avgReadLen;
+
     /**
      * @brief Loads the read data from a file
      *
@@ -88,7 +91,6 @@ private:
     std::vector<std::unique_ptr<std::string>> editStrings;
     /** Whether the read is a reverse complement **/
     std::vector<bool> reverse;
-    size_t readLen;
     // End testing
 };
 

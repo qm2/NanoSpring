@@ -15,6 +15,7 @@ void ReadData::loadFromFile(const char *fileName) {
 
     std::ifstream infile(fileName);
     std::string line;
+    size_t totalNumBases = 0;
     while (std::getline(infile, line)) {
         //        std::cout << line << std::endl;
         size_t index = line.find(':');
@@ -36,18 +37,20 @@ void ReadData::loadFromFile(const char *fileName) {
             std::unique_ptr<std::string> ptr(new std::string(line));
             readData.push_back(std::move(ptr));
         }
+        totalNumBases += readData.back()->size();
         numReads++;
         if (numReads == std::numeric_limits<read_t>::max()) {
             throw std::runtime_error(
                 "Too many reads for read_t type to handle.");
         }
     }
-    readLen = readData[0]->length();
+    assert(numReads != 0);
+    avgReadLen = totalNumBases / numReads;
     readPosSorted = readPos;
     std::sort(readPosSorted.begin(), readPosSorted.end());
 #ifdef DEBUG
     std::cout << "numReads " << numReads << std::endl;
-    std::cout << "readLen " << readLen << std::endl;
+    std::cout << "avgReadLen " << avgReadLen << std::endl;
 #endif
 }
 

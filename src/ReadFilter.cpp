@@ -119,6 +119,7 @@ FilterStats MinHashReadFilter::getFilterStats(size_t overlapBaseThreshold,
     for (read_t i = 0; i < numReads; ++i) {
         // long curTh = (*readPosSorted)[i] + readLen - overlapBaseThreshold;
         long curTh = 0;
+        /// FIXME
         for (read_t j = i + 1; j < numReads; ++j) {
             if (((long)(*readPosSorted)[j]) <= curTh)
                 numOverlaps++;
@@ -138,6 +139,7 @@ FilterStats MinHashReadFilter::getFilterStats(size_t overlapBaseThreshold,
         std::multiset<read_t> matches;
         unsigned long curPos = (*readPos)[i];
         // long th = readLen - overlapBaseThreshold;
+        /// FIXME
         long th = 0;
         for (size_t sketchIndex = 0; sketchIndex < n; ++sketchIndex) {
             kMer_t curHash = sketches[i * n + sketchIndex];
