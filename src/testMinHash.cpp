@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
     }
     omp_set_nested(1);
     {
-        ProfilerStart("testMinHash.prof");
+         ProfilerStart("testMinHash.prof");
         //        nanoporeReads.printHashes();
         ReadData rD;
         rD.loadFromFile(argv[1]);
@@ -22,8 +22,6 @@ int main(int argc, char **argv) {
         minHashReadFilter->n = std::stoi(argv[3]);
         ReadFilter *rF = minHashReadFilter;
         rF->initialize(rD);
-        std::cout << rF->getFilterStats(1000, 4);
-        delete rF;
         ProfilerStop();
         //        unsigned int overlapBaseThs[] = {10, 20, 50, 100, 500, 1000};
         //        unsigned int overlapBaseThs[] = {500, 1000, 2000, 5000, 8000};
@@ -37,15 +35,15 @@ int main(int argc, char **argv) {
         //            }
         //        }
         std::cout << "calculating filter stats" << std::endl;
-        // while (true) {
-        //     unsigned int overlapBaseTh, overlapSketchTh;
-        //     std::cin >> overlapBaseTh >> overlapSketchTh;
-        // std::cout << nanoporeReads.getFilterStats(overlapBaseTh,
-        //                                           overlapSketchTh)
-        //           << std::endl;
-        // }
-        //                std::cout << nanoporeReads.getFilterStats(1000, 1) <<
-        //                std::endl;
+        while (true) {
+            unsigned int overlapBaseTh, overlapSketchTh;
+            std::cin >> overlapBaseTh >> overlapSketchTh;
+            if (overlapBaseTh == 0)
+                break;
+            std::cout << rF->getFilterStats(overlapBaseTh, overlapSketchTh)
+                      << std::endl;
+        }
+        delete rF;
     }
 
     return 0;

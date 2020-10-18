@@ -38,7 +38,11 @@ void MinHashReadFilter::initialize(ReadData &rD) {
     this->rD = &rD;
     numReads = rD.getNumReads();
     readPos = &rD.getReadPos();
-    readPosSorted = &rD.getReadPosSorted();
+    readPosSorted.clear();
+    for (read_t r = 0; r < numReads; ++r) {
+        readPosSorted.push_back(std::make_pair((*readPos)[r], r));
+    }
+    std::sort(readPosSorted.begin(), readPosSorted.end());
 
     if (sketches)
         delete[] sketches;
@@ -117,13 +121,16 @@ FilterStats MinHashReadFilter::getFilterStats(size_t overlapBaseThreshold,
     size_t numOverlaps = 0;
 #pragma omp parallel for reduction(+ : numOverlaps)
     for (read_t i = 0; i < numReads; ++i) {
-        // long curTh = (*readPosSorted)[i] + readLen - overlapBaseThreshold;
-        long curTh = 0;
-        /// FIXME
+        read_t realI = readPosSorted[i].second;
         for (read_t j = i + 1; j < numReads; ++j) {
-            if (((long)(*readPosSorted)[j]) <= curTh)
+            read_t realJ = readPosSorted[j].second;
+            size_t minEnd =
+                std::min((*readPos)[realI] + rD->getRead(realI).size(),
+                         (*readPos)[realJ] + rD->getRead(realJ).size());
+            size_t maxBegin = std::max((*readPos)[realI], (*readPos)[realJ]);
+            if (minEnd > maxBegin + overlapBaseThreshold)
                 numOverlaps++;
-            else
+            else if ((*readPos)[realJ] > minEnd)
                 break;
         }
     }
@@ -137,16 +144,12 @@ FilterStats MinHashReadFilter::getFilterStats(size_t overlapBaseThreshold,
 #pragma omp parallel for reduction(+ : totalPositive, falsePositives)
     for (read_t i = 0; i < numReads; ++i) {
         std::multiset<read_t> matches;
-        unsigned long curPos = (*readPos)[i];
-        // long th = readLen - overlapBaseThreshold;
-        /// FIXME
-        long th = 0;
         for (size_t sketchIndex = 0; sketchIndex < n; ++sketchIndex) {
             kMer_t curHash = sketches[i * n + sketchIndex];
             //            std::cout << i << " " << sketchIndex << " " << curHash
             //            << std::endl; auto currentMap =
             //            hashTables[sketchIndex]; for (auto p : currentMap) {
-            //                std::cout << p.first << " ";
+            //                std::cout << p << " ";
             //            }
             //            std::cout << std::endl;
             std::vector<read_t> &m = hashTables[sketchIndex].at(curHash);
@@ -157,9 +160,12 @@ FilterStats MinHashReadFilter::getFilterStats(size_t overlapBaseThreshold,
              it = matches.upper_bound(*it)) {
             if (*it <= i)
                 continue;
-            unsigned long pos = (*readPos)[*it];
             if (matches.count(*it) >= overlapSketchThreshold) {
-                if (abs((long)pos - (long)curPos) > th)
+                ssize_t minEnd =
+                    std::min((*readPos)[i] + rD->getRead(i).size(),
+                             (*readPos)[*it] + rD->getRead(*it).size());
+                ssize_t maxBegin = std::max((*readPos)[i], (*readPos)[*it]);
+                if (minEnd - maxBegin < (ssize_t)overlapBaseThreshold)
                     falsePositives++;
                 totalPositive++;
             }

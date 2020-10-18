@@ -49,8 +49,6 @@ public:
     /// the raw data.
     std::vector<unsigned long> &getReadPos();
 
-    std::vector<unsigned long> &getReadPosSorted();
-
     std::vector<std::unique_ptr<std::string>> &getReadData();
 
     /**
@@ -87,7 +85,6 @@ private:
 
     // The following are for testing
     std::vector<unsigned long> readPos;
-    std::vector<unsigned long> readPosSorted;
     std::vector<std::unique_ptr<std::string>> editStrings;
     /** Whether the read is a reverse complement **/
     std::vector<bool> reverse;

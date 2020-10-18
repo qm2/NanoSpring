@@ -46,8 +46,6 @@ void ReadData::loadFromFile(const char *fileName) {
     }
     assert(numReads != 0);
     avgReadLen = totalNumBases / numReads;
-    readPosSorted = readPos;
-    std::sort(readPosSorted.begin(), readPosSorted.end());
 #ifdef DEBUG
     std::cout << "numReads " << numReads << std::endl;
     std::cout << "avgReadLen " << avgReadLen << std::endl;
@@ -59,10 +57,6 @@ read_t ReadData::getNumReads() { return numReads; }
 std::string &ReadData::getRead(read_t readId) { return *readData[readId]; }
 
 std::vector<unsigned long> &ReadData::getReadPos() { return readPos; }
-
-std::vector<unsigned long> &ReadData::getReadPosSorted() {
-    return readPosSorted;
-}
 
 std::vector<std::unique_ptr<std::string>> &ReadData::getReadData() {
     return readData;

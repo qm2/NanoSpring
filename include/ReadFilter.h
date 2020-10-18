@@ -158,8 +158,8 @@ public:
 
 private:
     ReadData *rD;
-    std::vector<unsigned long> *readPos;
-    std::vector<unsigned long> *readPosSorted;
+    std::vector<size_t> *readPos;
+    std::vector<std::pair<size_t, read_t>> readPosSorted;
     read_t numReads;
     kMer_t *sketches = nullptr;
     std::vector<std::map<kMer_t, std::vector<read_t>>> hashTables;
