@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
             return 0;
         MergeSortReadAligner rA(21, 10);
         LocalMyersRollBack<ConsensusGraph::RAItA, ConsensusGraph::RAItB>
-            localMyersRollBackAligner(100, 200, 3200);
+            localMyersRollBackAligner(100, 200, 100, 0.21);
         ConsensusGraph::StringAligner_t *aligner = &localMyersRollBackAligner;
         Compressor compressor;
         compressor.k = k;

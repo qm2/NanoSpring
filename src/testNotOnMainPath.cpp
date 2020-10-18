@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
     (void)argc;
     (void)argv;
     LocalMyersRollBack<ConsensusGraph::RAItA, ConsensusGraph::RAItB>
-        stringAligner(100, 200, 3200);
+        stringAligner(100, 200, 100, 0.21);
     ConsensusGraph cG(&stringAligner);
 
     std::string reads[3];

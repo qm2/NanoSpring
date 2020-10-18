@@ -31,12 +31,14 @@ public:
     typedef EditPath *EditInfoMat_t;
     typedef uint8_t *EditInfoAccessedMat_t;
 
-    /**
-     * The maximum edit distance to search for among the overlapping portions
-     */
-    const size_t maxEditDis;
+    /** The expected error rate **/
+    const double expectedErrorRate = 0.2;
 
-    const double errorRate = 0.2;
+    /** Every alignment gets this many edits for free **/
+    const size_t editSlack;
+
+    /** The aligner gives up if the error rate exceeds this **/
+    const double maxErrorRate;
 
     /**
      * Calculates a good edit script from string s1 to string s2 and stores it
@@ -68,9 +70,37 @@ public:
                        size_t &editDis) override;
 
     LocalMyersRollBack(const size_t lenA, const size_t lenB,
-                       const size_t maxEditDis);
+                       const size_t editSlack, const double maxErrorRate);
 
 protected:
+    /** dimensions for the two matrices editInfo and editInfoAccessed **/
+    size_t xSize, ySize;
+
+    /**
+     * @brief Whether we should continue the alignment given the current edit
+     * distance and positions
+     *
+     * We should continue if
+     * editDis <
+     * editSlack + maxErrorRate * max(Acurrent - Abegin, Bcurrent - Bbegin)
+     *
+     * @tparam RItA
+     * @tparam RItB
+     * @param Abegin
+     * @param Acurrent
+     * @param Aend
+     * @param Bbegin
+     * @param Bcurrent
+     * @param Bend
+     * @param editDis
+     * @return true
+     * @return false
+     */
+    template <typename RItA, typename RItB>
+    __attribute__((warn_unused_result)) bool
+    shouldContinue(RItA Abegin, RItA Acurrent, RItA Aend, RItB Bbegin,
+                   RItB Bcurrent, RItB Bend, size_t editDis);
+
     /**
      * @brief
      * Performs alignment using an modification of myers algorithm where
@@ -134,8 +164,7 @@ protected:
      * @param Bend
      * @param lenAString
      * @param lenBString
-     * @param dirSuccess Whether we should continue based on maxEditDis and the
-     * current editDis
+     * @param dirSuccess Whether we should continue based on localAlign results
      * @param editDis
      * @param editInfo Stores edit path in 2d array, preallocated elsewhere
      * for speed (passed to localAlign as it is)
@@ -149,8 +178,6 @@ protected:
                  bool &dirSuccess, size_t &editDis, const size_t max,
                  EditInfoMat_t editInfo,
                  EditInfoAccessedMat_t editInfoAccessed);
-
-    /** dimensions for the two matrices editInfo and editInfoAccessed **/
-    size_t xSize, ySize;
 };
+
 #endif /* F1ADC39F_6A7F_4671_B4B5_77EF545E2B5C */

@@ -23,23 +23,10 @@ int main(int argc, char **argv) {
     //    aligners.push_back(new LocalMyers(50));
     //    aligners.push_back(new LocalMyers(100));
     //    aligners.push_back(new LocalMyers(200));
-    size_t maxEditDis = 3200;
     //    aligners.push_back(new LocalMyers(32, 64));
-    // aligners.push_back(new LocalMyersRollBack(32, 64, maxEditDis));
     // aligners.push_back(new LocalMyers<const char *>(50, 100));
-    // aligners.push_back(
-    // new LocalMyersRollBack<const char *>(50, 100, maxEditDis));
-    // aligners.push_back(
-    // new LocalMyersRollBack<const char *>(50, 100, maxEditDis * 2));
     aligners.push_back(
-        new LocalMyersRollBack<const char *>(100, 200, maxEditDis));
-    // aligners.push_back(
-    // new LocalMyersRollBack<const char *>(100, 200, maxEditDis * 2));
-
-    //    aligners.push_back(new LocalMyersRollBack(100, 50, maxEditDis));
-    //    aligners.push_back(new LocalMyers(100, 200));
-    //    aligners.push_back(new LocalMyersRollBack(100, 200, maxEditDis));
-    //    aligners.push_back(new LocalMyersRollBack(200, 100, maxEditDis));
+        new LocalMyersRollBack<const char *>(100, 200, 100, 0.21));
     // aligners.push_back(new MyersAligner());
     testAlg(aligners);
     for (StringAligner<const char *> *aligner : aligners)

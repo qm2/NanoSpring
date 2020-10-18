@@ -303,12 +303,15 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::localAlign(
 
 template <typename RandomAccessItA, typename RandomAccessItB>
 LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::LocalMyersRollBack(
-    const size_t lenA, const size_t lenB, const size_t maxEditDis)
+    const size_t lenA, const size_t lenB, const size_t editSlack,
+    const double maxErrorRate)
     : LocalMyers<RandomAccessItA, RandomAccessItB>(
           "LMRB " + std::to_string(lenA) + " " + std::to_string(lenB) +
-              " MaxEditDis " + std::to_string(maxEditDis),
+              " editSlack " + std::to_string(editSlack) + " maxErrorRate " +
+              std::to_string(maxErrorRate),
           lenA, lenB),
-      maxEditDis(maxEditDis), xSize(lenA + 1), ySize(lenB + 1) {}
+      editSlack(editSlack), maxErrorRate(maxErrorRate), xSize(lenA + 1),
+      ySize(lenB + 1) {}
 
 template <typename RandomAccessItA, typename RandomAccessItB>
 template <typename RItA, typename RItB>
@@ -320,7 +323,8 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::alignOnce(
     endOffset = 0;
     editDis = 0;
     editScript.clear();
-
+    RItA constAbegin = Abegin;
+    RItB constBbegin = Bbegin;
     // std::cout << "299AlignReverse" << offsetGuess << std::endl;
     if (offsetGuess > 0) {
         if (Aend - Abegin <= offsetGuess)
@@ -363,13 +367,9 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::alignOnce(
         // std::cout << "331: Aend-Abegin " << Aend - Abegin << " Bend-Bbegin "
         //          << Bend - Bbegin << std::endl;
         editDis += localEditDis;
-        if (editDis + errorRate * std::min(Aend - Abegin, Bend - Bbegin) >
-            maxEditDis) {
-            // std::cout << "333: editDis " << editDis << " maxEditDis "
-            //          << maxEditDis << " Aend-Abegin " << Aend - Abegin
-            //          << std::endl;
+        if (!shouldContinue(constAbegin, Abegin, Aend, constBbegin, Bbegin,
+                            Bend, editDis))
             return false;
-        }
         std::reverse(localEditScript.begin(), localEditScript.end());
         editScript.insert(editScript.end(), localEditScript.begin(),
                           localEditScript.end());
@@ -425,9 +425,11 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::align(
     while (Abegin1 < Aend && Bbegin1 < Bend && Abegin2 < Aend &&
            Bbegin2 < Bend && (dir1Success || dir2Success)) {
         double expectedEditDis1 =
-            editDis1 + errorRate * std::min(Aend - Abegin1, Bend - Bbegin1);
+            editDis1 +
+            expectedErrorRate * std::min(Aend - Abegin1, Bend - Bbegin1);
         double expectedEditDis2 =
-            editDis2 + errorRate * std::min(Aend - Abegin2, Bend - Bbegin2);
+            editDis2 +
+            expectedErrorRate * std::min(Aend - Abegin2, Bend - Bbegin2);
 
         if ((!dir2Success) ||
             (dir1Success && expectedEditDis1 < expectedEditDis2)) {
@@ -435,10 +437,16 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::align(
             advance(Abegin1, Aend, Bbegin1, Bend, this->lenA, this->lenB,
                     dir1Success, editDis1, max, editInfo.get(),
                     editInfoAccessed.get());
+            if (dir1Success)
+                dir1Success = shouldContinue(s1Begin, Abegin1, Aend, s2Begin,
+                                             Bbegin1, Bend, editDis1);
         } else {
             advance(Bbegin2, Bend, Abegin2, Aend, this->lenA, this->lenB,
                     dir2Success, editDis2, max, editInfo.get(),
                     editInfoAccessed.get());
+            if (dir2Success)
+                dir2Success = shouldContinue(s1Begin, Abegin2, Aend, s2Begin,
+                                             Bbegin2, Bend, editDis2);
         }
     }
     if (!dir1Success && !dir2Success) {
@@ -524,12 +532,21 @@ void LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::advance(
                    localEditDis, editInfo, editInfoAccessed);
     if (success) {
         editDis += localEditDis;
-        if (editDis + errorRate * std::min(Aend - Abegin, Bend - Bbegin) >
-            maxEditDis)
-            dirSuccess = false;
     } else {
         dirSuccess = false;
     }
 };
+
+template <typename RandomAccessItA, typename RandomAccessItB>
+template <typename RItA, typename RItB>
+__attribute__((warn_unused_result)) bool
+LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::shouldContinue(
+    RItA Abegin, RItA Acurrent, RItA Aend, RItB Bbegin, RItB Bcurrent,
+    RItB Bend, size_t editDis) {
+    (void)Aend;
+    (void)Bend;
+    return editDis < editSlack + maxErrorRate * std::max(Acurrent - Abegin,
+                                                         Bcurrent - Bbegin);
+}
 
 #endif /* A1AFCAE9_C3D5_433B_8650_E2AFA990F0A1 */

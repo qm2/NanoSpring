@@ -48,7 +48,7 @@ int main() {
         const char *const s2End = s2.c_str() + s2.length();
         std::vector<Edit> editScript;
         size_t editDis;
-        LocalMyersRollBack<const char *> pM(4, 8, 1000);
+        LocalMyersRollBack<const char *> pM(4, 8, 100, 0.21);
         ssize_t beginOffset, endOffset;
         pM.align(s1Start, s1End, s2Start, s2End, 0, beginOffset, endOffset,
                  editScript, editDis);
