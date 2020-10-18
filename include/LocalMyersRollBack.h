@@ -5,10 +5,6 @@
 #include "LocalMyers.h"
 #include "StringAligner.h"
 
-// define types for matrices used in localAlign
-typedef std::vector<std::vector<EditPath>> EditInfoMat_t;
-typedef std::vector<std::vector<uint8_t>> EditInfoAccessedMat_t;
-
 /**
  * This class basically runs the local myers algorithm from left the right to
  * obtain a good alignment at the right most end, and then uses that alignment
@@ -29,6 +25,12 @@ typedef std::vector<std::vector<uint8_t>> EditInfoAccessedMat_t;
 template <typename RandomAccessItA, typename RandomAccessItB = RandomAccessItA>
 class LocalMyersRollBack : public LocalMyers<RandomAccessItA, RandomAccessItB> {
 public:
+    // define types for matrices used in localAlign
+    // typedef std::vector<std::vector<EditPath>> EditInfoMat_t;
+    // typedef std::vector<std::vector<uint8_t>> EditInfoAccessedMat_t;
+    typedef EditPath *EditInfoMat_t;
+    typedef uint8_t *EditInfoAccessedMat_t;
+
     /**
      * The maximum edit distance to search for among the overlapping portions
      */
@@ -92,10 +94,10 @@ protected:
      * @return false
      */
     template <typename RItA, typename RItB>
-    static bool localAlign(RItA &Abegin, RItA Aend, RItB &Bbegin, RItB Bend,
-                           const size_t max, std::vector<Edit> &editScript,
-                           size_t &editDis, EditInfoMat_t &editInfo,
-                           EditInfoAccessedMat_t &editInfoAccessed);
+    bool localAlign(RItA &Abegin, RItA Aend, RItB &Bbegin, RItB Bend,
+                    const size_t max, std::vector<Edit> &editScript,
+                    size_t &editDis, EditInfoMat_t editInfo,
+                    EditInfoAccessedMat_t editInfoAccessed);
 
     /**
      * @brief Performs global alignment algorithm once
@@ -145,6 +147,10 @@ protected:
     void advance(RItA &Abegin, RItA Aend, RItB &Bbegin, RItB Bend,
                  const size_t lenAString, const size_t lenBString,
                  bool &dirSuccess, size_t &editDis, const size_t max,
-                 EditInfoMat_t &editInfo, EditInfoAccessedMat_t &editInfoAccessed);
+                 EditInfoMat_t editInfo,
+                 EditInfoAccessedMat_t editInfoAccessed);
+
+    /** dimensions for the two matrices editInfo and editInfoAccessed **/
+    size_t xSize, ySize;
 };
 #endif /* F1ADC39F_6A7F_4671_B4B5_77EF545E2B5C */
