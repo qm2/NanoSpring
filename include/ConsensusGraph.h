@@ -229,6 +229,8 @@ public:
      * @brief Updates the graph with the new read s, and the alignment results
      * editScript, beginOffset, and endOffset
      *
+     * There must be at least one Edit of type SAME in editScript!
+     *
      * @param s the string of the read if !reverseComplement and its reverse
      * complement otherwise
      * @param editScript

@@ -157,6 +157,12 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
         //           << " OffsetGuess " << offsetGuess << std::endl;
         return false;
     }
+    size_t numUnchanged = 0;
+    for (auto e : editScript)
+        if (e.editType == SAME)
+            numUnchanged += e.editInfo.num;
+    if (numUnchanged == 0)
+        return false;
     return true;
     // updateGraph(s, editScript, beginOffset, endOffset, readId, pos);
 }
@@ -175,6 +181,8 @@ void ConsensusGraph::updateGraph(const std::string &s,
     /** The last node of this read that has been added **/
     Node *currentNode = nullptr;
     Node *initialNode = nullptr;
+
+    size_t numUnchanged = 0;
 
     // First we update leftMostUnchangedNode and rightMostUnchangedNode
     if (beginOffset >= 0 || endOffset >= 0) {
@@ -261,7 +269,7 @@ void ConsensusGraph::updateGraph(const std::string &s,
         //        std::cout << e;
         if (e.editType == SAME) {
             size_t num = e.editInfo.num;
-
+            numUnchanged += num;
             // We deal with the first node
             if (!currentNode) {
                 // If there is no currentNode, set it and initialNode
@@ -308,6 +316,7 @@ void ConsensusGraph::updateGraph(const std::string &s,
         }
     }
 
+    assert(numUnchanged > 0);
     // Don't forget to add the read!
     readsInGraph.insert(std::make_pair(
         readId, Read(pos, initialNode, s.length(), reverseComplement)));
