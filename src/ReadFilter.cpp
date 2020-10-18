@@ -222,12 +222,12 @@ void MinHashReadFilter::string2Sketch(const std::string &s, kMer_t *sketch) {
     ssize_t numKMers = s.length() - k + 1;
     if (numKMers < 0)
         return;
-    std::vector<kMer_t> kMers(numKMers);
-    string2KMers(s, k, kMers.begin());
-    std::vector<kMer_t> hashes(numKMers * n);
+    std::unique_ptr<kMer_t[]> kMers(new kMer_t[numKMers]);
+    string2KMers(s, k, kMers.get());
+    std::unique_ptr<kMer_t[]> hashes(new kMer_t[numKMers * n]);
     for (size_t i = 0; i < (size_t)numKMers; ++i)
-        hashKMer(kMers[i], hashes.begin() + i * n);
-    calcSketch(numKMers, n, hashes.begin(), sketch);
+        hashKMer(kMers[i], hashes.get() + i * n);
+    calcSketch(numKMers, n, hashes.get(), sketch);
 }
 
 MinHashReadFilter::~MinHashReadFilter() {
