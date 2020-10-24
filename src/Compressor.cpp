@@ -11,7 +11,6 @@
 #include <iostream>
 
 void Compressor::compress(const char *inputFileName) const {
-
     ReadData rD;
     rD.loadFromFile(inputFileName);
     // (inputFileName, k, n);

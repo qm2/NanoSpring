@@ -118,7 +118,6 @@ void ConsensusGraph::initialize(const std::string &seed, read_t readId,
     // We create a read that points to this node
     readsInGraph.insert(std::make_pair(
         readId, ConsensusGraph::Read(pos, currentNode, seed.length(), false)));
-    startingNode = currentNode;
     rightMostUnchangedNode = currentNode;
     rightMostUnchangedNodeOffset = 0;
     leftMostUnchangedNode = currentNode;
@@ -132,7 +131,7 @@ void ConsensusGraph::initialize(const std::string &seed, read_t readId,
         currentNode = nextNode;
     }
     startPos = pos;
-    endPos = pos + len;
+    endPos = pos + 1;
 }
 
 bool ConsensusGraph::addRead(const std::string &s, long pos,
@@ -322,97 +321,97 @@ void ConsensusGraph::updateGraph(const std::string &s,
         readId, Read(pos, initialNode, s.length(), reverseComplement)));
 }
 
-// TODO: Optimize this to only update the portion of the graph that has changed
-Path &ConsensusGraph::calculateMainPath() {
-    mainPath.clear();
+// Deprecated
+// Path &ConsensusGraph::calculateMainPath() {
+// mainPath.clear();
 
-    // First we set all the hasReached fields to false
-    traverseAndCall(startingNode, true, [](Node *) {});
+//// First we set all the hasReached fields to false
+// traverseAndCall(startingNode, true, [](Node *) {});
 
-    std::deque<Node *> unfinishedNodes;
-    size_t globalMaxWeight = 0;
-    Node *globalMaxWeightNode = nullptr;
-    unfinishedNodes.push_back(startingNode);
-    while (!unfinishedNodes.empty()) {
-        Node *currentNode = unfinishedNodes.front();
-        if (currentNode->hasReached) {
-            unfinishedNodes.pop_front();
-            continue;
-        }
+// std::deque<Node *> unfinishedNodes;
+// size_t globalMaxWeight = 0;
+// Node *globalMaxWeightNode = nullptr;
+// unfinishedNodes.push_back(startingNode);
+// while (!unfinishedNodes.empty()) {
+// Node *currentNode = unfinishedNodes.front();
+// if (currentNode->hasReached) {
+// unfinishedNodes.pop_front();
+// continue;
+//}
 
-        size_t maxWeight = 0;
-        bool hasPreviousWeights = true;
-        for (auto edgeIt : currentNode->edgesOut) {
-            Node *n = edgeIt.second->sink;
-            if (!n->hasReached) {
-                // std::deque<Node *>::iterator temp = std::find(
-                //     unfinishedNodes.begin(), unfinishedNodes.end(), n);
-                // if (temp != unfinishedNodes.end()) {
-                //     std::cout << std::distance(unfinishedNodes.begin(),
-                //     temp)
-                //               << std::endl;
-                //     std::cout << unfinishedNodes.size() << std::endl;
-                //     std::raise(SIGINT);
-                // }
-                // if (unfinishedNodes.size() > 1000000) {
-                //     std::cout << unfinishedNodes.size() << ' ';
-                //     std::raise(SIGINT);
-                // }
-                unfinishedNodes.push_front(n);
-                hasPreviousWeights = false;
-                break;
-            }
-            size_t prevWeight = edgeIt.second->sink->cumulativeWeight;
-            size_t curWeight = prevWeight + edgeIt.second->count;
-            maxWeight = std::max(maxWeight, curWeight);
-        }
-        if (!hasPreviousWeights)
-            continue;
-        globalMaxWeightNode =
-            maxWeight >= globalMaxWeight ? currentNode : globalMaxWeightNode;
-        globalMaxWeight = std::max(maxWeight, globalMaxWeight);
-        unfinishedNodes.pop_front();
-        for (auto edgeIt : currentNode->edgesIn) {
-            unfinishedNodes.push_back(edgeIt->source);
-        }
-        currentNode->cumulativeWeight = maxWeight;
-        currentNode->hasReached = true;
-    }
+// size_t maxWeight = 0;
+// bool hasPreviousWeights = true;
+// for (auto edgeIt : currentNode->edgesOut) {
+// Node *n = edgeIt.second->sink;
+// if (!n->hasReached) {
+//// std::deque<Node *>::iterator temp = std::find(
+////     unfinishedNodes.begin(), unfinishedNodes.end(), n);
+//// if (temp != unfinishedNodes.end()) {
+////     std::cout << std::distance(unfinishedNodes.begin(),
+////     temp)
+////               << std::endl;
+////     std::cout << unfinishedNodes.size() << std::endl;
+////     std::raise(SIGINT);
+//// }
+//// if (unfinishedNodes.size() > 1000000) {
+////     std::cout << unfinishedNodes.size() << ' ';
+////     std::raise(SIGINT);
+//// }
+// unfinishedNodes.push_front(n);
+// hasPreviousWeights = false;
+// break;
+//}
+// size_t prevWeight = edgeIt.second->sink->cumulativeWeight;
+// size_t curWeight = prevWeight + edgeIt.second->count;
+// maxWeight = std::max(maxWeight, curWeight);
+//}
+// if (!hasPreviousWeights)
+// continue;
+// globalMaxWeightNode =
+// maxWeight >= globalMaxWeight ? currentNode : globalMaxWeightNode;
+// globalMaxWeight = std::max(maxWeight, globalMaxWeight);
+// unfinishedNodes.pop_front();
+// for (auto edgeIt : currentNode->edgesIn) {
+// unfinishedNodes.push_back(edgeIt->source);
+//}
+// currentNode->cumulativeWeight = maxWeight;
+// currentNode->hasReached = true;
+//}
 
-    startingNode = globalMaxWeightNode;
+// startingNode = globalMaxWeightNode;
 
-    auto &edgesInPath = mainPath.edges;
-    auto &stringPath = mainPath.path;
+// auto &edgesInPath = mainPath.edges;
+// auto &stringPath = mainPath.path;
 
-    stringPath.push_back(globalMaxWeightNode->base);
-    globalMaxWeightNode->onMainPath = true;
-    //    std::cout << "max weight" << globalMaxWeight << std::endl;
-    //    std::cout << "here" << std::endl;
-    while (globalMaxWeight > 0) {
-        //        std::cout << "max weight" << globalMaxWeight << " "
-        //                  << edgesInPath.size() << std::endl;
-        for (auto e : globalMaxWeightNode->edgesOut) {
-            if (e.second->count + e.first->cumulativeWeight ==
-                globalMaxWeight) {
-                edgesInPath.push_back(e.second);
-                globalMaxWeight -= e.second->count;
-                globalMaxWeightNode = e.first;
-                stringPath.push_back(globalMaxWeightNode->base);
-                e.first->onMainPath = true;
-                break;
-            };
-        }
-    }
+// stringPath.push_back(globalMaxWeightNode->base);
+// globalMaxWeightNode->onMainPath = true;
+////    std::cout << "max weight" << globalMaxWeight << std::endl;
+////    std::cout << "here" << std::endl;
+// while (globalMaxWeight > 0) {
+////        std::cout << "max weight" << globalMaxWeight << " "
+////                  << edgesInPath.size() << std::endl;
+// for (auto e : globalMaxWeightNode->edgesOut) {
+// if (e.second->count + e.first->cumulativeWeight ==
+// globalMaxWeight) {
+// edgesInPath.push_back(e.second);
+// globalMaxWeight -= e.second->count;
+// globalMaxWeightNode = e.first;
+// stringPath.push_back(globalMaxWeightNode->base);
+// e.first->onMainPath = true;
+// break;
+//};
+//}
+//}
 
-    read_t startingReadId = *edgesInPath.front()->reads.begin();
-    startPos = readsInGraph.at(startingReadId).pos;
-    read_t endingReadId = *edgesInPath.back()->reads.begin();
-    Read &endingRead = readsInGraph.at(endingReadId);
-    endPos = endingRead.pos + endingRead.len;
-    //    printStatus();
-    removeCycles();
-    return mainPath;
-}
+// read_t startingReadId = *edgesInPath.front()->reads.begin();
+// startPos = readsInGraph.at(startingReadId).pos;
+// read_t endingReadId = *edgesInPath.back()->reads.begin();
+// Read &endingRead = readsInGraph.at(endingReadId);
+// endPos = endingRead.pos + endingRead.len;
+////    printStatus();
+// removeCycles();
+// return mainPath;
+//}
 
 Path &ConsensusGraph::calculateMainPathGreedy() {
     clearMainPath();
@@ -598,11 +597,12 @@ void ConsensusGraph::splitPath(Node *newPre, Edge *e,
 }
 
 ConsensusGraph::~ConsensusGraph() {
-    if (!startingNode)
-        return;
     // std::cerr << "Removing" << std::endl;
 
-    removeConnectedNodes(startingNode);
+    std::vector<Node *> startingNodes;
+    for (auto it : readsInGraph)
+        startingNodes.push_back(it.second.start);
+    removeConnectedNodes(startingNodes);
     if (numEdges || numNodes)
         std::cerr << "graph " << this << " " << std::to_string(numEdges)
                   << " edges " << std::to_string(numNodes) << " nodes left"
@@ -705,26 +705,27 @@ void ConsensusGraph::removeAbove(Node *n) {
     }
 }
 
-void ConsensusGraph::removeConnectedNodes(Node *n) {
-    traverseAndCall(n, true, [](Node *) {});
-
+void ConsensusGraph::removeConnectedNodes(std::vector<Node *> nodes) {
     {
         // This code segment makes sure that the graph is connected and
         // traverseAndCall is working as desired
-        // size_t count = 0;
-        // traverseAndCall(n, false, [&count](Node *) { ++count; });
-        // assert(count == numNodes);
-        // count = 0;
-        // traverseAndCall(n, true, [&count](Node *) { ++count; });
-        // assert(count == numNodes);
+        size_t count = 0;
+        for (Node *n : nodes)
+            traverseAndCall(n, false, [&count](Node *) { ++count; });
+        assert(count == numNodes);
+        count = 0;
+        for (Node *n : nodes)
+            traverseAndCall(n, true, [&count](Node *) { ++count; });
+        assert(count == numNodes);
     }
 
     /** Nodes that have no edges in **/
     std::stack<Node *> leafNodes;
-    traverseAndCall(n, false, [&leafNodes](Node *node) {
-        if (node->edgesOut.empty())
-            leafNodes.push(node);
-    });
+    for (Node *n : nodes)
+        traverseAndCall(n, false, [&leafNodes](Node *node) {
+            if (node->edgesOut.empty())
+                leafNodes.push(node);
+        });
 #ifdef DEBUG
     // std::cerr << "Num of leaf Nodes " << leafNodes.size() << std::endl;
 #endif
@@ -986,14 +987,15 @@ bool ConsensusGraph::checkNoCycle() {
     // In this function cumulativeWeight == 1 means is parent of current Node,
     // and cumulativeWeight == 0 means otherwise
     std::vector<Node *> sourceNodes;
-    traverseAndCall(startingNode, false,
-                    [&sourceNodes, &countNodes, &countEdges](Node *node) {
-                        ++countNodes;
-                        countEdges += node->edgesIn.size();
-                        node->cumulativeWeight = 0;
-                        if (node->edgesIn.empty())
-                            sourceNodes.push_back(node);
-                    });
+    for (auto it : readsInGraph)
+        traverseAndCall(it.second.start, false,
+                        [&sourceNodes, &countNodes, &countEdges](Node *node) {
+                            ++countNodes;
+                            countEdges += node->edgesIn.size();
+                            node->cumulativeWeight = 0;
+                            if (node->edgesIn.empty())
+                                sourceNodes.push_back(node);
+                        });
     assert(countNodes == numNodes);
     assert(countEdges == numEdges);
     assert(!sourceNodes.empty());
@@ -1005,6 +1007,8 @@ bool ConsensusGraph::checkNoCycle() {
         node->hasReached = !status;
         while (!nodes2Visit.empty()) {
             Node *currentNode = nodes2Visit.top();
+            // cumulativeWeight == 1 means parent of current Node (including
+            // itself)
             currentNode->cumulativeWeight = 1;
             bool hasUnvisitedChild = false;
             for (auto it : currentNode->edgesOut) {

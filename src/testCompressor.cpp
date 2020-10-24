@@ -22,14 +22,20 @@ int main(int argc, char **argv) {
         return 1;
     }
     {
-        size_t k, n, overlapSketchThreshold;
-        std::cout << "k n overlapSketchThreshold" << std::endl;
-        std::cin >> k >> n >> overlapSketchThreshold;
+        size_t k, n, overlapSketchThreshold, editSlack;
+        double maxErrorRate;
+        std::cout << "k n overlapSketchThreshold\neditSlack maxErrorRate"
+                  << std::endl;
+        std::cin >> k >> n >> overlapSketchThreshold >> editSlack >>
+            maxErrorRate;
         if (k == 0)
             return 0;
+        std::cout << "k n overlapSketchThreshold editSlack maxErrorRate\n"
+                  << k << " " << n << " " << overlapSketchThreshold << " "
+                  << editSlack << " " << maxErrorRate << std::endl;
         MergeSortReadAligner rA(21, 10);
         LocalMyersRollBack<ConsensusGraph::RAItA, ConsensusGraph::RAItB>
-            localMyersRollBackAligner(100, 200, 100, 0.21);
+            localMyersRollBackAligner(100, 200, editSlack, maxErrorRate);
         ConsensusGraph::StringAligner_t *aligner = &localMyersRollBackAligner;
         Compressor compressor;
         compressor.k = k;

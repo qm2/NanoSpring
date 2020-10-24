@@ -250,7 +250,8 @@ public:
      * Uses dynamic programming.
      * @return the new mainPath
      */
-    Path &calculateMainPath();
+    // Deprecated
+    // Path &calculateMainPath();
 
     /**
      * Clears the old mainPath, calculates the new mainPath and adds it.
@@ -336,12 +337,11 @@ public:
     ~ConsensusGraph();
 
 private:
-    Node *startingNode;
     // These are stored such that the path only needs to be updated locally
-    Node *rightMostUnchangedNode;
+    Node *rightMostUnchangedNode = nullptr;
     /** An offset for the Node (not Edge) indexed from 0 **/
     size_t rightMostUnchangedNodeOffset = 0;
-    Node *leftMostUnchangedNode;
+    Node *leftMostUnchangedNode = nullptr;
     /** An offset for the Node (not Edge) indexed from 0 **/
     size_t leftMostUnchangedNodeOffset = 0;
     size_t numNodes = 0;
@@ -369,7 +369,13 @@ private:
 
     void removeAbove(Node *n);
 
-    void removeConnectedNodes(Node *n);
+    /**
+     * @brief Remove all nodes and edges that are connected to any one Node in
+     * nodes
+     *
+     * @param nodes
+     */
+    void removeConnectedNodes(std::vector<Node *> nodes);
 
     /**
      * @brief Traverses the graph starting at Node n and calls the function f on

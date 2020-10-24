@@ -87,6 +87,7 @@ add_library(NanoporeCompressionLib
         src/OmpMutex.cpp
         src/DirectoryUtils.cpp
         src/testNotOnMainPath.cpp
+        src/testDisconnected.cpp
         include/AlignerTester.h
         include/bsc_helper.h
         include/Compressor.h
@@ -173,3 +174,6 @@ target_link_libraries(validateResult PRIVATE NanoporeCompressionLib profiler)
 
 add_executable(testNotOnMainPath src/testNotOnMainPath.cpp)
 target_link_libraries(testNotOnMainPath PRIVATE NanoporeCompressionLib profiler)
+
+add_executable(testDisconnected src/testDisconnected.cpp)
+target_link_libraries(testDisconnected PRIVATE NanoporeCompressionLib profiler)

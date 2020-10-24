@@ -40,7 +40,7 @@ void createGraphFromReads(ConsensusGraph *cG, const std::string reads[3]) {
     std::cout << len << std::endl;
     assert(len >= 4);
     Node *nodeBeforeMainPath = cG->createNode('Z');
-    cG->startingNode = nodeBeforeMainPath;
+    // cG->startingNode = nodeBeforeMainPath;
     Node *lastNode = nodeBeforeMainPath;
     Node *currentNode = cG->createNode(reads[readId][0]);
     cG->createEdge(lastNode, currentNode, readId);
