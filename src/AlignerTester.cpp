@@ -160,6 +160,8 @@ bool AlignerTester::validate(StringAligner<const char *> *aligner) {
     {
 #pragma omp for
         for (size_t i = 0; i < numReads; ++i) {
+            if (!result)
+                continue;
             std::vector<Edit> editScript;
             size_t editDis;
             ssize_t beginOffset, endOffset;
@@ -176,8 +178,9 @@ bool AlignerTester::validate(StringAligner<const char *> *aligner) {
             if (!success) {
                 result = false;
 #pragma omp cancel for
+                continue;
             }
-            std::string result;
+            std::string resultAfterEdit;
             // std::cout << "beginOffset" << beginOffset << std::endl;
             // std::cout << "endOffset" << endOffset << std::endl;
             // std::cout << aligner->name << std::endl;
@@ -190,13 +193,18 @@ bool AlignerTester::validate(StringAligner<const char *> *aligner) {
                 readsB[i].length() - (beginOffset > 0 ? 0 : -beginOffset) -
                     (endOffset > 0 ? endOffset : 0));
 
-            applyEditsToString(origString, editScript, result);
-            if (result.compare(targetString)) {
+            applyEditsToString(origString, editScript, resultAfterEdit);
+            if (resultAfterEdit.compare(targetString)) {
                 std::cout << "Begin Offset " << beginOffset << " EndOffset "
                           << endOffset << '\n';
                 std::cout << readsA[i] << std::endl;
                 std::cout << readsB[i].length() << readsB[i] << std::endl;
-                std::cout << result.length() << result << std::endl;
+                for (auto e : editScript)
+                    std::cout << e;
+                std::cout << std::endl;
+                std::cout << "result is " << result << std::endl;
+                std::cout << resultAfterEdit.length() << resultAfterEdit
+                          << std::endl;
                 result = false;
 #pragma omp cancel for
             }

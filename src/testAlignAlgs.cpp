@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     //    aligners.push_back(new LocalMyers(32, 64));
     // aligners.push_back(new LocalMyers<const char *>(50, 100));
     aligners.push_back(
-        new LocalMyersRollBack<const char *>(100, 200, 100, 0.21));
+        new LocalMyersRollBack<const char *>(100, 200, 300, 0.21));
     // aligners.push_back(new MyersAligner());
     testAlg(aligners);
     for (StringAligner<const char *> *aligner : aligners)
@@ -42,7 +42,7 @@ void testAlg(std::vector<StringAligner<const char *> *> aligners) {
 
     const size_t algW = 35;
     for (ssize_t offset : offsets2Test) {
-        aT.generateData(10000, offset, 100000, 0.03, 0.03, 0.04);
+        aT.generateData(10000, offset, 1000, 0.03, 0.03, 0.04);
         for (StringAligner<const char *> *aligner : aligners) {
             if (aT.validate(aligner)) {
                 std::cout << "Validation of " << std::setw(algW)
