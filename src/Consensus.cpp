@@ -52,9 +52,12 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
                                 size_t len) {
     // Find reads likely to have overlaps
     ssize_t offsetInMainPath = curPos - cG->startPos;
+    if (len == 0 || offsetInMainPath < 0 ||
+        offsetInMainPath >= (ssize_t)cG->mainPath.path.size())
+        return;
     auto stringBegin = cG->mainPath.path.begin() + offsetInMainPath;
     auto stringEnd =
-        (ssize_t)cG->mainPath.path.size() > offsetInMainPath + (ssize_t)len
+        (ssize_t)cG->mainPath.path.size() >= offsetInMainPath + (ssize_t)len
             ? stringBegin + len
             : cG->mainPath.path.end();
     // std::cout << curPos << "\n";
@@ -103,12 +106,13 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
             }
             cG->updateGraph(readStr, editScript, beginOffset, endOffset, r, pos,
                             reverseComplement);
-            // assert(checkRead(cG, r));
-            // assert(cG->checkNoCycle());
+            assert(checkRead(cG, r));
+            assert(cG->checkNoCycle());
             cG->calculateMainPathGreedy();
-            // std::cout << "Added read " << r << " first unadded read "
-            //           << firstUnaddedRead << '\n';
-            // assert(checkRead(cG, r));
+            std::cout << "Added read " << r << " first unadded read "
+                      << firstUnaddedRead << std::endl;
+            assert(checkRead(cG, r));
+            assert(cG->checkNoCycle());
         }
     }
 }
@@ -119,7 +123,24 @@ bool Consensus::checkRead(ConsensusGraph *cG, read_t read) {
     assert(temp);
     if (!temp)
         return false;
-    return result == rD->getRead(read);
+    if (!cG->readsInGraph.at(read).reverseComplement) {
+        if (result != rD->getRead(read)) {
+            std::cout << "readInGraph:\n" << result << "\n";
+            std::cout << "actualRead:\n" << rD->getRead(read) << "\n";
+        }
+        return result == rD->getRead(read);
+    }
+    std::string reverseComplement;
+    ReadData::toReverseComplement(
+        result.begin(), result.end(),
+        std::inserter(reverseComplement, reverseComplement.end()));
+    if (reverseComplement != rD->getRead(read)) {
+        std::cout << "readInGraphRerseComplement:\n"
+                  << reverseComplement << "\n";
+        std::cout << "readInGraph:\n" << result << "\n";
+        std::cout << "actualRead:\n" << rD->getRead(read) << "\n";
+    }
+    return reverseComplement == rD->getRead(read);
 }
 
 void Consensus::writeConsensus() {
