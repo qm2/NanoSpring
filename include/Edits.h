@@ -60,4 +60,38 @@ public:
     EditPath() {}; // default constructor needed for initialization of matrix
 };
 
+namespace Edits {
+/**
+ * @brief
+ *
+ * @tparam Iterator Random access read iterator that dereferences to char
+ * @tparam Inserter Write inserter that dereferences to char
+ * @param original
+ * @param editScript
+ * @param result
+ */
+template <typename Iterator, typename Inserter>
+void applyEdits(Iterator original, const std::vector<Edit> &editScript,
+                Inserter result) {
+    for (const Edit &e : editScript) {
+        switch (e.editType) {
+        case SAME:
+            for (size_t i = 0; i < e.editInfo.num; ++i)
+                *(result++) = *(original++);
+            break;
+        case INSERT:
+            *(result++) = e.editInfo.ins;
+            break;
+        case DELETE:
+            ++original;
+            break;
+        case SUBSTITUTION:
+            *(result++) = e.editInfo.sub;
+            ++original;
+            break;
+        }
+    }
+}
+} // namespace Edits
+
 #endif // EXPERIMENTS_EDITS_H

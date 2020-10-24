@@ -193,7 +193,9 @@ bool AlignerTester::validate(StringAligner<const char *> *aligner) {
                 readsB[i].length() - (beginOffset > 0 ? 0 : -beginOffset) -
                     (endOffset > 0 ? endOffset : 0));
 
-            applyEditsToString(origString, editScript, resultAfterEdit);
+            Edits::applyEdits(
+                origString.begin(), editScript,
+                std::inserter(resultAfterEdit, resultAfterEdit.end()));
             if (resultAfterEdit.compare(targetString)) {
                 std::cout << "Begin Offset " << beginOffset << " EndOffset "
                           << endOffset << '\n';
@@ -211,61 +213,4 @@ bool AlignerTester::validate(StringAligner<const char *> *aligner) {
         }
     }
     return result;
-}
-
-void AlignerTester::applyEditsToString(const std::string &origString,
-                                       const std::vector<Edit> &editScript,
-                                       std::string &result) {
-    result.clear();
-    auto pos = origString.begin();
-    for (const Edit &e : editScript) {
-        switch (e.editType) {
-        case SAME:
-            result.append(pos, pos + e.editInfo.num);
-            pos += e.editInfo.num;
-            break;
-        case INSERT:
-            result.push_back(e.editInfo.ins);
-            break;
-        case DELETE:
-            pos++;
-            break;
-        case SUBSTITUTION:
-            result.push_back(e.editInfo.sub);
-            pos++;
-            break;
-        }
-    }
-}
-
-void AlignerTester::applyEditsToString(const std::string &origString,
-                                       const std::string &editScript,
-                                       std::string &result) {
-    result.clear();
-    std::stringstream ss(editScript);
-    auto pos = origString.begin();
-    char c;
-    while (true) {
-        ss >> c;
-        if (ss.eof())
-            break;
-        switch (c) {
-        case 'u':
-            size_t num;
-            ss >> num;
-            result.append(pos, pos + num);
-            pos += num;
-            break;
-        case 'i':
-            char b;
-            ss >> b;
-            result.push_back(b);
-            break;
-        case 'd':
-            pos++;
-            break;
-        default:
-            std::cerr << "Error in applyEditsToString" << std::endl;
-        }
-    }
 }

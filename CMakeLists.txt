@@ -169,9 +169,6 @@ target_link_libraries(testMinHash PRIVATE NanoporeCompressionLib profiler)
 add_executable(testMyers src/testMyers.cpp)
 target_link_libraries(testMyers PRIVATE NanoporeCompressionLib profiler)
 
-add_executable(validateResult src/validateResult.cpp)
-target_link_libraries(validateResult PRIVATE NanoporeCompressionLib profiler)
-
 add_executable(testNotOnMainPath src/testNotOnMainPath.cpp)
 target_link_libraries(testNotOnMainPath PRIVATE NanoporeCompressionLib profiler)
 

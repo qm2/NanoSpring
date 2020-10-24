@@ -52,28 +52,6 @@ public:
      */
     bool validate(StringAligner<const char *> *aligner);
 
-    /**
-     * Applies editScript to origString and stores in result
-     * @param origString The original string to transform
-     * @param editScript The edit script to apply
-     * @param result stores the resulting string
-     * @return
-     */
-    static void applyEditsToString(const std::string &origString,
-                                   const std::vector<Edit> &editScript,
-                                   std::string &result);
-
-    /**
-     * Applies editScript to origString and stores in result
-     * @param origString The original string to transform
-     * @param editScript The edit script to apply
-     * @param result stores the resulting string
-     * @return
-     */
-    static void applyEditsToString(const std::string &origString,
-                                   const std::string &editScript,
-                                   std::string &result);
-
 private:
     std::vector<std::string> readsA, readsB;
 };
