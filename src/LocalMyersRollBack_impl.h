@@ -406,13 +406,13 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::align(
     size_t editDis2 = 0;
 
     if (offsetGuess > 0) {
+        if ((ssize_t)(Aend - Abegin1) <= offsetGuess)
+            return false;
         Abegin1 += offsetGuess;
-        if (Abegin1 >= Aend)
-            return false;
     } else {
-        Bbegin1 += (-offsetGuess);
-        if (Bbegin1 > Bend)
+        if ((ssize_t)(Bend - Bbegin1) <= -offsetGuess)
             return false;
+        Bbegin1 += (-offsetGuess);
     }
     RandomAccessItA Abegin2 = Abegin1;
     RandomAccessItB Bbegin2 = Bbegin1;
