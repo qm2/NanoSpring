@@ -68,7 +68,7 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::localAlign(
                 // we go along the diagonal until we fail
                 size_t snakeLen = 0;
                 while (xEnd < (int)lenAString && yEnd < (int)lenBString &&
-                Abegin[xEnd ] == Bbegin[yEnd]
+                Abegin[xEnd] == Bbegin[yEnd]
                        /*(forward ? Abegin[xEnd] == Bbegin[yEnd]
                                 : Aend[-xEnd - 1] == Bend[-yEnd - 1])*/) {
                     ++xEnd;
@@ -83,10 +83,10 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::localAlign(
                 // If we don't overwrite, we will always be using the shortest
                 // path that reaches that point; but if we do, the original
                 // shorter path will be overwritten by a longer path.
-                if (!editInfoAccessed[xEnd * xSize + yEnd]) {
-                    editInfo[xEnd * xSize + yEnd] =
+                if (!editInfoAccessed[xEnd * ySize + yEnd]) {
+                    editInfo[xEnd * ySize + yEnd] =
                         EditPath(xStart, yStart, xMid, yMid, snakeLen);
-                    editInfoAccessed[xEnd * xSize + yEnd] = 1;
+                    editInfoAccessed[xEnd * ySize + yEnd] = 1;
                 }
 
                 // std::cout << d << ',' << k << ':' << xStart << ' ' << yStart
@@ -243,7 +243,7 @@ bool LocalMyersRollBack<RandomAccessItA, RandomAccessItB>::localAlign(
     editScript.reserve(max);
     while (currentX > 0 || currentY > 0) {
         // std::cout << currentX << " " << currentY << std::endl;
-        EditPath &e = editInfo[currentX * xSize + currentY];
+        EditPath &e = editInfo[currentX * ySize + currentY];
         if (e.snakeLen > 0) {
             // If there is a snake (a series of diagonals)
             editScript.push_back(Edit(SAME, e.snakeLen));
