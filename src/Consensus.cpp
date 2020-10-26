@@ -104,15 +104,57 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
                 putReadBack(r);
                 continue;
             }
+#ifdef CHECKS
+            {
+                // Check editScript applied to originalString is readStr
+                std::string origString = std::string(
+                    cG->mainPath.path.begin() +
+                        (beginOffset > 0 ? beginOffset : 0),
+                    cG->mainPath.path.end() + (endOffset > 0 ? 0 : endOffset));
+                std::string targetString = readStr.substr(
+                    beginOffset > 0 ? 0 : -beginOffset,
+                    readStr.length() - (beginOffset > 0 ? 0 : -beginOffset) -
+                        (endOffset > 0 ? endOffset : 0));
+                std::string resultAfterEdit;
+                Edits::applyEdits(
+                    origString.begin(), editScript,
+                    std::inserter(resultAfterEdit, resultAfterEdit.end()));
+                if (resultAfterEdit.compare(targetString)) {
+                    std::cout << "beginOffset " << beginOffset << " endOffset "
+                              << endOffset << std::endl;
+                    std::cout << "origString\n" << origString << std::endl;
+                    std::cout << "targetString\n" << targetString << std::endl;
+                    std::cout << "resultAfterEdit\n"
+                              << resultAfterEdit << std::endl;
+                    std::cout << "editScript\n";
+                    for (auto e : editScript)
+                        std::cout << e;
+                    std::cout << std::endl;
+                    std::cout << "mainPath\n"
+                              << std::string(cG->mainPath.path.begin(),
+                                             cG->mainPath.path.end())
+                              << std::endl;
+                    std::cout << "pos " << pos << " endPos " << cG->endPos
+                              << " offsetGuess "
+                              << cG->mainPath.path.size() - cG->endPos + pos
+                              << std::endl;
+                }
+                assert(!resultAfterEdit.compare(targetString));
+            }
+#endif
             cG->updateGraph(readStr, editScript, beginOffset, endOffset, r, pos,
                             reverseComplement);
+#ifdef CHECKS
             assert(checkRead(cG, r));
             assert(cG->checkNoCycle());
+#endif
             cG->calculateMainPathGreedy();
+#ifdef CHECKS
             std::cout << "Added read " << r << " first unadded read "
                       << firstUnaddedRead << std::endl;
             assert(checkRead(cG, r));
             assert(cG->checkNoCycle());
+#endif
         }
     }
 }

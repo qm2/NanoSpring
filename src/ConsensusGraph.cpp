@@ -707,6 +707,7 @@ void ConsensusGraph::removeAbove(Node *n) {
 }
 
 void ConsensusGraph::removeConnectedNodes(std::vector<Node *> nodes) {
+#ifdef CHECKS
     {
         // This code segment makes sure that the graph is connected and
         // traverseAndCall is working as desired
@@ -719,6 +720,7 @@ void ConsensusGraph::removeConnectedNodes(std::vector<Node *> nodes) {
             traverseAndCall(n, true, [&count](Node *) { ++count; });
         assert(count == numNodes);
     }
+#endif
 
     /** Nodes that have no edges in **/
     std::stack<Node *> leafNodes;

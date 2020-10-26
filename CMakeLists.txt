@@ -19,6 +19,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "CHECKS=${CHECKS} (Use -DCHECKS=True to enable all checks")
 
 find_package(OpenMP)
 
@@ -126,6 +127,11 @@ target_compile_options(NanoporeCompressionLib
 target_compile_options(NanoporeCompressionLib 
     PRIVATE 
     $<$<CONFIG:Debug>:-g -O3 -fsanitize=address -fno-omit-frame-pointer>)
+if ( CHECKS )
+    target_compile_options(NanoporeCompressionLib 
+        PRIVATE 
+        -DCHECKS)
+endif()
 
 target_compile_definitions(NanoporeCompressionLib PUBLIC "$<$<CONFIG:Debug>:DEBUG>")
 target_compile_definitions(NanoporeCompressionLib PUBLIC "$<$<CONFIG:RelWithDebInfo>:DEBUG>")
