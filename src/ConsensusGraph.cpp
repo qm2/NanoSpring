@@ -546,7 +546,7 @@ void ConsensusGraph::walkAndPrune(Edge *e) {
         Node *sink = curr->sink;
         Node *source = curr->source;
         if (sink->onMainPath)
-            return;
+            continue;
         if (sink->edgesIn.size() > 1)
             splitPath(source, curr, &(curr->reads));
         // Now put sink->edgesOut into stack, use reverse order for consistency with 
