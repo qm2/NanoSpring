@@ -441,7 +441,7 @@ private:
      * created nodes are guaranteed to have at most one Edge going in.
      */
     void splitPath(Node *newPre, Edge *e,
-                   std::vector<read_t> const &reads2Split);
+                   std::vector<read_t> *reads2Split);
 
     /**
      * Write the edits trings of the reads into a single file

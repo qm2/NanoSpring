@@ -538,63 +538,114 @@ void ConsensusGraph::removeCycles() {
 }
 
 void ConsensusGraph::walkAndPrune(Edge *e) {
-    Node *sink = e->sink;
-    Node *source = e->source;
-    if (sink->onMainPath)
-        return;
-    if (sink->edgesIn.size() > 1)
-        splitPath(source, e, e->reads);
-    // Work with copy to avoid iterator invalidation.
-    auto edgesOutCopy = sink->edgesOut;
-    for (const auto &subEdge : edgesOutCopy) {
-        // Here walkAndPrune will only change sink->edgesOut by 1. deleting
-        // edge2WorkOn and 2. adding new edges that we don't need to prune. So
-        // copying sink->edgesOut should work.
-        walkAndPrune(subEdge.second);
+    std::stack<Edge *> callStack; // converting recursion to iteration
+    callStack.push(e);
+    while (!callStack.empty()) {
+        Edge *curr = callStack.top();
+        callStack.pop();
+        Node *sink = curr->sink;
+        Node *source = curr->source;
+        if (sink->onMainPath)
+            return;
+        if (sink->edgesIn.size() > 1)
+            splitPath(source, curr, &(curr->reads));
+        // Now put sink->edgesOut into stack, use reverse order for consistency with 
+        // earlier code
+        for (auto it = sink->edgesOut.rbegin(); it != sink->edgesOut.rend(); ++it) {
+            callStack.push(it->second);
+            // OLD COMMENT:
+            // Here walkAndPrune will only change sink->edgesOut by 1. deleting
+            // edge2WorkOn and 2. adding new edges that we don't need to prune. So
+            // copying sink->edgesOut should work.
+        }
     }
 }
 
-void ConsensusGraph::splitPath(Node *newPre, Edge *e,
-                               std::vector<read_t> const &reads2Split) {
-    // The reads that need to be split going down this path
-    std::vector<read_t> readsInPath2Split;
-    std::set_intersection(
-        reads2Split.begin(), reads2Split.end(), e->reads.begin(),
-        e->reads.end(),
-        std::inserter(readsInPath2Split, readsInPath2Split.begin()));
-    if (readsInPath2Split.empty())
-        return;
+void ConsensusGraph::splitPath(Node *newPre_, Edge *e_,
+                               std::vector<read_t> *reads2Split_) {
+    // converting recursion to iteration.
+    std::stack<std::tuple<Node *,Edge *, std::vector<read_t> *, bool, Node *>> callStack;
+    // callStack contains:
+    // 1. Node *newPre
+    // 2. Edge *e
+    // 3. std::vector<read_t> *reads2Split
+    // 4. bool value denoting if this is the last subedge in oldCur->edgesOut iteration
+    // 5. Node *oldCurToRemove // only needed when bool value is true
+    // When the bool value is true, two things happen at the end (cleanup for calling iteration):
+    // i. the reads2Split vector is deleted
+    // ii. oldCur node is removed if it has no more edges
+    // If oldCur->edgesOut is empty, these happen in the current iteration itself
 
-    Node *oldCur = e->sink;
+    callStack.push(std::make_tuple(newPre_,e_,reads2Split_,false,(Node*)NULL));
+    
+    while (!callStack.empty()) {
+        auto newPre = std::get<0>(callStack.top());
+        auto e = std::get<1>(callStack.top());
+        auto reads2Split = std::get<2>(callStack.top());
+        auto lastIterationFlag = std::get<3>(callStack.top());
+        auto oldCurToRemove = std::get<4>(callStack.top());
+        callStack.pop();
+        
+        // The reads that need to be split going down this path
+        auto readsInPath2Split = new std::vector<read_t>;
+        std::set_intersection(
+            reads2Split->begin(), reads2Split->end(), e->reads.begin(),
+            e->reads.end(),
+            std::inserter(*readsInPath2Split, readsInPath2Split->begin()));
+        if (readsInPath2Split->empty()) {
+            delete readsInPath2Split;
+        } else {
+            Node *oldCur = e->sink;
 
-    // Remove the reads from the node edge
-    removeReadsFromEdge(e, readsInPath2Split);
+            // Remove the reads from the node edge
+            removeReadsFromEdge(e, *readsInPath2Split);
 
-    // just create a new edge and return if we are arriving at a node in
-    // mainPath
-    if (oldCur->onMainPath) {
-        Edge *newEdge = createEdge(newPre, oldCur, 0);
-        newEdge->reads = readsInPath2Split;
-        newEdge->count = newEdge->reads.size();
-        return;
+            // just create a new edge and return if we are arriving at a node in
+            // mainPath
+            if (oldCur->onMainPath) {
+                Edge *newEdge = createEdge(newPre, oldCur, 0);
+                newEdge->reads = *readsInPath2Split;
+                newEdge->count = newEdge->reads.size();
+                delete readsInPath2Split;
+            } else { 
+                // Otherwise create a new node
+                Node *newCur = createNode(oldCur->base);
+                // Add an edge to this new node
+                Edge *newEdge = createEdge(newPre, newCur, 0);
+                newEdge->reads = *readsInPath2Split;
+                newEdge->count = newEdge->reads.size();
+
+                // Now put sink->edgesOut into stack, use reverse order for consistency with 
+                // earlier code
+                auto numElemsToPush = oldCur->edgesOut.size();
+                if (numElemsToPush > 0) {
+                    for (size_t idx = numElemsToPush - 1; idx != (size_t)(-1); --idx) {
+                        if (idx == numElemsToPush - 1) {
+                            // this is the last one that will be called
+                            // So we set lastIterationFlag to true, and include oldCur
+                            callStack.push(std::make_tuple(newCur,oldCur->edgesOut[idx].second,readsInPath2Split,true,oldCur));
+                        } else {
+                            callStack.push(std::make_tuple(newCur,oldCur->edgesOut[idx].second,readsInPath2Split,false,(Node*)NULL));
+                        }
+                        // OLD COMMENT:
+                        // Here, splitPath will only affect oldCur->edgesOut by deleting
+                        // edge2WorkOn. So again just copying everything should work.
+                    }
+                } else {
+                    // no edge out so perform cleanup here itself
+                    delete readsInPath2Split;
+                    if (oldCur->edgesIn.empty() && oldCur->edgesOut.empty())
+                        removeNode(oldCur);
+                }
+            }
+        }
+        // finally, if lastIterationFlag is set, perform cleanup for calling iteration
+        if (lastIterationFlag) {
+            delete reads2Split;
+            if (oldCurToRemove->edgesIn.empty() && oldCurToRemove->edgesOut.empty())
+                removeNode(oldCurToRemove);
+        }
     }
-
-    // Otherwise create a new node
-    Node *newCur = createNode(oldCur->base);
-    // Add an edge to this new node
-    Edge *newEdge = createEdge(newPre, newCur, 0);
-    newEdge->reads = readsInPath2Split;
-    newEdge->count = newEdge->reads.size();
-
-    // Work with copy to avoid iterator invalidation.
-    auto edgesOutCopy = oldCur->edgesOut;
-    for (auto subEdge : edgesOutCopy) {
-        // Here, splitPath will only affect oldCur->edgesOut by deleting
-        // edge2WorkOn. So again just copying everything should work.
-        splitPath(newCur, subEdge.second, readsInPath2Split);
-    }
-    if (oldCur->edgesIn.empty() && oldCur->edgesOut.empty())
-        removeNode(oldCur);
 }
 
 ConsensusGraph::~ConsensusGraph() {
