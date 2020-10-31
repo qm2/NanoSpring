@@ -10,7 +10,12 @@
 Edge::Edge(Node *source, Node *sink, read_t read) : source(source), sink(sink) {
     count = 1;
     // insert into sorted vector
-    reads.insert(std::lower_bound(reads.begin(), reads.end(), read), read);
+    reads.push_back(read);
+}
+
+Edge::Edge(Node *source, Node *sink, std::vector<read_t> &reads)
+    : source(source), sink(sink), reads(reads) {
+    count = reads.size();
 }
 
 void Edge::addRead(read_t read) {
@@ -549,102 +554,109 @@ void ConsensusGraph::walkAndPrune(Edge *e) {
             continue;
         if (sink->edgesIn.size() > 1)
             splitPath(source, curr, &(curr->reads));
-        // Now put sink->edgesOut into stack, use reverse order for consistency with 
-        // earlier code
-        for (auto it = sink->edgesOut.rbegin(); it != sink->edgesOut.rend(); ++it) {
+        // Now put sink->edgesOut into stack
+        for (auto it = sink->edgesOut.begin(); it != sink->edgesOut.end();
+             ++it) {
             callStack.push(it->second);
             // OLD COMMENT:
             // Here walkAndPrune will only change sink->edgesOut by 1. deleting
-            // edge2WorkOn and 2. adding new edges that we don't need to prune. So
-            // copying sink->edgesOut should work.
+            // edge2WorkOn and 2. adding new edges that we don't need to prune.
+            // So copying sink->edgesOut should work.
         }
     }
 }
 
-void ConsensusGraph::splitPath(Node *newPre_, Edge *e_,
-                               std::vector<read_t> *reads2Split_) {
-    // converting recursion to iteration.
-    std::stack<std::tuple<Node *,Edge *, std::vector<read_t> *, bool, Node *>> callStack;
-    // callStack contains:
-    // 1. Node *newPre
-    // 2. Edge *e
-    // 3. std::vector<read_t> *reads2Split
-    // 4. bool value denoting if this is the last subedge in oldCur->edgesOut iteration
-    // 5. Node *oldCurToRemove // only needed when bool value is true
-    // When the bool value is true, two things happen at the end (cleanup for calling iteration):
-    // i. the reads2Split vector is deleted
-    // ii. oldCur node is removed if it has no more edges
-    // If oldCur->edgesOut is empty, these happen in the current iteration itself
+void ConsensusGraph::splitPath(Node *newPre, Edge *e,
+                               std::vector<read_t> *reads2Split) {
+    /**
+     * @brief The context for changing recursion to iteration.
+     *
+     * Every context will be visited exactly twice.
+     *
+     * When constructed, hasVisited is set to false, oldCur is set to
+     * nullptr, and reads2Split is set to the pointer passed down by the last
+     * iteration.
+     *
+     * After the first visit, hasVisited is set to true, reads2Split is set to
+     * reads2Split created in this iteration and passed on to future iterations.
+     * The new value is created by new and the destructor is responsible for
+     * deleting it. And oldCur will be set to e->sink, and the destructor will
+     * delete it if it becomes disconnected.
+     *
+     */
+    class SplitPathContext {
+    public:
+        Node *const newPre;
+        Edge *const e;
+        std::vector<read_t> *reads2Split;
+        bool hasVisited;
+        /** we need to store this (e->sink) because e might be deleted and we
+         * still need to delete e->sink **/
+        Node *oldCur;
 
-    callStack.push(std::make_tuple(newPre_,e_,reads2Split_,false,(Node*)NULL));
-    
+        SplitPathContext(ConsensusGraph *cG, Node *newPre, Edge *e,
+                         std::vector<read_t> *reads2Split)
+            : newPre(newPre), e(e), reads2Split(reads2Split), hasVisited(false),
+              oldCur(nullptr), cG(cG) {}
+
+        ~SplitPathContext() {
+            delete reads2Split;
+            if (oldCur && oldCur->edgesIn.empty() && oldCur->edgesOut.empty())
+                cG->removeNode(oldCur);
+        }
+
+    private:
+        ConsensusGraph *cG;
+    };
+
+    std::stack<SplitPathContext> callStack;
+
+    callStack.emplace(this, newPre, e, reads2Split);
+
     while (!callStack.empty()) {
-        auto newPre = std::get<0>(callStack.top());
-        auto e = std::get<1>(callStack.top());
-        auto reads2Split = std::get<2>(callStack.top());
-        auto lastIterationFlag = std::get<3>(callStack.top());
-        auto oldCurToRemove = std::get<4>(callStack.top());
-        callStack.pop();
-        
+        SplitPathContext &currentContext = callStack.top();
+
+        if (currentContext.hasVisited) {
+            callStack.pop();
+            continue;
+        }
+
         // The reads that need to be split going down this path
         auto readsInPath2Split = new std::vector<read_t>;
         std::set_intersection(
-            reads2Split->begin(), reads2Split->end(), e->reads.begin(),
-            e->reads.end(),
+            currentContext.reads2Split->begin(),
+            currentContext.reads2Split->end(), currentContext.e->reads.begin(),
+            currentContext.e->reads.end(),
             std::inserter(*readsInPath2Split, readsInPath2Split->begin()));
-        if (readsInPath2Split->empty()) {
-            delete readsInPath2Split;
-        } else {
-            Node *oldCur = e->sink;
 
-            // Remove the reads from the node edge
-            removeReadsFromEdge(e, *readsInPath2Split);
+        currentContext.reads2Split = readsInPath2Split;
+        currentContext.hasVisited = true;
 
-            // just create a new edge and return if we are arriving at a node in
-            // mainPath
-            if (oldCur->onMainPath) {
-                Edge *newEdge = createEdge(newPre, oldCur, 0);
-                newEdge->reads = *readsInPath2Split;
-                newEdge->count = newEdge->reads.size();
-                delete readsInPath2Split;
-            } else { 
-                // Otherwise create a new node
-                Node *newCur = createNode(oldCur->base);
-                // Add an edge to this new node
-                Edge *newEdge = createEdge(newPre, newCur, 0);
-                newEdge->reads = *readsInPath2Split;
-                newEdge->count = newEdge->reads.size();
+        if (readsInPath2Split->empty())
+            continue;
 
-                // Now put sink->edgesOut into stack, use reverse order for consistency with 
-                // earlier code
-                auto numElemsToPush = oldCur->edgesOut.size();
-                if (numElemsToPush > 0) {
-                    for (size_t idx = numElemsToPush - 1; idx != (size_t)(-1); --idx) {
-                        if (idx == numElemsToPush - 1) {
-                            // this is the last one that will be called
-                            // So we set lastIterationFlag to true, and include oldCur
-                            callStack.push(std::make_tuple(newCur,oldCur->edgesOut[idx].second,readsInPath2Split,true,oldCur));
-                        } else {
-                            callStack.push(std::make_tuple(newCur,oldCur->edgesOut[idx].second,readsInPath2Split,false,(Node*)NULL));
-                        }
-                        // OLD COMMENT:
-                        // Here, splitPath will only affect oldCur->edgesOut by deleting
-                        // edge2WorkOn. So again just copying everything should work.
-                    }
-                } else {
-                    // no edge out so perform cleanup here itself
-                    delete readsInPath2Split;
-                    if (oldCur->edgesIn.empty() && oldCur->edgesOut.empty())
-                        removeNode(oldCur);
-                }
-            }
+        Node *oldCur = currentContext.e->sink;
+        currentContext.oldCur = oldCur;
+
+        // Remove the reads from the node edge
+        removeReadsFromEdge(currentContext.e, *readsInPath2Split);
+
+        // just create a new edge and return if we are arriving at a node in
+        // mainPath
+        if (oldCur->onMainPath) {
+            createEdge(currentContext.newPre, oldCur, *readsInPath2Split);
+            continue;
+            // delete readsInPath2Split;
         }
-        // finally, if lastIterationFlag is set, perform cleanup for calling iteration
-        if (lastIterationFlag) {
-            delete reads2Split;
-            if (oldCurToRemove->edgesIn.empty() && oldCurToRemove->edgesOut.empty())
-                removeNode(oldCurToRemove);
-        }
+
+        // Otherwise create a new node
+        Node *newCur = createNode(oldCur->base);
+        // Add an edge to this new node
+        createEdge(currentContext.newPre, newCur, *readsInPath2Split);
+
+        // Now put sink->edgesOut into stack
+        for (auto &it : oldCur->edgesOut)
+            callStack.emplace(this, newCur, it.second, readsInPath2Split);
     }
 }
 
@@ -678,6 +690,15 @@ Edge *ConsensusGraph::createEdge(Node *source, Node *sink, read_t read) {
     return e;
 }
 
+Edge *ConsensusGraph::createEdge(Node *source, Node *sink,
+                                 std::vector<read_t> &reads) {
+    Edge *e = new Edge(source, sink, reads);
+    source->edgesOut.push_back(std::make_pair(sink, e));
+    sink->edgesIn.push_back(e);
+    numEdges++;
+    return e;
+}
+
 void ConsensusGraph::removeReadsFromEdge(Edge *e,
                                          std::vector<read_t> const &reads) {
     std::vector<read_t> updatedReadsInOldEdge;
@@ -694,425 +715,437 @@ void ConsensusGraph::removeReadsFromEdge(Edge *e,
 void ConsensusGraph::removeEdge(Edge *e,
                                 bool dontRemoveFromSource /* = false */,
                                 bool dontRemoveFromSink /* = false */) {
-    if (!dontRemoveFromSource)
-        e->source->edgesOut.erase(
-            std::find_if(e->source->edgesOut.begin(), e->source->edgesOut.end(),
-                         [&](const std::pair<Node *, Edge *> &p) {
-                             return (p.first == e->sink);
-                         }));
+            if (!dontRemoveFromSource)
+                e->source->edgesOut.erase(std::find_if(
+                    e->source->edgesOut.begin(), e->source->edgesOut.end(),
+                    [&](const std::pair<Node *, Edge *> &p) {
+                        return (p.first == e->sink);
+                    }));
 
-    if (!dontRemoveFromSink)
-        e->sink->edgesIn.erase(
-            std::find(e->sink->edgesIn.begin(), e->sink->edgesIn.end(), e));
-    delete e;
-    numEdges--;
-}
-
-void ConsensusGraph::removeNode(Node *n) {
-    {
-        auto edgeIt = n->edgesIn.begin();
-        auto end = n->edgesIn.end();
-        while (edgeIt != end)
-            removeEdge(*(edgeIt++), false, true);
-        // don't remove from sink node which is this node!
-        // Avoids iterator invalidation and speeds things up
-    }
-    {
-        auto edgeIt = n->edgesOut.begin();
-        auto end = n->edgesOut.end();
-        while (edgeIt != end)
-            removeEdge(edgeIt++->second, true, false);
-        // don't remove from source node which is this node!
-        // Avoids iterator invalidation and speeds things up
-    }
-    delete n;
-    numNodes--;
-}
-
-void ConsensusGraph::removeBelow(Node *n) {
-    std::stack<Node *> nodesToRemove;
-    nodesToRemove.push(n);
-    while (!nodesToRemove.empty()) {
-        Node *curNode = nodesToRemove.top();
-        if (curNode->edgesOut.empty()) {
-            nodesToRemove.pop();
-            removeNode(curNode);
-        } else {
-            nodesToRemove.push(curNode->edgesOut.begin()->first);
+            if (!dontRemoveFromSink)
+                e->sink->edgesIn.erase(std::find(e->sink->edgesIn.begin(),
+                                                 e->sink->edgesIn.end(), e));
+            delete e;
+            numEdges--;
         }
-    }
-}
 
-void ConsensusGraph::removeAbove(Node *n) {
-    std::stack<Node *> nodesToRemove;
-    nodesToRemove.push(n);
-    while (!nodesToRemove.empty()) {
-        Node *curNode = nodesToRemove.top();
-        if (curNode->edgesIn.empty()) {
-            nodesToRemove.pop();
-            removeNode(curNode);
-        } else {
-            nodesToRemove.push((*curNode->edgesIn.begin())->source);
-        }
-    }
-}
-
-void ConsensusGraph::removeConnectedNodes(std::vector<Node *> nodes) {
-#ifdef CHECKS
-    {
-        // This code segment makes sure that the graph is connected and
-        // traverseAndCall is working as desired
-        size_t count = 0;
-        for (Node *n : nodes)
-            traverseAndCall(n, false, [&count](Node *) { ++count; });
-        assert(count == numNodes);
-        count = 0;
-        for (Node *n : nodes)
-            traverseAndCall(n, true, [&count](Node *) { ++count; });
-        assert(count == numNodes);
-    }
-#endif
-
-    /** Nodes that have no edges in **/
-    std::stack<Node *> leafNodes;
-    for (Node *n : nodes)
-        traverseAndCall(n, false, [&leafNodes](Node *node) {
-            if (node->edgesOut.empty())
-                leafNodes.push(node);
-        });
-#ifdef DEBUG
-    // std::cerr << "Num of leaf Nodes " << leafNodes.size() << std::endl;
-#endif
-    while (!leafNodes.empty()) {
-        Node *curNode = leafNodes.top();
-        leafNodes.pop();
-        for (auto edgeIt : curNode->edgesIn) {
-            Node *source = edgeIt->source;
-            if (source->edgesOut.size() == 1) {
-                leafNodes.push(source);
+        void ConsensusGraph::removeNode(Node *n) {
+            {
+                auto edgeIt = n->edgesIn.begin();
+                auto end = n->edgesIn.end();
+                while (edgeIt != end)
+                    removeEdge(*(edgeIt++), false, true);
+                // don't remove from sink node which is this node!
+                // Avoids iterator invalidation and speeds things up
             }
-        }
-        removeNode(curNode);
-    }
-}
-
-void ConsensusGraph::printStatus() {
-    std::cout << readsInGraph.size() << " reads in graph " << this << ", "
-              << numNodes << " nodes, and " << numEdges << " edges."
-              << "\n";
-    std::cout << "mainPath len " << mainPath.edges.size() + 1 << " "
-              << mainPath.path.size() << " avg weight "
-              << mainPath.getAverageWeight() << " starts at " << startPos
-              << " ends at " << endPos << " len in Contig " << endPos - startPos
-              << "\n";
-    double stat = mainPath.edges.size() * mainPath.getAverageWeight() /
-                  (readsInGraph.size() * 9999);
-    std::cout << stat / (1 - 0.17) << " " << stat / (1 - 0.17 * 1.05) << " "
-              << stat / (1 - 0.17 * 1.1) << " " << std::endl;
-}
-
-void ConsensusGraph::writeMainPath(const std::string &filename) {
-    std::ofstream f;
-    std::string genomeFileName = tempDir + filename + ".genome";
-    f.open(genomeFileName);
-    f << std::string(mainPath.path.begin(), mainPath.path.end()) << std::endl;
-    f.close();
-}
-
-void ConsensusGraph::writeReads(const std::string &filename) {
-    // First we write the index of each character into the cumulativeWeight
-    // field of the nodes on mainPath
-    mainPath.edges.front()->source->cumulativeWeight = 0;
-    size_t i = 0;
-    for (auto e : mainPath.edges) {
-        e->sink->cumulativeWeight = ++i;
-    }
-    size_t totalEditDis = 0;
-
-    const std::string posFileName = tempDir + filename + ".pos";
-    const std::string editTypeFileName = tempDir + filename + ".type";
-    const std::string editBaseFileName = tempDir + filename + ".base";
-    const std::string idFileName = tempDir + filename + ".id";
-    const std::string complementFileName = tempDir + filename + ".complement";
-    std::ofstream posFile, editTypeFile, editBaseFile, idFile, complementFile;
-    posFile.open(posFileName);
-    editTypeFile.open(editTypeFileName);
-    editBaseFile.open(editBaseFileName);
-    idFile.open(idFileName);
-    complementFile.open(complementFileName);
-    read_t pasId = 0;
-    for (auto it : readsInGraph) {
-        {
-            idFile << it.first - pasId << ':';
-            complementFile << (it.second.reverseComplement ? 'c' : 'n') << ':';
-            pasId = it.first;
-        }
-        totalEditDis +=
-            writeRead(posFile, editTypeFile, editBaseFile, it.second, it.first);
-    }
-    idFile << '\n';
-    complementFile << '\n';
-    posFile.close();
-    editTypeFile.close();
-    editBaseFile.close();
-    idFile.close();
-    complementFile.close();
-    std::cout << "AvgEditDis " << totalEditDis / (double)readsInGraph.size()
-              << std::endl;
-    printStatus();
-}
-
-read_t ConsensusGraph::getNumReads() { return readsInGraph.size(); }
-
-size_t ConsensusGraph::read2EditScript(ConsensusGraph::Read &r, read_t id,
-                                       std::vector<Edit> &editScript,
-                                       size_t &pos) {
-    editScript.clear();
-    // First we store the initial position
-    Node *curNode = r.start;
-    assert(curNode);
-    bool intersectWithMainPath = true;
-    while (!curNode->onMainPath) {
-        curNode = curNode->getNextNodeInRead(id);
-        if (!curNode) {
-            intersectWithMainPath = false;
-            break;
-        }
-    }
-
-    // When the read has no intersection with mainPath, we just store it as a
-    // bunch of inserts
-    if (!intersectWithMainPath) {
-        pos = 0;
-        size_t editDis = 0;
-        Node *curNode = r.start;
-        do {
-            editScript.push_back(Edit(INSERT, curNode->base));
-            ++editDis;
-        } while ((curNode = curNode->getNextNodeInRead(id)));
-
-        return editDis;
-    }
-
-    pos = curNode->cumulativeWeight;
-
-    size_t editDis = 0;
-    size_t posInMainPath = curNode->cumulativeWeight;
-    curNode = r.start;
-    size_t unchangedCount = 0;
-    auto dealWithUnchanged = [&unchangedCount, &editScript]() {
-        if (unchangedCount > 0) {
-            editScript.push_back(Edit(SAME, unchangedCount));
-            unchangedCount = 0;
-        }
-    };
-    do {
-        if (curNode->onMainPath) {
-            size_t curPos = curNode->cumulativeWeight;
-            if (curPos > posInMainPath)
-                dealWithUnchanged();
-            for (; posInMainPath < curPos; posInMainPath++) {
-                editScript.push_back(Edit(DELETE, '-'));
-                editDis++;
+            {
+                auto edgeIt = n->edgesOut.begin();
+                auto end = n->edgesOut.end();
+                while (edgeIt != end)
+                    removeEdge(edgeIt++->second, true, false);
+                // don't remove from source node which is this node!
+                // Avoids iterator invalidation and speeds things up
             }
-            unchangedCount++;
-            posInMainPath++;
-        } else {
-            dealWithUnchanged();
-            // Else we have an insertion
-            editScript.push_back(Edit(INSERT, curNode->base));
-            editDis++;
+            delete n;
+            numNodes--;
         }
-    } while ((curNode = curNode->getNextNodeInRead(id)));
 
-    dealWithUnchanged();
-
-    return editDis;
-}
-
-size_t ConsensusGraph::writeRead(std::ofstream &posFile,
-                                 std::ofstream &editTypeFile,
-                                 std::ofstream &editBaseFile, Read &r,
-                                 read_t id) {
-
-    size_t offset;
-    std::vector<Edit> editScript;
-    size_t editDis = read2EditScript(r, id, editScript, offset);
-    posFile << offset << ':';
-
-    std::vector<Edit> newEditScript;
-    editDis = Edit::optimizeEditScript(editScript, newEditScript);
-    size_t unchangedCount = 0;
-    for (Edit e : newEditScript) {
-        switch (e.editType) {
-        case SAME: {
-            unchangedCount += e.editInfo.num;
-            break;
-        }
-        case INSERT: {
-            posFile << unchangedCount << ':';
-            unchangedCount = 0;
-            editTypeFile << 'i';
-            editBaseFile << e.editInfo.ins;
-            break;
-        }
-        case DELETE: {
-            posFile << unchangedCount << ':';
-            unchangedCount = 0;
-            editTypeFile << 'd';
-            break;
-        }
-        case SUBSTITUTION: {
-            posFile << unchangedCount << ':';
-            unchangedCount = 0;
-            editTypeFile << 's';
-            editBaseFile << e.editInfo.sub;
-            break;
-        }
-        }
-    }
-
-    posFile << unchangedCount << ':';
-    unchangedCount = 0;
-
-    posFile << '\n';
-    editTypeFile << '\n';
-    editBaseFile << '\n';
-    return editDis;
-}
-
-void ConsensusGraph::writeReads(std::ofstream &f) {
-    // First we write the index of each character into the cumulativeWeight
-    // field of the nodes on mainPath
-    mainPath.edges.front()->source->cumulativeWeight = 0;
-    size_t i = 0;
-    for (auto e : mainPath.edges) {
-        e->sink->cumulativeWeight = ++i;
-    }
-    size_t totalEditDis = 0;
-    for (auto it : readsInGraph) {
-        totalEditDis += writeRead(f, it.second, it.first);
-    }
-    std::cout << "AvgEditDis " << totalEditDis / (double)readsInGraph.size()
-              << std::endl;
-}
-
-size_t ConsensusGraph::writeRead(std::ofstream &f, Read &r, read_t id) {
-
-    std::vector<Edit> editScript;
-    size_t pos;
-    size_t editDis = read2EditScript(r, id, editScript, pos);
-    std::vector<Edit> newEditScript;
-
-    editDis = Edit::optimizeEditScript(editScript, newEditScript);
-
-    f << std::to_string(id) << ":" << std::to_string(pos) << "\n";
-
-    for (Edit e : newEditScript) {
-        switch (e.editType) {
-        case SAME:
-            f << 'u' << std::to_string(e.editInfo.num);
-            break;
-        case DELETE:
-            f << 'd';
-            break;
-        case INSERT:
-            f << 'i' << e.editInfo.ins;
-            break;
-        case SUBSTITUTION:
-            f << 's' << e.editInfo.sub;
-            break;
-        }
-    }
-
-    f << std::endl;
-    return editDis;
-}
-
-ConsensusGraph::ConsensusGraph(StringAligner_t *aligner) : aligner(aligner) {}
-
-ConsensusGraph::Read::Read(long pos, Node *start, size_t len,
-                           bool reverseComplement)
-    : pos(pos), start(start), len(len), reverseComplement(reverseComplement) {}
-
-bool ConsensusGraph::checkNoCycle() {
-    size_t countNodes = 0;
-    size_t countEdges = 0;
-    // In this function cumulativeWeight == 1 means is parent of current Node,
-    // and cumulativeWeight == 0 means otherwise
-    std::vector<Node *> sourceNodes;
-    for (auto it : readsInGraph)
-        traverseAndCall(it.second.start, false,
-                        [&sourceNodes, &countNodes, &countEdges](Node *node) {
-                            ++countNodes;
-                            countEdges += node->edgesIn.size();
-                            node->cumulativeWeight = 0;
-                            if (node->edgesIn.empty())
-                                sourceNodes.push_back(node);
-                        });
-    assert(countNodes == numNodes);
-    assert(countEdges == numEdges);
-    assert(!sourceNodes.empty());
-    // Here all the .hasReached has been set to true
-    bool status = true;
-    for (Node *node : sourceNodes) {
-        std::stack<Node *> nodes2Visit;
-        nodes2Visit.push(node);
-        node->hasReached = !status;
-        while (!nodes2Visit.empty()) {
-            Node *currentNode = nodes2Visit.top();
-            // cumulativeWeight == 1 means parent of current Node (including
-            // itself)
-            currentNode->cumulativeWeight = 1;
-            bool hasUnvisitedChild = false;
-            for (auto it : currentNode->edgesOut) {
-                // A back edge
-                if (it.first->cumulativeWeight == 1)
-                    return false;
-                // == status means has not visited
-                if (it.first->hasReached == status) {
-                    nodes2Visit.push(it.first);
-                    it.first->hasReached = !status;
-                    hasUnvisitedChild = true;
-                    continue;
+        void ConsensusGraph::removeBelow(Node *n) {
+            std::stack<Node *> nodesToRemove;
+            nodesToRemove.push(n);
+            while (!nodesToRemove.empty()) {
+                Node *curNode = nodesToRemove.top();
+                if (curNode->edgesOut.empty()) {
+                    nodesToRemove.pop();
+                    removeNode(curNode);
+                } else {
+                    nodesToRemove.push(curNode->edgesOut.begin()->first);
                 }
             }
-            if (hasUnvisitedChild)
-                continue;
-            // All children has been visited
-            currentNode->cumulativeWeight = 0;
-            nodes2Visit.pop();
-        }
-    }
-    return true;
-}
-
-template <typename Functor>
-void ConsensusGraph::traverseAndCall(Node *n, bool status, Functor f) {
-    std::deque<Node *> unfinishedNodes;
-    unfinishedNodes.push_back(n);
-    while (!unfinishedNodes.empty()) {
-        Node *currentNode = unfinishedNodes.front();
-        // We don't do anything if it has already been set to !status
-        if (currentNode->hasReached != status) {
-            unfinishedNodes.pop_front();
-            continue;
         }
 
-        currentNode->hasReached = !status;
-        unfinishedNodes.pop_front();
-        f(currentNode);
-
-        for (auto edgeIt : currentNode->edgesOut) {
-            Node *n = edgeIt.second->sink;
-            if (n->hasReached == status) {
-                unfinishedNodes.push_front(n);
+        void ConsensusGraph::removeAbove(Node *n) {
+            std::stack<Node *> nodesToRemove;
+            nodesToRemove.push(n);
+            while (!nodesToRemove.empty()) {
+                Node *curNode = nodesToRemove.top();
+                if (curNode->edgesIn.empty()) {
+                    nodesToRemove.pop();
+                    removeNode(curNode);
+                } else {
+                    nodesToRemove.push((*curNode->edgesIn.begin())->source);
+                }
             }
         }
 
-        for (auto edgeIt : currentNode->edgesIn) {
-            if (edgeIt->source->hasReached == status)
-                unfinishedNodes.push_back(edgeIt->source);
+        void ConsensusGraph::removeConnectedNodes(std::vector<Node *> nodes) {
+#ifdef CHECKS
+            {
+                // This code segment makes sure that the graph is connected and
+                // traverseAndCall is working as desired
+                size_t count = 0;
+                for (Node *n : nodes)
+                    traverseAndCall(n, false, [&count](Node *) { ++count; });
+                assert(count == numNodes);
+                count = 0;
+                for (Node *n : nodes)
+                    traverseAndCall(n, true, [&count](Node *) { ++count; });
+                assert(count == numNodes);
+            }
+#endif
+
+            /** Nodes that have no edges in **/
+            std::stack<Node *> leafNodes;
+            for (Node *n : nodes)
+                traverseAndCall(n, false, [&leafNodes](Node *node) {
+                    if (node->edgesOut.empty())
+                        leafNodes.push(node);
+                });
+#ifdef DEBUG
+                // std::cerr << "Num of leaf Nodes " << leafNodes.size() <<
+                // std::endl;
+#endif
+            while (!leafNodes.empty()) {
+                Node *curNode = leafNodes.top();
+                leafNodes.pop();
+                for (auto edgeIt : curNode->edgesIn) {
+                    Node *source = edgeIt->source;
+                    if (source->edgesOut.size() == 1) {
+                        leafNodes.push(source);
+                    }
+                }
+                removeNode(curNode);
+            }
         }
-    }
-}
+
+        void ConsensusGraph::printStatus() {
+            std::cout << readsInGraph.size() << " reads in graph " << this
+                      << ", " << numNodes << " nodes, and " << numEdges
+                      << " edges."
+                      << "\n";
+            std::cout << "mainPath len " << mainPath.edges.size() + 1 << " "
+                      << mainPath.path.size() << " avg weight "
+                      << mainPath.getAverageWeight() << " starts at "
+                      << startPos << " ends at " << endPos << " len in Contig "
+                      << endPos - startPos << "\n";
+            double stat = mainPath.edges.size() * mainPath.getAverageWeight() /
+                          (readsInGraph.size() * 9999);
+            std::cout << stat / (1 - 0.17) << " " << stat / (1 - 0.17 * 1.05)
+                      << " " << stat / (1 - 0.17 * 1.1) << " " << std::endl;
+        }
+
+        void ConsensusGraph::writeMainPath(const std::string &filename) {
+            std::ofstream f;
+            std::string genomeFileName = tempDir + filename + ".genome";
+            f.open(genomeFileName);
+            f << std::string(mainPath.path.begin(), mainPath.path.end())
+              << std::endl;
+            f.close();
+        }
+
+        void ConsensusGraph::writeReads(const std::string &filename) {
+            // First we write the index of each character into the
+            // cumulativeWeight field of the nodes on mainPath
+            mainPath.edges.front()->source->cumulativeWeight = 0;
+            size_t i = 0;
+            for (auto e : mainPath.edges) {
+                e->sink->cumulativeWeight = ++i;
+            }
+            size_t totalEditDis = 0;
+
+            const std::string posFileName = tempDir + filename + ".pos";
+            const std::string editTypeFileName = tempDir + filename + ".type";
+            const std::string editBaseFileName = tempDir + filename + ".base";
+            const std::string idFileName = tempDir + filename + ".id";
+            const std::string complementFileName =
+                tempDir + filename + ".complement";
+            std::ofstream posFile, editTypeFile, editBaseFile, idFile,
+                complementFile;
+            posFile.open(posFileName);
+            editTypeFile.open(editTypeFileName);
+            editBaseFile.open(editBaseFileName);
+            idFile.open(idFileName);
+            complementFile.open(complementFileName);
+            read_t pasId = 0;
+            for (auto it : readsInGraph) {
+                {
+                    idFile << it.first - pasId << ':';
+                    complementFile << (it.second.reverseComplement ? 'c' : 'n')
+                                   << ':';
+                    pasId = it.first;
+                }
+                totalEditDis += writeRead(posFile, editTypeFile, editBaseFile,
+                                          it.second, it.first);
+            }
+            idFile << '\n';
+            complementFile << '\n';
+            posFile.close();
+            editTypeFile.close();
+            editBaseFile.close();
+            idFile.close();
+            complementFile.close();
+            std::cout << "AvgEditDis "
+                      << totalEditDis / (double)readsInGraph.size()
+                      << std::endl;
+            printStatus();
+        }
+
+        read_t ConsensusGraph::getNumReads() { return readsInGraph.size(); }
+
+        size_t ConsensusGraph::read2EditScript(ConsensusGraph::Read &r,
+                                               read_t id,
+                                               std::vector<Edit> &editScript,
+                                               size_t &pos) {
+            editScript.clear();
+            // First we store the initial position
+            Node *curNode = r.start;
+            assert(curNode);
+            bool intersectWithMainPath = true;
+            while (!curNode->onMainPath) {
+                curNode = curNode->getNextNodeInRead(id);
+                if (!curNode) {
+                    intersectWithMainPath = false;
+                    break;
+                }
+            }
+
+            // When the read has no intersection with mainPath, we just store it
+            // as a bunch of inserts
+            if (!intersectWithMainPath) {
+                pos = 0;
+                size_t editDis = 0;
+                Node *curNode = r.start;
+                do {
+                    editScript.push_back(Edit(INSERT, curNode->base));
+                    ++editDis;
+                } while ((curNode = curNode->getNextNodeInRead(id)));
+
+                return editDis;
+            }
+
+            pos = curNode->cumulativeWeight;
+
+            size_t editDis = 0;
+            size_t posInMainPath = curNode->cumulativeWeight;
+            curNode = r.start;
+            size_t unchangedCount = 0;
+            auto dealWithUnchanged = [&unchangedCount, &editScript]() {
+                if (unchangedCount > 0) {
+                    editScript.push_back(Edit(SAME, unchangedCount));
+                    unchangedCount = 0;
+                }
+            };
+            do {
+                if (curNode->onMainPath) {
+                    size_t curPos = curNode->cumulativeWeight;
+                    if (curPos > posInMainPath)
+                        dealWithUnchanged();
+                    for (; posInMainPath < curPos; posInMainPath++) {
+                        editScript.push_back(Edit(DELETE, '-'));
+                        editDis++;
+                    }
+                    unchangedCount++;
+                    posInMainPath++;
+                } else {
+                    dealWithUnchanged();
+                    // Else we have an insertion
+                    editScript.push_back(Edit(INSERT, curNode->base));
+                    editDis++;
+                }
+            } while ((curNode = curNode->getNextNodeInRead(id)));
+
+            dealWithUnchanged();
+
+            return editDis;
+        }
+
+        size_t ConsensusGraph::writeRead(std::ofstream &posFile,
+                                         std::ofstream &editTypeFile,
+                                         std::ofstream &editBaseFile, Read &r,
+                                         read_t id) {
+
+            size_t offset;
+            std::vector<Edit> editScript;
+            size_t editDis = read2EditScript(r, id, editScript, offset);
+            posFile << offset << ':';
+
+            std::vector<Edit> newEditScript;
+            editDis = Edit::optimizeEditScript(editScript, newEditScript);
+            size_t unchangedCount = 0;
+            for (Edit e : newEditScript) {
+                switch (e.editType) {
+                case SAME: {
+                    unchangedCount += e.editInfo.num;
+                    break;
+                }
+                case INSERT: {
+                    posFile << unchangedCount << ':';
+                    unchangedCount = 0;
+                    editTypeFile << 'i';
+                    editBaseFile << e.editInfo.ins;
+                    break;
+                }
+                case DELETE: {
+                    posFile << unchangedCount << ':';
+                    unchangedCount = 0;
+                    editTypeFile << 'd';
+                    break;
+                }
+                case SUBSTITUTION: {
+                    posFile << unchangedCount << ':';
+                    unchangedCount = 0;
+                    editTypeFile << 's';
+                    editBaseFile << e.editInfo.sub;
+                    break;
+                }
+                }
+            }
+
+            posFile << unchangedCount << ':';
+            unchangedCount = 0;
+
+            posFile << '\n';
+            editTypeFile << '\n';
+            editBaseFile << '\n';
+            return editDis;
+        }
+
+        void ConsensusGraph::writeReads(std::ofstream &f) {
+            // First we write the index of each character into the
+            // cumulativeWeight field of the nodes on mainPath
+            mainPath.edges.front()->source->cumulativeWeight = 0;
+            size_t i = 0;
+            for (auto e : mainPath.edges) {
+                e->sink->cumulativeWeight = ++i;
+            }
+            size_t totalEditDis = 0;
+            for (auto it : readsInGraph) {
+                totalEditDis += writeRead(f, it.second, it.first);
+            }
+            std::cout << "AvgEditDis "
+                      << totalEditDis / (double)readsInGraph.size()
+                      << std::endl;
+        }
+
+        size_t ConsensusGraph::writeRead(std::ofstream &f, Read &r, read_t id) {
+
+            std::vector<Edit> editScript;
+            size_t pos;
+            size_t editDis = read2EditScript(r, id, editScript, pos);
+            std::vector<Edit> newEditScript;
+
+            editDis = Edit::optimizeEditScript(editScript, newEditScript);
+
+            f << std::to_string(id) << ":" << std::to_string(pos) << "\n";
+
+            for (Edit e : newEditScript) {
+                switch (e.editType) {
+                case SAME:
+                    f << 'u' << std::to_string(e.editInfo.num);
+                    break;
+                case DELETE:
+                    f << 'd';
+                    break;
+                case INSERT:
+                    f << 'i' << e.editInfo.ins;
+                    break;
+                case SUBSTITUTION:
+                    f << 's' << e.editInfo.sub;
+                    break;
+                }
+            }
+
+            f << std::endl;
+            return editDis;
+        }
+
+        ConsensusGraph::ConsensusGraph(StringAligner_t *aligner)
+            : aligner(aligner) {}
+
+        ConsensusGraph::Read::Read(long pos, Node *start, size_t len,
+                                   bool reverseComplement)
+            : pos(pos), start(start), len(len),
+              reverseComplement(reverseComplement) {}
+
+        bool ConsensusGraph::checkNoCycle() {
+            size_t countNodes = 0;
+            size_t countEdges = 0;
+            // In this function cumulativeWeight == 1 means is parent of current
+            // Node, and cumulativeWeight == 0 means otherwise
+            std::vector<Node *> sourceNodes;
+            for (auto it : readsInGraph)
+                traverseAndCall(
+                    it.second.start, false,
+                    [&sourceNodes, &countNodes, &countEdges](Node *node) {
+                        ++countNodes;
+                        countEdges += node->edgesIn.size();
+                        node->cumulativeWeight = 0;
+                        if (node->edgesIn.empty())
+                            sourceNodes.push_back(node);
+                    });
+            assert(countNodes == numNodes);
+            assert(countEdges == numEdges);
+            assert(!sourceNodes.empty());
+            // Here all the .hasReached has been set to true
+            bool status = true;
+            for (Node *node : sourceNodes) {
+                std::stack<Node *> nodes2Visit;
+                nodes2Visit.push(node);
+                node->hasReached = !status;
+                while (!nodes2Visit.empty()) {
+                    Node *currentNode = nodes2Visit.top();
+                    // cumulativeWeight == 1 means parent of current Node
+                    // (including itself)
+                    currentNode->cumulativeWeight = 1;
+                    bool hasUnvisitedChild = false;
+                    for (auto it : currentNode->edgesOut) {
+                        // A back edge
+                        if (it.first->cumulativeWeight == 1)
+                            return false;
+                        // == status means has not visited
+                        if (it.first->hasReached == status) {
+                            nodes2Visit.push(it.first);
+                            it.first->hasReached = !status;
+                            hasUnvisitedChild = true;
+                            continue;
+                        }
+                    }
+                    if (hasUnvisitedChild)
+                        continue;
+                    // All children has been visited
+                    currentNode->cumulativeWeight = 0;
+                    nodes2Visit.pop();
+                }
+            }
+            return true;
+        }
+
+        template <typename Functor>
+        void ConsensusGraph::traverseAndCall(Node *n, bool status, Functor f) {
+            std::deque<Node *> unfinishedNodes;
+            unfinishedNodes.push_back(n);
+            while (!unfinishedNodes.empty()) {
+                Node *currentNode = unfinishedNodes.front();
+                // We don't do anything if it has already been set to !status
+                if (currentNode->hasReached != status) {
+                    unfinishedNodes.pop_front();
+                    continue;
+                }
+
+                currentNode->hasReached = !status;
+                unfinishedNodes.pop_front();
+                f(currentNode);
+
+                for (auto edgeIt : currentNode->edgesOut) {
+                    Node *n = edgeIt.second->sink;
+                    if (n->hasReached == status) {
+                        unfinishedNodes.push_front(n);
+                    }
+                }
+
+                for (auto edgeIt : currentNode->edgesIn) {
+                    if (edgeIt->source->hasReached == status)
+                        unfinishedNodes.push_back(edgeIt->source);
+                }
+            }
+        }

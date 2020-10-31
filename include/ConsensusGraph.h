@@ -121,6 +121,14 @@ public:
     Edge(Node *source, Node *sink, read_t read);
 
     /**
+     * Initializes the Edge from a source, a sink, and a vector of sorted read.
+     * @param source
+     * @param sink
+     * @param reads
+     */
+    Edge(Node *source, Node *sink, std::vector<read_t> &reads);
+
+    /**
      * Adds a read to the edge. Basically just increases count by 1 and add read
      * to the internal vector (while maintaining sorting).
      * @param read
@@ -353,6 +361,8 @@ private:
 
     Edge *createEdge(Node *source, Node *sink, read_t read);
 
+    Edge *createEdge(Node *source, Node *sink, std::vector<read_t> &reads);
+
     // reads must be a sorted vector
     void removeReadsFromEdge(Edge *e, std::vector<read_t> const &reads);
 
@@ -439,6 +449,9 @@ private:
      *  A duplicate of "everything" below e in reads2Split will be created under
      * newPre. In particular, newPre will have a new edge going out. The newly
      * created nodes are guaranteed to have at most one Edge going in.
+     * - May turn a connected graph into a disconnected graph, but every Node is
+     * guaranteed to be reachable from the starting Node of some read provided
+     * this condition holds before this function is called.
      */
     void splitPath(Node *newPre, Edge *e,
                    std::vector<read_t> *reads2Split);
