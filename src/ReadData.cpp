@@ -6,7 +6,20 @@
 #include <limits> // std::numeric_limits
 #include <stdexcept>
 
-void ReadData::loadFromFile(const char *fileName) {
+void ReadData::loadFromFile(const char *fileName, enum Filetype filetype) {
+    switch (filetype) {
+    case READ:
+        loadFromReadFile(fileName);
+        break;
+    case FASTQ:
+        loadFromFastqFile(fileName);
+        break;
+    default:
+        assert(false);
+    }
+}
+
+void ReadData::loadFromReadFile(const char *fileName) {
     numReads = 0;
     readData.clear();
     readPos.clear();
@@ -37,6 +50,44 @@ void ReadData::loadFromFile(const char *fileName) {
             std::unique_ptr<std::string> ptr(new std::string(line));
             readData.push_back(std::move(ptr));
         }
+        totalNumBases += readData.back()->size();
+        numReads++;
+        if (numReads == std::numeric_limits<read_t>::max()) {
+            throw std::runtime_error(
+                "Too many reads for read_t type to handle.");
+        }
+    }
+    assert(numReads != 0);
+    avgReadLen = totalNumBases / numReads;
+#ifdef DEBUG
+    std::cout << "numReads " << numReads << std::endl;
+    std::cout << "avgReadLen " << avgReadLen << std::endl;
+#endif
+}
+
+void ReadData::loadFromFastqFile(const char *fileName) {
+    numReads = 0;
+    readData.clear();
+    readPos.clear();
+    editStrings.clear();
+    reverse.clear();
+
+    std::ifstream infile(fileName);
+    std::string line;
+    size_t totalNumBases = 0;
+    while (std::getline(infile, line)) {
+        std::getline(infile, line);
+        {
+            std::unique_ptr<std::string> ptr(new std::string(line));
+            readData.push_back(std::move(ptr));
+            readPos.push_back(0);
+        }
+        {
+            std::unique_ptr<std::string> ptr(new std::string());
+            editStrings.push_back(std::move(ptr));
+        }
+        std::getline(infile, line);
+        std::getline(infile, line);
         totalNumBases += readData.back()->size();
         numReads++;
         if (numReads == std::numeric_limits<read_t>::max()) {

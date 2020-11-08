@@ -43,6 +43,13 @@ int main(int argc, char **argv) {
         compressor.overlapSketchThreshold = overlapSketchThreshold;
         compressor.rA = &rA;
         compressor.aligner = aligner;
+        const std::string filename(argv[1]);
+        const std::string extension =
+            filename.substr(filename.find_last_of('.') + 1);
+        if (!extension.compare("reads"))
+            compressor.filetype = ReadData::Filetype::READ;
+        else if (!extension.compare("fastq"))
+            compressor.filetype = ReadData::Filetype::FASTQ;
         compressor.compress(argv[1]);
     }
     // ProfilerStop();

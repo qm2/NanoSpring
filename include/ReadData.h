@@ -14,21 +14,21 @@
  */
 class ReadData {
 public:
+    /**
+     * @brief The filetype to read
+     *
+     */
+    enum Filetype { FASTQ, READ };
+
     /** The average length of the reads **/
     size_t avgReadLen;
 
     /**
-     * @brief Loads the read data from a file
-     *
-     * Assumes the file has format
-     * [nc]:readPos:editString
-     * read
-     *
-     * [nc] stands for [n]ormal and reverse [c]omplement
+     * @brief Loads the read data from a file (.reads format)
      *
      * @param fileName
      */
-    void loadFromFile(const char *fileName);
+    void loadFromFile(const char *fileName, enum Filetype filetype = READ);
 
     /**
      * @brief Get the number of reads
@@ -89,6 +89,28 @@ private:
     /** Whether the read is a reverse complement **/
     std::vector<bool> reverse;
     // End testing
+
+    /**
+     * @brief Loads the read data from a file (.reads format)
+     *
+     * Assumes the file has format
+     * [nc]:readPos:editString
+     * read
+     *
+     * [nc] stands for [n]ormal and reverse [c]omplement
+     *
+     * @param fileName
+     */
+    void loadFromReadFile(const char *fileName);
+
+    /**
+     * @brief Loads the read data from a file (.reads format)
+     *
+     * For every four lines, the second line is the read. The rest we disgard
+     *
+     * @param fileName
+     */
+    void loadFromFastqFile(const char *fileName);
 };
 
 /******************************************************************************/

@@ -11,6 +11,7 @@ class Compressor {
 public:
     /** Parameters for filtering **/
     size_t k, n, overlapSketchThreshold;
+    ReadData::Filetype filetype = ReadData::Filetype::READ;
     ReadAligner *rA;
     /** Parameters for consensus **/
     ConsensusGraph::StringAligner_t *aligner;

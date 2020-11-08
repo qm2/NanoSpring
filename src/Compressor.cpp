@@ -12,7 +12,8 @@
 
 void Compressor::compress(const char *inputFileName) const {
     ReadData rD;
-    rD.loadFromFile(inputFileName);
+    rD.loadFromFile(inputFileName, filetype);
+
     // (inputFileName, k, n);
     MinHashReadFilter rF;
     rF.k = k;

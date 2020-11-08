@@ -606,7 +606,7 @@ void ConsensusGraph::splitPath(Node *newPre, Edge *e,
         }
 
     private:
-        ConsensusGraph *cG;
+        ConsensusGraph *const cG;
     };
 
     std::stack<SplitPathContext> callStack;
@@ -646,7 +646,6 @@ void ConsensusGraph::splitPath(Node *newPre, Edge *e,
         if (oldCur->onMainPath) {
             createEdge(currentContext.newPre, oldCur, *readsInPath2Split);
             continue;
-            // delete readsInPath2Split;
         }
 
         // Otherwise create a new node
