@@ -102,9 +102,10 @@ int main(int argc, char **argv) {
     }
 
     createGraphFromReads(&cG, reads);
-
-    cG.writeMainPath("Contig0");
-    cG.writeReads("Contig0");
+    const std::string filePrefix = "Contig0";
+    ConsensusGraphWriter cgw(filePrefix); 
+    cG.writeMainPath(cgw);
+    cG.writeReads(cgw);
 
     return 0;
 }

@@ -42,8 +42,7 @@ void Compressor::compress(const char *inputFileName) const {
         consensus.tempDir = tempDir;
         consensus.tempFileName = tempFileName;
 
-        consensus.generateConsensus();
-        consensus.writeConsensus();
+        consensus.generateAndWriteConsensus();
     }
 
     {

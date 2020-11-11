@@ -35,14 +35,18 @@ public:
 
     std::string tempFileName = "Contig";
 
-    void generateConsensus();
+    /**
+     * @brief Generates consensus, calls writeReads and writeMainPath on each 
+     * of the consensus graphs, and combines their output
+     */
+    void generateAndWriteConsensus();
 
     /**
-     * @brief Calls writeReads and writeMainPath on each of the consensus
-     * graphs, and combines their otuput
+     * @brief Combine files from threads and write metadata file
      *
+     * @param numReadsInContig Vector with number of reads per contig in each thread
      */
-    void writeConsensus();
+    void finishWriteConsensus(const std::vector<std::vector<read_t>>& numReadsInContig);
 
     /**
      * @brief Checks that the read read in cG is equal to the read in ReadData
@@ -57,8 +61,6 @@ public:
     bool checkRead(ConsensusGraph *cG, read_t read);
 
     Consensus();
-
-    ~Consensus();
 
 private:
     /**
@@ -78,8 +80,6 @@ private:
      */
     OmpNestMutex readStatusLock;
     read_t numReads;
-
-    std::vector<std::unique_ptr<ConsensusGraph>> graphs;
 
     /**
      * @brief Initializes firstUnaddedRead and numReads

@@ -116,6 +116,21 @@ void Path::clear() {
     path.clear();
 }
 
+ConsensusGraphWriter::ConsensusGraphWriter(const std::string &filePrefix) {
+    const std::string posFileName = filePrefix + ".pos";
+    const std::string editTypeFileName = filePrefix + ".type";
+    const std::string editBaseFileName = filePrefix + ".base";
+    const std::string idFileName = filePrefix + ".id";
+    const std::string complementFileName = filePrefix + ".complement";
+    const std::string genomeFileName = filePrefix + ".genome";
+    posFile.open(posFileName);
+    editTypeFile.open(editTypeFileName);
+    editBaseFile.open(editBaseFileName);
+    idFile.open(idFileName);
+    complementFile.open(complementFileName);
+    genomeFile.open(genomeFileName);
+}
+
 void ConsensusGraph::initialize(const std::string &seed, read_t readId,
                                 long pos) {
     size_t len = seed.length();
@@ -833,16 +848,13 @@ void ConsensusGraph::removeEdge(Edge *e,
                       << " " << stat / (1 - 0.17 * 1.1) << " " << std::endl;
         }
 
-        void ConsensusGraph::writeMainPath(const std::string &filename) {
-            std::ofstream f;
-            std::string genomeFileName = tempDir + filename + ".genome";
-            f.open(genomeFileName);
-            f << std::string(mainPath.path.begin(), mainPath.path.end())
+        void ConsensusGraph::writeMainPath(ConsensusGraphWriter &cgw) {
+            cgw.genomeFile << std::string(mainPath.path.begin(), mainPath.path.end())
               << std::endl;
-            f.close();
+            cgw.genomeFile << ".\n";
         }
 
-        void ConsensusGraph::writeReads(const std::string &filename) {
+        void ConsensusGraph::writeReads(ConsensusGraphWriter &cgw) {
             // First we write the index of each character into the
             // cumulativeWeight field of the nodes on mainPath
             mainPath.edges.front()->source->cumulativeWeight = 0;
@@ -852,37 +864,24 @@ void ConsensusGraph::removeEdge(Edge *e,
             }
             size_t totalEditDis = 0;
 
-            const std::string posFileName = tempDir + filename + ".pos";
-            const std::string editTypeFileName = tempDir + filename + ".type";
-            const std::string editBaseFileName = tempDir + filename + ".base";
-            const std::string idFileName = tempDir + filename + ".id";
-            const std::string complementFileName =
-                tempDir + filename + ".complement";
-            std::ofstream posFile, editTypeFile, editBaseFile, idFile,
-                complementFile;
-            posFile.open(posFileName);
-            editTypeFile.open(editTypeFileName);
-            editBaseFile.open(editBaseFileName);
-            idFile.open(idFileName);
-            complementFile.open(complementFileName);
             read_t pasId = 0;
             for (auto it : readsInGraph) {
                 {
-                    idFile << it.first - pasId << ':';
-                    complementFile << (it.second.reverseComplement ? 'c' : 'n')
+                    cgw.idFile << it.first - pasId << ':';
+                    cgw.complementFile << (it.second.reverseComplement ? 'c' : 'n')
                                    << ':';
                     pasId = it.first;
                 }
-                totalEditDis += writeRead(posFile, editTypeFile, editBaseFile,
+                totalEditDis += writeRead(cgw.posFile, cgw.editTypeFile, cgw.editBaseFile,
                                           it.second, it.first);
             }
-            idFile << '\n';
-            complementFile << '\n';
-            posFile.close();
-            editTypeFile.close();
-            editBaseFile.close();
-            idFile.close();
-            complementFile.close();
+            cgw.idFile << '\n';
+            cgw.complementFile << '\n';
+            cgw.posFile << ".\n";
+            cgw.editTypeFile << ".\n";
+            cgw.editBaseFile << ".\n";
+            cgw.idFile << ".\n";
+            cgw.complementFile << ".\n";
             std::cout << "AvgEditDis "
                       << totalEditDis / (double)readsInGraph.size()
                       << std::endl;
@@ -1008,7 +1007,11 @@ void ConsensusGraph::removeEdge(Edge *e,
             editBaseFile << '\n';
             return editDis;
         }
-
+        
+        /*
+        // NOTE: Commenting this out since it doesn't seem to be in use.
+        // Please remove if not needed. 
+        // -Shubham
         void ConsensusGraph::writeReads(std::ofstream &f) {
             // First we write the index of each character into the
             // cumulativeWeight field of the nodes on mainPath
@@ -1025,6 +1028,7 @@ void ConsensusGraph::removeEdge(Edge *e,
                       << totalEditDis / (double)readsInGraph.size()
                       << std::endl;
         }
+        */
 
         size_t ConsensusGraph::writeRead(std::ofstream &f, Read &r, read_t id) {
 

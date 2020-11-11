@@ -8,15 +8,17 @@ namespace DirectoryUtils {
 
 /**
  * @brief Combines the files filestem[0-(numFiles-1)].fileExt into the
- * single file filepath.fileExt by inplacing a ".\n" in between files, and
- * removes the old files
+ * single file filepath.fileExt by inplacing a ".\n" in between files 
+ * (if delim is true), and removes the old files
  *
  * @param filestem
  * @param fileExt
  * @param numFiles
+ * @param delim Whether to put delimiter
  */
 void combineFilesWithExt(const std::string &filestem,
-                         const std::string &fileExt, size_t numFiles);
+                         const std::string &fileExt, size_t numFiles,
+                         bool delim);
 
 /**
  * @brief Unpacks the file filepath by splitting it up at ".\n" and stores the

@@ -12,40 +12,54 @@
 #include <mutex>
 #include <set>
 
-void Consensus::generateConsensus() {
+void Consensus::generateAndWriteConsensus() {
     initialize();
 
+    auto max_thr = omp_get_max_threads();
+    std::vector<std::vector<read_t>> numReadsInContig(max_thr);
     ConsensusGraph *cG = nullptr;
 #pragma omp parallel private(cG)
-    while ((cG = createGraph())) {
-        ssize_t initialStartPos = cG->startPos;
-        ssize_t initialEndPos = cG->endPos;
-        const ssize_t len = initialEndPos - initialStartPos;
-        size_t offset = rD->avgReadLen / 4;
+    {
+        auto tid = omp_get_thread_num();
+        std::string filePrefix = tempDir + tempFileName + std::to_string(tid);
+        ConsensusGraphWriter cgw(filePrefix);
+        while ((cG = createGraph())) {
+            ssize_t initialStartPos = cG->startPos;
+            ssize_t initialEndPos = cG->endPos;
+            const ssize_t len = initialEndPos - initialStartPos;
+            size_t offset = rD->avgReadLen / 4;
 
-        ssize_t curPos = cG->startPos;
+            ssize_t curPos = cG->startPos;
 
-        while (true) {
-            std::cout << "right\n";
-            addRelatedReads(cG, curPos, len);
-            cG->printStatus();
-            curPos += offset;
-            // std::cout << "curPos " << curPos << " len " << len << " endPos "
-            //          << cG->endPos << '\n';
-            if (curPos + len > cG->endPos)
-                break;
+            while (true) {
+                std::cout << "right\n";
+                addRelatedReads(cG, curPos, len);
+                cG->printStatus();
+                curPos += offset;
+                // std::cout << "curPos " << curPos << " len " << len << " endPos "
+                //          << cG->endPos << '\n';
+                if (curPos + len > cG->endPos)
+                    break;
+            }
+
+            curPos = initialStartPos - offset;
+            while (true) {
+                std::cout << "left\n";
+                if (curPos < cG->startPos)
+                    break;
+                cG->printStatus();
+                addRelatedReads(cG, curPos, len);
+                curPos -= offset;
+            }
+            cG->writeMainPath(cgw);
+            cG->writeReads(cgw);
+            numReadsInContig[tid].push_back(cG->getNumReads());
+            delete cG;
         }
+    } // pragma omp parallel
 
-        curPos = initialStartPos - offset;
-        while (true) {
-            std::cout << "left\n";
-            if (curPos < cG->startPos)
-                break;
-            cG->printStatus();
-            addRelatedReads(cG, curPos, len);
-            curPos -= offset;
-        }
-    }
+    // now perform last step, combining files from threads and writing metadata
+    finishWriteConsensus(numReadsInContig);
 }
 
 void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
@@ -185,22 +199,19 @@ bool Consensus::checkRead(ConsensusGraph *cG, read_t read) {
     return reverseComplement == rD->getRead(read);
 }
 
-void Consensus::writeConsensus() {
-    size_t size = graphs.size();
-    for (size_t i = 0; i < size; ++i) {
-        ConsensusGraph &cG = *graphs[i];
-        std::string fileName = tempFileName + std::to_string(i);
-        cG.writeMainPath(fileName);
-        cG.writeReads(fileName);
-    }
+void Consensus::finishWriteConsensus(const std::vector<std::vector<read_t>>& numReadsInContig) {
+    size_t numThreads = numReadsInContig.size();
+    size_t size = 0;
+    for (size_t i = 0; i < numThreads; i++)
+        size += numReadsInContig[i].size();
     std::ofstream metaData;
     metaData.open(tempDir + "metaData");
     metaData << "numReads=" << rD->getNumReads() << '\n';
     metaData << "numContigs=" << size << '\n';
     metaData << "numReadsInContig=";
-    for (size_t i = 0; i < size; ++i) {
-        metaData << graphs[i]->getNumReads() << ":";
-    }
+    for (size_t i = 0; i < numThreads; ++i)
+        for (size_t j = 0; j < numReadsInContig[i].size(); ++j)
+            metaData << numReadsInContig[i][j] << ":";
     metaData << '\n';
     metaData.close();
 
@@ -208,9 +219,9 @@ void Consensus::writeConsensus() {
     DirectoryUtils::getAllExtensions(
         tempDir, std::inserter(extensions, extensions.end()));
 
-    // Now we combine the files, deliminated by ".\n"
+    // Now we combine the files (note delimiter already present so not added here)
     for (const std::string &ext : extensions) {
-        DirectoryUtils::combineFilesWithExt(tempDir + tempFileName, ext, size);
+        DirectoryUtils::combineFilesWithExt(tempDir + tempFileName, ext, numThreads, false);
     }
 }
 
@@ -220,11 +231,8 @@ ConsensusGraph *Consensus::createGraph() {
     if (!getRead(read))
         return nullptr;
     ConsensusGraph *cG = new ConsensusGraph(aligner);
-    graphs.emplace_back(std::move(cG));
-    cG->tempDir = tempDir;
     cG->initialize(rD->getRead(read), read, 0);
     cG->calculateMainPathGreedy();
-    std::cout << "Creating graph " << graphs.size() << '\n';
     return cG;
 }
 
@@ -268,10 +276,3 @@ bool Consensus::addRead(read_t read) {
 
 Consensus::Consensus() {}
 
-Consensus::~Consensus() {
-    // We should call the destructors of the ConsensusGraphs in parallel
-    size_t numGraphs = graphs.size();
-#pragma omp parallel for
-    for (size_t i = 0; i < numGraphs; ++i)
-        graphs[i].reset();
-}

@@ -11,13 +11,15 @@ void clearDir(const std::string &path) {
 }
 
 void combineFilesWithExt(const std::string &filestem,
-                         const std::string &fileExt, const size_t numFiles) {
+                         const std::string &fileExt, const size_t numFiles,
+                         bool delim) {
     std::ofstream outFile(filestem + fileExt, std::ios_base::binary);
     for (size_t i = 0; i < numFiles; i++) {
         std::string fileName = filestem + std::to_string(i) + fileExt;
         std::ifstream inFile(fileName, std::ios_base::binary);
         outFile << inFile.rdbuf();
-        outFile << ".\n";
+        if (delim)
+            outFile << ".\n";
         inFile.close();
         boost::system::error_code ec;
         const boost::filesystem::path oldFilePath(fileName);

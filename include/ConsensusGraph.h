@@ -6,6 +6,7 @@
 #include "ReadData.h"
 #include "StringAligner.h"
 #include <deque>
+#include <fstream>
 #include <functional>
 #include <map>
 #include <set>
@@ -159,6 +160,22 @@ public:
 };
 
 /**
+ * Class for writing consensus graphs.
+ * One per thread.
+ * Different contigs separated by ".\n" in line with DirectotyUtils
+ */ 
+class ConsensusGraphWriter {
+public:
+    std::ofstream posFile;
+    std::ofstream editTypeFile;
+    std::ofstream editBaseFile;
+    std::ofstream idFile;
+    std::ofstream complementFile;
+    std::ofstream genomeFile;
+    ConsensusGraphWriter(const std::string &filePrefix);
+};
+
+/**
  * We store the current reads along with their relations as a directly acyclic
  * graph. The nodes represent different bases, and each each edge means there is
  * at least one read where the base in the next node follows the current node.
@@ -173,9 +190,6 @@ public:
 
     /** Starting and ending positions of mainPath in contig **/
     ssize_t startPos, endPos;
-
-    /** Directory for storing the temp files (.genome, .pos, .type) **/
-    std::string tempDir = "tempRaw/";
 
     Path mainPath;
 
@@ -275,7 +289,7 @@ public:
      *
      * @param filename
      */
-    void writeMainPath(const std::string &filename);
+    void writeMainPath(ConsensusGraphWriter &cgw);
 
     /**
      * @param editScript outputs the editScript (consisting of insertions,
@@ -292,7 +306,7 @@ public:
      *
      * @param f
      */
-    void writeReads(std::ofstream &f);
+    void writeReads(ConsensusGraphWriter &cgw);
 
     /**
      * @brief Write the raw data into tempDir with file names .pos, .genome,
