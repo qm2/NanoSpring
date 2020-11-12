@@ -10,6 +10,7 @@
 #include <functional>
 #include <map>
 #include <set>
+#include <stack>
 #include <utility> // std::pair
 #include <vector>
 
@@ -445,8 +446,9 @@ private:
      * might be deleted. But the newly created edges are guaranteed to need no
      * further pruning.
      * @param e
+     * @param callStack Call stack (must be empty)
      */
-    void walkAndPrune(Edge *e);
+    void walkAndPrune(Edge *e, std::stack<Edge *> &callStack);
 
     /**
      * @brief

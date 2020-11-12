@@ -526,6 +526,9 @@ void ConsensusGraph::removeCycles() {
     auto edgeOnPathEnd = mainPath.edges.end();
     Node *nodeOnPath = edgeOnPath < edgeOnPathEnd ? (*edgeOnPath)->source
                                                   : edgeOnPath[-1]->sink;
+    std::stack<Edge *> walkAndPruneCallStack; 
+    // used for converting recursion to iteration.
+    // Define here to avoid overhead of repeated allocations
     while (true) {
         // Then we iterate over all edges pointing to side nodes that have
         // other edges in
@@ -533,7 +536,7 @@ void ConsensusGraph::removeCycles() {
         // Work with copy to avoid iterator invalidation.
         auto edgesOutCopy = nodeOnPath->edgesOut;
         for (const auto &edgeIt : edgesOutCopy)
-            walkAndPrune(edgeIt.second);
+            walkAndPrune(edgeIt.second, walkAndPruneCallStack);
 
         if (edgeOnPath == edgeOnPathEnd)
             break;
@@ -549,7 +552,7 @@ void ConsensusGraph::removeCycles() {
         // Work with copy to avoid iterator invalidation.
         auto edgesOutCopy = nodeOnPath->edgesOut;
         for (const auto &edgeIt : edgesOutCopy)
-            walkAndPrune(edgeIt.second);
+            walkAndPrune(edgeIt.second, walkAndPruneCallStack);
 
         if (edgeOnPath == mainPath.edges.begin())
             break;
@@ -557,8 +560,7 @@ void ConsensusGraph::removeCycles() {
     }
 }
 
-void ConsensusGraph::walkAndPrune(Edge *e) {
-    std::stack<Edge *> callStack; // converting recursion to iteration
+void ConsensusGraph::walkAndPrune(Edge *e, std::stack<Edge *> &callStack) {
     callStack.push(e);
     while (!callStack.empty()) {
         Edge *curr = callStack.top();
