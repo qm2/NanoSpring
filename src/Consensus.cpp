@@ -27,6 +27,7 @@ void Consensus::generateAndWriteConsensus() {
             ssize_t initialStartPos = cG->startPos;
             ssize_t initialEndPos = cG->endPos;
             const ssize_t len = initialEndPos - initialStartPos;
+            // TODO: Experiment with this
             size_t offset = rD->avgReadLen / 4;
 
             ssize_t curPos = cG->startPos;

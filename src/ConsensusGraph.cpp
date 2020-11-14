@@ -158,8 +158,12 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
                              std::vector<Edit> &editScript,
                              ssize_t &beginOffset, ssize_t &endOffset) {
     auto &originalString = mainPath.path;
-    /// TODO: don't always use endPos for offsetGuess
-    const ssize_t offsetGuess = originalString.size() - endPos + pos;
+    /// We use either the head or tail of mainPath as a reference to obtain an
+    /// offsetGuess
+    const ssize_t offsetGuess =
+        pos + (long)s.size() / 2 < (startPos + endPos) / 2
+            ? pos - startPos
+            : originalString.size() - endPos + pos;
     size_t editDis;
 
     RAItA Abegin = originalString.begin();

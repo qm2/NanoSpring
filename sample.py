@@ -2,6 +2,9 @@ import random
 
 
 def sample(oldfile, newfile, p):
+    """
+    Sample reads from a fastq file at a given probability
+    """
     with open(oldfile, "r") as oldf:
         with open(newfile, "w") as newf:
             while True:
