@@ -17,6 +17,7 @@ void Consensus::generateAndWriteConsensus() {
 
     auto max_thr = omp_get_max_threads();
     std::vector<std::vector<read_t>> numReadsInContig(max_thr);
+    std::vector<std::vector<read_t>> loneReads(max_thr);
     ConsensusGraph *cG = nullptr;
 #pragma omp parallel private(cG)
     {
@@ -55,12 +56,25 @@ void Consensus::generateAndWriteConsensus() {
             cG->writeMainPath(cgw);
             cG->writeReads(cgw);
             numReadsInContig[tid].push_back(cG->getNumReads());
+            if (cG->getNumReads() == 1)
+                loneReads[tid].push_back(cG->readsInGraph.begin()->first);
             delete cG;
         }
     } // pragma omp parallel
 
     // now perform last step, combining files from threads and writing metadata
     finishWriteConsensus(numReadsInContig);
+
+    // print stats about lone reads
+    read_t totalNumLoneReads = 0;
+    std::cout << "LoneReads";
+    for (auto &v: loneReads) {
+        totalNumLoneReads += v.size();
+        for (auto &r: v)
+           std::cout << std::dec << ":" << r; 
+    }
+    std::cout << "\n";
+    std::cout << "#LoneReads = " << totalNumLoneReads << "\n";
 }
 
 void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
