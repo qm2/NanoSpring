@@ -78,7 +78,7 @@ class BSC_CLASS {
     int paramCoder = LIBBSC_CODER_QLFC_STATIC;
     int paramSortingContexts = LIBBSC_CONTEXTS_FOLLOWING;
 
-    int paramEnableParallelProcessing = 1;
+    int paramEnableParallelProcessing = 0;
     int paramEnableMultiThreading = 1;
     int paramEnableFastMode = 1;
     int paramEnableLargePages = 0;
@@ -88,6 +88,7 @@ class BSC_CLASS {
     int paramEnableLZP = 1;
     int paramLZPHashSize = 16;
     int paramLZPMinLen = 128;
+    int paramnumthr = 1;
 
     int paramFeatures() {
         int features =
@@ -193,7 +194,7 @@ class BSC_CLASS {
 
         int numThreads = 1;
         if (paramEnableParallelProcessing) {
-            numThreads = omp_get_max_threads();
+            numThreads = paramnumthr;
             if (numThreads <= nBlocks)
                 paramEnableMultiThreading = 0;
             if (numThreads >= nBlocks)
@@ -236,12 +237,13 @@ class BSC_CLASS {
 #ifdef LIBBSC_OPENMP
 #pragma omp master
 #endif
-                        {
+                        {/*
                             double progress =
                                 (100.0 * (double)BSC_FTELL(fInput)) / fileSize;
                             fprintf(stdout, "\rCompressing %.55s(%02d%%)",
                                     argv[2], (int)progress);
                             fflush(stdout);
+                         */
                         }
 
                         blockOffset = BSC_FTELL(fInput);
@@ -487,11 +489,11 @@ class BSC_CLASS {
 
             bsc_free(buffer);
         }
-
+        /*
         fprintf(stdout, "\r%.55s compressed %.0f into %.0f in %.3f seconds.\n",
                 argv[2], (double)fileSize, (double)BSC_FTELL(fOutput),
                 BSC_CLOCK() - startTime);
-
+        */
         fclose(fInput);
         fclose(fOutput);
     }
@@ -550,7 +552,7 @@ class BSC_CLASS {
 
         int numThreads = 1;
         if (paramEnableParallelProcessing) {
-            numThreads = omp_get_max_threads();
+            numThreads = paramnumthr;
             if (numThreads <= nBlocks)
                 paramEnableMultiThreading = 0;
             if (numThreads >= nBlocks)
@@ -580,12 +582,13 @@ class BSC_CLASS {
 #ifdef LIBBSC_OPENMP
 #pragma omp master
 #endif
-                        {
+                        {/*
                             double progress =
                                 (100.0 * (double)BSC_FTELL(fInput)) / fileSize;
                             fprintf(stdout, "\rDecompressing %.55s(%02d%%)",
                                     argv[2], (int)progress);
                             fflush(stdout);
+                         */
                         }
 
                         BSC_BLOCK_HEADER header = {0, 0, 0};
@@ -774,11 +777,12 @@ class BSC_CLASS {
             exit(1);
         }
 
+        /*
         fprintf(stdout,
                 "\r%.55s decompressed %.0f into %.0f in %.3f seconds.\n",
                 argv[2], (double)fileSize, (double)BSC_FTELL(fOutput),
                 BSC_CLOCK() - startTime);
-
+        */
         fclose(fInput);
         fclose(fOutput);
     }
@@ -836,7 +840,7 @@ class BSC_CLASS {
 #ifdef LIBBSC_OPENMP
         fprintf(
             stdout,
-            "  -t       Disable parallel blocks processing, default: enable\n");
+            "  -t<num_thr>  Number of threads: default 1\n");
         fprintf(
             stdout,
             "  -T       Disable multi-core systems support, default: enable\n");
@@ -848,6 +852,7 @@ class BSC_CLASS {
     }
 
     void ProcessSwitch(char *s) {
+        char *strthr;
         if (*s == 0) {
             ShowUsage();
         }
@@ -971,7 +976,12 @@ class BSC_CLASS {
 
 #ifdef LIBBSC_OPENMP
             case 't':
-                paramEnableParallelProcessing = 0;
+                strthr = s; while ((*s >= '0') && (*s <= '9')) s++;
+                paramnumthr = atoi(strthr);
+                if(paramnumthr == 1)
+                    paramEnableMultiThreading = paramEnableParallelProcessing = 0;
+                else
+                    paramEnableParallelProcessing = 1;
                 break;
             case 'T':
                 paramEnableParallelProcessing = paramEnableMultiThreading = 0;

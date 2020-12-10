@@ -19,7 +19,7 @@ void Decompressor::decompress(const char *inputFileName,
     {
         std::cout << "Extracting tar archive ...";
         std::string tar_command =
-            "tar -C " + tempDir + " -xvf " + inputFileName;
+            "tar -C " + tempDir + " -xf " + inputFileName;
         int tar_status = std::system(tar_command.c_str());
         if (tar_status != 0)
             throw std::runtime_error(
@@ -29,6 +29,7 @@ void Decompressor::decompress(const char *inputFileName,
 
     // bsc Decompress
     {
+        std::cout << "BSC decompression ...";
         boost::filesystem::path tempPath(tempDir);
         boost::filesystem::directory_iterator endIt;
         for (boost::filesystem::directory_iterator it(tempDir); it != endIt;
@@ -50,6 +51,7 @@ void Decompressor::decompress(const char *inputFileName,
                 boost::filesystem::remove(fullPath);
             }
         }
+        std::cout << "BSC decompression done!\n";
     }
 
     unpack();
@@ -73,9 +75,21 @@ void Decompressor::unpack() {
         } else if (line.substr(0, delimPos) == "numContigs") {
             numContigs = std::stol(line.substr(delimPos + 1));
             std::cout << "NumContigs:" << numContigs << std::endl;
+        } else if (line.substr(0, delimPos) == "numThr") {
+            numEncodingThreads = std::stol(line.substr(delimPos + 1));
+            std::cout << "NumEncodingThreads:" << numEncodingThreads << std::endl;
         }
     }
 
+    // since the compressed files are on a per-thread level, we first combine the
+    // files with common extension (TODO: use better solution with parallelized decompression)
+    std::set<std::string> extensions;
+    DirectoryUtils::getAllExtensions(
+            tempDir, std::inserter(extensions, extensions.end()));
+    // Now we combine the files (note delimiter already present so not added here)
+    for (const std::string &ext : extensions)
+        DirectoryUtils::combineFilesWithExt(tempDir + tempFilename, ext, numEncodingThreads, false);
+    
     // Unpack all files in directory with extensions
     boost::filesystem::directory_iterator endIt;
     for (boost::filesystem::directory_iterator it(tempDir); it != endIt; ++it) {

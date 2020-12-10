@@ -15,9 +15,8 @@
 void Consensus::generateAndWriteConsensus() {
     initialize();
 
-    auto max_thr = omp_get_max_threads();
-    std::vector<std::vector<read_t>> numReadsInContig(max_thr);
-    std::vector<std::vector<read_t>> loneReads(max_thr);
+    std::vector<std::vector<read_t>> numReadsInContig(numThr);
+    std::vector<std::vector<read_t>> loneReads(numThr);
     ConsensusGraph *cG = nullptr;
 #pragma omp parallel private(cG)
     {
@@ -215,29 +214,20 @@ bool Consensus::checkRead(ConsensusGraph *cG, read_t read) {
 }
 
 void Consensus::finishWriteConsensus(const std::vector<std::vector<read_t>>& numReadsInContig) {
-    size_t numThreads = numReadsInContig.size();
     size_t size = 0;
-    for (size_t i = 0; i < numThreads; i++)
+    for (size_t i = 0; i < numThr; i++)
         size += numReadsInContig[i].size();
     std::ofstream metaData;
     metaData.open(tempDir + "metaData");
     metaData << "numReads=" << rD->getNumReads() << '\n';
     metaData << "numContigs=" << size << '\n';
+    metaData << "numThr=" << numThr << '\n';
     metaData << "numReadsInContig=";
-    for (size_t i = 0; i < numThreads; ++i)
+    for (size_t i = 0; i < numThr; ++i)
         for (size_t j = 0; j < numReadsInContig[i].size(); ++j)
             metaData << numReadsInContig[i][j] << ":";
     metaData << '\n';
     metaData.close();
-
-    std::set<std::string> extensions;
-    DirectoryUtils::getAllExtensions(
-        tempDir, std::inserter(extensions, extensions.end()));
-
-    // Now we combine the files (note delimiter already present so not added here)
-    for (const std::string &ext : extensions) {
-        DirectoryUtils::combineFilesWithExt(tempDir + tempFileName, ext, numThreads, false);
-    }
 }
 
 ConsensusGraph *Consensus::createGraph() {

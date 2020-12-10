@@ -35,6 +35,8 @@ public:
 
     std::string tempFileName = "Contig";
 
+    int numThr;
+
     /**
      * @brief Generates consensus, calls writeReads and writeMainPath on each 
      * of the consensus graphs, and combines their output

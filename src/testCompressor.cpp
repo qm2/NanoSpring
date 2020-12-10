@@ -12,15 +12,19 @@
 
 int main(int argc, char **argv) {
     omp_set_nested(1);
-    // omp_set_num_threads(1);
+
+
     // if (!fork())
     //     return -1;
     std::srand(unsigned(std::time(0)));
     // ProfilerStart("testCompressor.prof");
     if (argc < 2) {
-        std::cout << "Usage ./testCompressor filename" << std::endl;
+        std::cout << "Usage ./testCompressor filename [numThr]" << std::endl;
         return 1;
     }
+    int numThr = omp_get_max_threads();
+    if (argc == 3)
+       numThr = atoi(argv[2]); 
     {
         size_t k, n, overlapSketchThreshold, editSlack;
         double maxErrorRate;
@@ -50,7 +54,7 @@ int main(int argc, char **argv) {
             compressor.filetype = ReadData::Filetype::READ;
         else if (!extension.compare("fastq"))
             compressor.filetype = ReadData::Filetype::FASTQ;
-        compressor.compress(argv[1]);
+        compressor.compress(argv[1], numThr);
     }
     // ProfilerStop();
 }

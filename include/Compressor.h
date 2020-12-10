@@ -30,7 +30,7 @@ public:
      *
      * @param inputFileName
      */
-    void compress(const char *inputFileName) const;
+    void compress(const char *inputFileName, const int numThr) const;
 };
 
 #endif /* D5822833_5BFC_4986_B7F9_20EEA68B3568 */

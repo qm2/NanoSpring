@@ -10,7 +10,8 @@
 #include <fstream>
 #include <iostream>
 
-void Compressor::compress(const char *inputFileName) const {
+void Compressor::compress(const char *inputFileName, const int numThr) const {
+    omp_set_num_threads(numThr);
     ReadData rD;
     rD.loadFromFile(inputFileName, filetype);
 
@@ -41,6 +42,7 @@ void Compressor::compress(const char *inputFileName) const {
         consensus.aligner = aligner;
         consensus.tempDir = tempDir;
         consensus.tempFileName = tempFileName;
+        consensus.numThr = numThr;
 
         consensus.generateAndWriteConsensus();
     }
@@ -51,25 +53,33 @@ void Compressor::compress(const char *inputFileName) const {
 #ifdef DEBUG
         std::cout << "bsc compression starts" << std::endl;
 #endif
-        boost::filesystem::directory_iterator endIt;
-        for (boost::filesystem::directory_iterator it(tempDir); it != endIt;
-             ++it) {
-            if (boost::filesystem::is_regular_file(*it)) {
-                boost::filesystem::path fullPath = it->path();
-                std::string filename = fullPath.filename().string();
-                // We only compress files with extensions
-                if (filename.find('.') == std::string::npos)
-                    continue;
-                std::string outPath = fullPath.string() + "Compressed";
-                bsc::BSC_compress(fullPath.string().c_str(), outPath.c_str());
+        std::set<std::string> extensions;
+        DirectoryUtils::getAllExtensions(tempDir, std::inserter(extensions, extensions.end()));
+        for (const std::string &ext : extensions) {
+            std::vector<size_t> uncompressedSizes(numThr);
+            std::vector<size_t> compressedSizes(numThr);
+#pragma omp parallel num_threads(numThr)
+#pragma omp for
+            for (int i = 0; i < numThr; i++) {
+                std::string fullPath = tempDir + tempFileName + std::to_string(i) + ext;
+                std::string outPath = fullPath + "Compressed";
+                bsc::BSC_compress(fullPath.c_str(), outPath.c_str());
+                uncompressedSizes[i] = boost::filesystem::file_size(fullPath);
+                compressedSizes[i] = boost::filesystem::file_size(outPath);
                 boost::filesystem::remove(fullPath);
             }
+            size_t totalUncompressed = 0, totalCompressed = 0;
+            for (int i = 0; i < numThr; i++) {
+                totalUncompressed += uncompressedSizes[i];
+                totalCompressed += compressedSizes[i];
+            }
+            std::cout << "Extension " << ext << ": Compressed " << totalUncompressed << " bytes to " << totalCompressed << " bytes\n";
         }
     }
 
     std::cout << "Creating tar archive ..." << std::endl;
     std::string tar_command =
-        "tar -cvf " + outputFileName + " -C " + tempDir + " . ";
+        "tar -cf " + outputFileName + " -C " + tempDir + " . ";
     int tar_status = std::system(tar_command.c_str());
     if (tar_status)
         throw std::runtime_error(

@@ -18,9 +18,10 @@ public:
     void decompress(const char *inputFileName, const char *outputFileName);
 
 private:
-    // Number of contigs and number of reads; initialized by bscDecompress
+    // Number of contigs, number of reads and number of encoding threads; initialized by bscDecompress
     size_t numContigs;
     read_t numReads;
+    size_t numEncodingThreads;
 
     /**
      * @brief Unpack the files in tempDir; i.e., break it up by ".\n"
