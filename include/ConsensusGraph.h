@@ -145,7 +145,7 @@ public:
 class Path {
 public:
     std::deque<Edge *> edges;
-    std::deque<char> path;
+    std::vector<char> path;
 
     /**
      * Returns the average weight of the edges on path
@@ -185,7 +185,7 @@ public:
  */
 class ConsensusGraph {
 public:
-    typedef std::deque<char>::const_iterator RAItA;
+    typedef const char *RAItA;
     typedef const char *RAItB;
     typedef StringAligner<RAItA, RAItB> StringAligner_t;
 

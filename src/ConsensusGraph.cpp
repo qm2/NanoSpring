@@ -166,7 +166,7 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
             : originalString.size() - endPos + pos;
     size_t editDis;
 
-    RAItA Abegin = originalString.begin();
+    RAItA Abegin = originalString.data();
     RAItA Aend = Abegin + originalString.size();
     RAItB Bbegin = s.c_str();
     RAItB Bend = Bbegin + s.length();
@@ -461,6 +461,10 @@ Path &ConsensusGraph::calculateMainPathGreedy() {
     }
 
     // Extend to the left
+    // NOTE: I have changed mainPath.path to vector to spped up alignment,
+    // but that means the code below is not efficient (inserting to start
+    // of vector). Fortunately, this is currently a very small contributor
+    // to the total time. But we might want to fix this if issues crop up later.
     {
         Node *currentNode = leftMostUnchangedNode;
         assert(currentNode->onMainPath);
