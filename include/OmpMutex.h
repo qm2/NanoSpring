@@ -12,7 +12,7 @@ class OmpMutex {
 public:
     void lock();
     void unlock();
-    void test();
+    bool try_lock();
     OmpMutex();
     ~OmpMutex();
 
@@ -29,7 +29,7 @@ class OmpNestMutex {
 public:
     void lock();
     void unlock();
-    void test();
+    bool try_lock();
     OmpNestMutex();
     ~OmpNestMutex();
 

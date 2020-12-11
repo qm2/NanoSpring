@@ -23,7 +23,9 @@ void Consensus::generateAndWriteConsensus() {
         auto tid = omp_get_thread_num();
         std::string filePrefix = tempDir + tempFileName + std::to_string(tid);
         ConsensusGraphWriter cgw(filePrefix);
-        while ((cG = createGraph())) {
+        read_t firstUnaddedRead = 0; 
+        // guarantee that all reads < firstUnaddedRead have been picked
+        while ((cG = createGraph(firstUnaddedRead))) {
             ssize_t initialStartPos = cG->startPos;
             ssize_t initialEndPos = cG->endPos;
             const ssize_t len = initialEndPos - initialStartPos;
@@ -108,7 +110,7 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
         // Try to add them one by one
         for (const auto r : results) {
             // std::cout << "Working on read " << r << '\n';
-            if (!addRead(r))
+            if (inGraph[r])
                 continue;
             ssize_t relPos;
             std::string readStr;
@@ -120,17 +122,35 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
                 readStr = rD->getRead(r);
 
             if (!rA->align(originalString, readStr, relPos)) {
-                putReadBack(r);
                 continue;
             }
 
             ssize_t pos = curPos + relPos;
             std::vector<Edit> editScript;
             ssize_t beginOffset, endOffset;
-            if (!cG->addRead(readStr, pos, editScript, beginOffset,
-                             endOffset)) {
-                putReadBack(r);
+            if (!readStatusLock[r%numLocks].try_lock()) {
+                // we only try_lock here since missing a read
+                // is not a major issue and lock contention should be a rare event anyway.
+                // On the other hand, waiting for another thread to finish alignment is not
+                // worthwhile.
                 continue;
+            } else {
+                // check again that read is available (variables flushed after lock is set)
+                if (inGraph[r]) {
+                    // read already taken, continue with next read
+                    readStatusLock[r%numLocks].unlock();
+                    continue;
+                }
+                if (!cG->addRead(readStr, pos, editScript, beginOffset,
+                                 endOffset)) {
+                    // read doesn't align, continue with next read
+                    readStatusLock[r%numLocks].unlock();
+                    continue;
+                } else {
+                    // read added to graph
+                    inGraph[r] = true;
+                    readStatusLock[r%numLocks].unlock();
+                }
             }
 #ifdef CHECKS
             {
@@ -230,53 +250,40 @@ void Consensus::finishWriteConsensus(const std::vector<std::vector<read_t>>& num
     metaData.close();
 }
 
-ConsensusGraph *Consensus::createGraph() {
-    std::lock_guard<OmpNestMutex> lg(readStatusLock);
-    read_t read;
+ConsensusGraph *Consensus::createGraph(read_t &firstUnaddedRead) {
+    // Note: firstUnaddedRead is local to the thread, and is a lower bound
+    // on the actual first unadded read.
+    read_t read = firstUnaddedRead;
     if (!getRead(read))
         return nullptr;
     ConsensusGraph *cG = new ConsensusGraph(aligner);
     cG->initialize(rD->getRead(read), read, 0);
     cG->calculateMainPathGreedy();
+    firstUnaddedRead = read + 1;
     return cG;
 }
 
 void Consensus::initialize() {
     numReads = rD->getNumReads();
     inGraph.resize(numReads, false);
-    firstUnaddedRead = 0;
-}
-
-bool Consensus::hasReadsLeft() {
-    std::lock_guard<OmpNestMutex> lg(readStatusLock);
-    return firstUnaddedRead < numReads;
+    readStatusLock.resize(numLocks);
 }
 
 bool Consensus::getRead(read_t &read) {
-    std::lock_guard<OmpNestMutex> lg(readStatusLock);
-    if (firstUnaddedRead >= numReads)
+    if (read >= numReads)
         return false;
-    read = firstUnaddedRead++;
-    inGraph[read] = true;
-    while (firstUnaddedRead < numReads && inGraph[firstUnaddedRead])
-        firstUnaddedRead++;
-    return true;
-}
-
-void Consensus::putReadBack(read_t read) {
-    std::lock_guard<OmpNestMutex> lg(readStatusLock);
-    inGraph[read] = false;
-    firstUnaddedRead = std::min(read, firstUnaddedRead);
-}
-
-bool Consensus::addRead(read_t read) {
-    std::lock_guard<OmpNestMutex> lg(readStatusLock);
-    if (inGraph[read])
-        return false;
-    inGraph[read] = true;
-    while (firstUnaddedRead < numReads && inGraph[firstUnaddedRead])
-        firstUnaddedRead++;
-    return true;
+    while (read < numReads) {
+        if (!inGraph[read]) {
+            std::lock_guard<OmpMutex> lg(readStatusLock[read%numLocks]);
+            // check once again inside locked region (since variables are flushed)
+            if (!inGraph[read]) {
+                inGraph[read] = true;
+                return true;
+            }
+        }
+        read++;
+    }
+    return false;
 }
 
 Consensus::Consensus() {}
