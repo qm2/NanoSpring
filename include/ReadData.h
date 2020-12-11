@@ -23,6 +23,9 @@ public:
     /** The average length of the reads **/
     size_t avgReadLen;
 
+    /** The length of the longest read **/
+    size_t maxReadLen;
+
     /**
      * @brief Loads the read data from a file (.reads format)
      *

@@ -29,6 +29,7 @@ void ReadData::loadFromReadFile(const char *fileName) {
     std::ifstream infile(fileName);
     std::string line;
     size_t totalNumBases = 0;
+    maxReadLen = 0;
     while (std::getline(infile, line)) {
         //        std::cout << line << std::endl;
         size_t index = line.find(':');
@@ -51,6 +52,8 @@ void ReadData::loadFromReadFile(const char *fileName) {
             readData.push_back(std::move(ptr));
         }
         totalNumBases += readData.back()->size();
+        if (readData.back()->size() > maxReadLen)
+            maxReadLen = readData.back()->size();
         numReads++;
         if (numReads == std::numeric_limits<read_t>::max()) {
             throw std::runtime_error(
@@ -62,6 +65,7 @@ void ReadData::loadFromReadFile(const char *fileName) {
 #ifdef DEBUG
     std::cout << "numReads " << numReads << std::endl;
     std::cout << "avgReadLen " << avgReadLen << std::endl;
+    std::cout << "maxReadLen " << maxReadLen << std::endl;
 #endif
 }
 
@@ -75,6 +79,7 @@ void ReadData::loadFromFastqFile(const char *fileName) {
     std::ifstream infile(fileName);
     std::string line;
     size_t totalNumBases = 0;
+    maxReadLen = 0;
     while (std::getline(infile, line)) {
         std::getline(infile, line);
         {
@@ -89,6 +94,8 @@ void ReadData::loadFromFastqFile(const char *fileName) {
         std::getline(infile, line);
         std::getline(infile, line);
         totalNumBases += readData.back()->size();
+        if (readData.back()->size() > maxReadLen)
+            maxReadLen = readData.back()->size();
         numReads++;
         if (numReads == std::numeric_limits<read_t>::max()) {
             throw std::runtime_error(
@@ -100,6 +107,7 @@ void ReadData::loadFromFastqFile(const char *fileName) {
 #ifdef DEBUG
     std::cout << "numReads " << numReads << std::endl;
     std::cout << "avgReadLen " << avgReadLen << std::endl;
+    std::cout << "maxReadLen " << maxReadLen << std::endl;
 #endif
 }
 

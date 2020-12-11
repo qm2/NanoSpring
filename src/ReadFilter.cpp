@@ -50,9 +50,18 @@ void MinHashReadFilter::initialize(ReadData &rD) {
 
     generateRandomNumbers(n);
 
-#pragma omp parallel for
-    for (read_t i = 0; i < numReads; ++i)
-        string2Sketch(rD.getRead(i), sketches + i * n);
+    size_t maxNumkMers = rD.maxReadLen - k + 1;
+#pragma omp parallel 
+    {
+        // We define these vectors here rather than allocate inside string2Sketch
+        // to avoid thread contention during repeated allocation and deallocation.
+        // Note that memory allocation typically leads to waits when multiple threads
+        // do it at the same time.
+        std::vector<kMer_t> kMersVec(maxNumkMers), hashesVec(maxNumkMers*n);
+#pragma omp for
+        for (read_t i = 0; i < numReads; ++i)
+            string2Sketch(rD.getRead(i), sketches + i * n, kMersVec, hashesVec);
+    } // pragma omp parallel
 
     populateHashTables();
 }
@@ -107,7 +116,9 @@ void MinHashReadFilter::getFilteredReads(const std::string &s,
                                          std::vector<read_t> &results) {
     results.clear();
     kMer_t sketch[n];
-    string2Sketch(s, sketch);
+    size_t numKmers = s.size() - k + 1;
+    std::vector<kMer_t> kMersVec(numKmers), hashesVec(numKmers*n);
+    string2Sketch(s, sketch, kMersVec, hashesVec);
     getFilteredReads(sketch, results);
 }
 
@@ -218,16 +229,14 @@ void MinHashReadFilter::calcSketch(const size_t numKMers, const size_t n,
     }
 }
 
-void MinHashReadFilter::string2Sketch(const std::string &s, kMer_t *sketch) {
+void MinHashReadFilter::string2Sketch(const std::string &s, kMer_t *sketch, std::vector<kMer_t> &kMers, std::vector<kMer_t> &hashes) {
     ssize_t numKMers = s.length() - k + 1;
     if (numKMers < 0)
         return;
-    std::unique_ptr<kMer_t[]> kMers(new kMer_t[numKMers]);
-    string2KMers(s, k, kMers.get());
-    std::unique_ptr<kMer_t[]> hashes(new kMer_t[numKMers * n]);
+    string2KMers(s, k, kMers.begin());
     for (size_t i = 0; i < (size_t)numKMers; ++i)
-        hashKMer(kMers[i], hashes.get() + i * n);
-    calcSketch(numKMers, n, hashes.get(), sketch);
+        hashKMer(kMers[i], hashes.begin() + i * n);
+    calcSketch(numKMers, n, hashes.begin(), sketch);
 }
 
 MinHashReadFilter::~MinHashReadFilter() {

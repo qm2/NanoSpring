@@ -88,8 +88,13 @@ public:
      *
      * @param s
      * @param sketch
+     * @param kMers preallocated for speed during multithreaded initialization 
+     * (size should be at least s.size()-k+1)
+     * @param hashes preallocated for speed during multithreaded initialization
+     * (size should be at least n*(s.size()-k+1))
      */
-    void string2Sketch(const std::string &s, kMer_t *sketch);
+    void string2Sketch(const std::string &s, kMer_t *sketch, 
+                    std::vector<kMer_t> &kMers, std::vector<kMer_t> &hashes);
 
     /**
      * @brief Calculates n hashes of kMer and stores them in hashes
