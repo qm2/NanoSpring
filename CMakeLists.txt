@@ -68,6 +68,40 @@ if(OpenMP_CXX_FOUND)
 endif()
 
 #######################################################
+#minimap2
+add_library(minimap2
+    STATIC
+        minimap2/kthread.c
+        minimap2/kalloc.c
+        minimap2/ksw2_extz2_sse.c
+        minimap2/ksw2_extd2_sse.c
+        minimap2/ksw2_exts2_sse.c
+        minimap2/misc.c
+        minimap2/bseq.c
+        minimap2/sketch.c
+        minimap2/sdust.c
+        minimap2/options.c
+        minimap2/index.c
+        minimap2/chain.c
+        minimap2/align.c
+        minimap2/hit.c
+        minimap2/map.c
+        minimap2/format.c
+        minimap2/pe.c
+        minimap2/esterr.c
+        minimap2/splitidx.c
+        minimap2/ksw2_ll_sse.c
+)
+
+target_include_directories(minimap2 
+    PRIVATE minimap2)
+
+target_compile_options(minimap2 
+    PRIVATE 
+    -g -Wall -O2 -Wc++-compat
+    )
+
+#######################################################
 # the NanoporeCompressionLib library
 add_library(NanoporeCompressionLib 
     STATIC 
@@ -112,7 +146,8 @@ add_library(NanoporeCompressionLib
 
 target_include_directories(NanoporeCompressionLib 
     PUBLIC include src
-    PRIVATE libbsc)
+    PRIVATE libbsc
+    PRIVATE minimap2)
 
 target_compile_options(NanoporeCompressionLib 
     PRIVATE 
@@ -140,6 +175,7 @@ target_compile_definitions(NanoporeCompressionLib PUBLIC "$<$<CONFIG:RelWithDebI
 target_link_libraries(NanoporeCompressionLib 
     PRIVATE 
         libbsc
+        minimap2
         Boost::filesystem
     )
 
