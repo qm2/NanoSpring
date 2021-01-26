@@ -7,3 +7,6 @@
 [submodule "minimap2"]
 	path = minimap2
 	url = https://github.com/lh3/minimap2
+[submodule "build/minimap2"]
+	path = build/minimap2
+	url = https://github.com/lh3/minimap2

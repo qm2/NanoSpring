@@ -11,6 +11,7 @@
 #include <memory>
 #include <mutex>
 #include <set>
+#include "minimap.h"
 
 void Consensus::generateAndWriteConsensus() {
     initialize();

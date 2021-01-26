@@ -6,6 +6,8 @@
 #include <fstream>
 #include <iostream>
 #include <stack>
+#include <zlib.h>
+#include "minimap.h"
 
 Edge::Edge(Node *source, Node *sink, read_t read) : source(source), sink(sink) {
     count = 1;
@@ -170,8 +172,10 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
     RAItA Aend = Abegin + originalString.size();
     RAItB Bbegin = s.c_str();
     RAItB Bend = Bbegin + s.length();
-    bool success = aligner->align(Abegin, Aend, Bbegin, Bend, offsetGuess,
-                                  beginOffset, endOffset, editScript, editDis);
+    // bool success = aligner->align(Abegin, Aend, Bbegin, Bend, offsetGuess,
+    //                               beginOffset, endOffset, editScript, editDis);
+    mm_idx_t * idx = mm_idx_str(15, 20, true, 20, originalString.size(), &Abegin, NULL);
+    bool success =1;
     //    std::cout << "success ? " << success << std::endl;
     if (!success) {
         // std::cout << "Failed to add"

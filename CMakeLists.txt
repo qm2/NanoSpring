@@ -95,10 +95,13 @@ add_library(minimap2
 
 target_include_directories(minimap2 
     PRIVATE minimap2)
+    
+# link with dependencies
+target_link_libraries(minimap2 -lz -ldl -lm -lpthread)
 
 target_compile_options(minimap2 
     PRIVATE 
-    -g -Wall -O2 -Wc++-compat
+    -g -Wall -O2 -Wc++-compat 
     )
 
 #######################################################
@@ -216,3 +219,6 @@ target_link_libraries(testNotOnMainPath PRIVATE NanoporeCompressionLib profiler)
 
 add_executable(testDisconnected src/testDisconnected.cpp)
 target_link_libraries(testDisconnected PRIVATE NanoporeCompressionLib profiler)
+
+
+
