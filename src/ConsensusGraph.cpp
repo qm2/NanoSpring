@@ -175,24 +175,53 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
     // bool success = aligner->align(Abegin, Aend, Bbegin, Bend, offsetGuess,
     //                               beginOffset, endOffset, editScript, editDis);
     int hits;
+    unsigned int i;
     //initialize the local buffer
     mm_tbuf_t *b = mm_tbuf_init();
     //initialize the mapopt and iopt
     mm_idxopt_t iopt;
     mm_mapopt_t mopt;
     mm_set_opt(0, &iopt, &mopt);
+    mopt.flag |= MM_F_CIGAR;
     //call the mm_idx_str to return the index for the reference read    
     // std::cout<<"k:"<<iopt.k<<"w:"<<iopt.w<<std::endl;
     // std::cout<<"flag:"<<iopt.flag<<"bits:"<<iopt.bucket_bits<<hits<<std::endl;      
     //the defalut parameters are: 15 10 false 140
     mm_idx_t * idx = mm_idx_str(15, 10, false, 140, 1, &Abegin, NULL);
+    mm_mapopt_update(&mopt, idx);
     //use the index to align with the current read
     mm_reg1_t* reg = mm_map(idx, s.length(), s.c_str(), &hits, b, &mopt, NULL);
-    // for(int i =0; i< (reg->p)->n_cigar; i++){
-    //     std::cout<<(reg->p)->n_cigar<<std::endl;
-    // }      
-    std::cout<<"number of hits: "<<hits<<std::endl;   
-
+    editScript.clear();
+	for (i = 0; i < hits; ++i) { // traverse hits and print them out
+		mm_reg1_t *r = &reg[i];
+		assert(r->p); 
+		for (i = 0; i < r->p->n_cigar; ++i){ // IMPORTANT: this gives the CIGAR in the aligned regions. NO soft/hard clippings!
+			std::cout<< (r->p->cigar[i]>>4) << "MIDNSH"[r->p->cigar[i]&0xf];
+			switch("MIDNSH"[r->p->cigar[i]&0xf]) {
+    			case 'M':
+      				editScript.push_back(Edit(SAME, r->p->cigar[i]>>4));
+      				break; 
+   				case 'I':
+      				editScript.push_back(Edit(INSERT, r->p->cigar[i]>>4));      				
+      				break; 
+   				case 'D':
+      				editScript.push_back(Edit(DELETE, r->p->cigar[i]>>4));      				
+      				break; 
+			    default: 
+        			continue;
+        	}
+        }
+		std::cout<<std::endl;
+        //calculate the edit distance
+		editDis = r->blen - r->mlen + r->p->n_ambi;
+		std::cout<<editDis<<std::endl;		
+		free(r->p);
+	}
+	editScript.shrink_to_fit();
+	free(reg);  
+	mm_tbuf_destroy(b);
+	mm_idx_destroy(idx);       
+ 
     bool success =1;
     //    std::cout << "success ? " << success << std::endl;
     if (!success) {
