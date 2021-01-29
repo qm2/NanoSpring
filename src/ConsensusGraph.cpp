@@ -162,6 +162,7 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
     auto &originalString = mainPath.path;
     /// We use either the head or tail of mainPath as a reference to obtain an
     /// offsetGuess
+    //everything shifted by the startPos 
     const ssize_t offsetGuess =
         pos + (long)s.size() / 2 < (startPos + endPos) / 2
             ? pos - startPos
@@ -175,41 +176,88 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
     // bool success = aligner->align(Abegin, Aend, Bbegin, Bend, offsetGuess,
     //                               beginOffset, endOffset, editScript, editDis);
     int hits;
-    unsigned int i;
+    bool success = true;
     //initialize the local buffer
     mm_tbuf_t *b = mm_tbuf_init();
     //initialize the mapopt and iopt
     mm_idxopt_t iopt;
     mm_mapopt_t mopt;
+    //0 correpons to map-ont
     mm_set_opt(0, &iopt, &mopt);
     mopt.flag |= MM_F_CIGAR;
     //call the mm_idx_str to return the index for the reference read    
     // std::cout<<"k:"<<iopt.k<<"w:"<<iopt.w<<std::endl;
     // std::cout<<"flag:"<<iopt.flag<<"bits:"<<iopt.bucket_bits<<hits<<std::endl;      
-    //the defalut parameters are: 15 10 false 140
-    mm_idx_t * idx = mm_idx_str(15, 10, false, 140, 1, &Abegin, NULL);
+    //the defalut parameters are: 15 10 false 14
+    mm_idx_t * idx = mm_idx_str(15, 10, false, 14, 1, &Abegin, NULL);
     mm_mapopt_update(&mopt, idx);
     //use the index to align with the current read
+    //we only want forward matches: use rev in mm_reg1_t
     mm_reg1_t* reg = mm_map(idx, s.length(), s.c_str(), &hits, b, &mopt, NULL);
     editScript.clear();
-	for (i = 0; i < hits; ++i) { // traverse hits and print them out
-		mm_reg1_t *r = &reg[i];
+	//experiment how many hits there are
+	if(hits > 0) { 
+        //if we have multiple hits, just stick with first hit
+		mm_reg1_t *r = &reg[0];
 		assert(r->p); 
-		for (i = 0; i < r->p->n_cigar; ++i){ // IMPORTANT: this gives the CIGAR in the aligned regions. NO soft/hard clippings!
-			std::cout<< (r->p->cigar[i]>>4) << "MIDNSH"[r->p->cigar[i]&0xf];
-			switch("MIDNSH"[r->p->cigar[i]&0xf]) {
+		//qpos is the current position on the query read
+		//rpos is the current position on the reference read
+		int qpos = r->qs;
+		int rpos = r->rs;
+		unsigned int j, k;
+		unsigned int count_same;
+		int i;
+    	beginOffset = r->rs - r->qs;
+    	endOffset = (s.length()-r->qe) - (originalString.size()-r->re); 
+		//treat the head of the read as insertions
+		for (i = 0; i < r->qs; ++i){
+      		editScript.push_back(Edit(INSERT, s[i]));             
+		}
+		for (j = 0; j < r->p->n_cigar; ++j){ // IMPORTANT: this gives the CIGAR in the aligned regions. NO soft/hard clippings!
+			//std::cout<< (r->p->cigar[j]>>4) << "MIDNSH"[r->p->cigar[j]&0xf];
+			switch("MIDNSH"[r->p->cigar[j]&0xf]) {
     			case 'M':
-      				editScript.push_back(Edit(SAME, r->p->cigar[i]>>4));
+    			    //fix: handle the substitute and same differently
+    			    count_same = 0;
+      				for(k=0; k<r->p->cigar[j]>>4;k++){
+                        if(s[qpos] == Abegin[rpos]){
+                    		count_same++;
+                        }
+                        else{
+      				    	editScript.push_back(Edit(SAME, count_same));
+      				    	count_same = 0;
+      				    	//add the substitute as one insert and one delete
+      				    	editScript.push_back(Edit(DELETE,Abegin[rpos]));
+                            editScript.push_back(Edit(INSERT,s[qpos]));                           	
+                        }
+      					qpos++;
+        	            rpos++;
+      				}
+      				//check if we need to push the "same" again
+      				if(count_same!=0){
+      				    editScript.push_back(Edit(SAME, count_same));      					
+      				}
       				break; 
    				case 'I':
-      				editScript.push_back(Edit(INSERT, r->p->cigar[i]>>4));      				
+      				for(k=0; k<r->p->cigar[j]>>4;k++){
+      					editScript.push_back(Edit(INSERT, s[qpos])); 
+      					qpos++; 
+      				}   				
       				break; 
    				case 'D':
-      				editScript.push_back(Edit(DELETE, r->p->cigar[i]>>4));      				
+      				for(k=0; k<r->p->cigar[j]>>4;k++){
+      					editScript.push_back(Edit(DELETE, Abegin[rpos])); 
+      			      	rpos++; 
+      				}    	   				
       				break; 
 			    default: 
-        			continue;
-        	}
+			        throw std::runtime_error("Bad things happening");
+        	}           
+		}
+		//treat the tail of the read as insertions
+		for (i = r->qe + 1; i < s.length(); ++i){
+      		editScript.push_back(Edit(INSERT, s[i]));  
+
         }
 		std::cout<<std::endl;
         //calculate the edit distance
@@ -217,12 +265,19 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
 		std::cout<<editDis<<std::endl;		
 		free(r->p);
 	}
+	else{
+		//return fail when there are not hits
+		success = false;
+	}
+    //return the correct beginOffset and endOffset   
 	editScript.shrink_to_fit();
 	free(reg);  
 	mm_tbuf_destroy(b);
 	mm_idx_destroy(idx);       
- 
-    bool success =1;
+    //number of hits
+    //edit distance as threshold
+    //length of alignment as fraction
+    //DP alignment score
     //    std::cout << "success ? " << success << std::endl;
     if (!success) {
         // std::cout << "Failed to add"
