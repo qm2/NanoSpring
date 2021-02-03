@@ -258,7 +258,7 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
         // - If endOffset is -ve, we need to add the soft-clipped bases at end to the editScript 
         //   as insertions. If endOffset is +ve, these bases will be automatically added in 
         //   the graph in updateGraph function, so we do not add them to editScript.
-        
+
     	beginOffset = r->rs - r->qs;
     	endOffset = (s.length()-r->qe) - (originalString.size()-r->re); 
 		//treat the head of the read as insertions
@@ -276,10 +276,11 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
                     		count_same++;
                         }
                         else{
-      				    	editScript.push_back(Edit(SAME, count_same));
-      				    	count_same = 0;
+                            if (count_same > 0)
+      				    	    editScript.push_back(Edit(SAME, count_same));
+      				    	count_same = 0; // reset count_same
       				    	//add the substitute as one insert and one delete
-      				    	editScript.push_back(Edit(DELETE,Abegin[rpos]));
+                            editScript.push_back(Edit(DELETE,Abegin[rpos]));
                             editScript.push_back(Edit(INSERT,s[qpos]));                           	
                         }
       					qpos++;
