@@ -27,8 +27,8 @@ void Consensus::generateAndWriteConsensus() {
         read_t firstUnaddedRead = 0; 
         // guarantee that all reads < firstUnaddedRead have been picked
         while ((cG = createGraph(firstUnaddedRead))) {
-            ssize_t initialStartPos = cG->startPos;
-            ssize_t initialEndPos = cG->endPos;
+            ssize_t initialStartPos = cG->startPos; // simply 0
+            ssize_t initialEndPos = cG->endPos; // 
             const ssize_t len = initialEndPos - initialStartPos;
             // TODO: Experiment with this
             size_t offset = rD->avgReadLen / 4;

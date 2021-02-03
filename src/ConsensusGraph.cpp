@@ -135,6 +135,7 @@ ConsensusGraphWriter::ConsensusGraphWriter(const std::string &filePrefix) {
 
 void ConsensusGraph::initialize(const std::string &seed, read_t readId,
                                 long pos) {
+    // pos is zero here                                
     size_t len = seed.length();
     Node *currentNode = createNode(seed[0]);
     // We create a read that points to this node
@@ -152,21 +153,45 @@ void ConsensusGraph::initialize(const std::string &seed, read_t readId,
         createEdge(currentNode, nextNode, readId);
         currentNode = nextNode;
     }
-    startPos = pos;
-    endPos = pos + 1;
+    startPos = pos; // = 0
+    endPos = pos + 1; 
+    // endPos is set to pos+1=1 here because we only inserted one base to mainPath
+    // Rest will be inserted later when calculateMainPathGreedy is called
 }
 
 bool ConsensusGraph::addRead(const std::string &s, long pos,
                              std::vector<Edit> &editScript,
                              ssize_t &beginOffset, ssize_t &endOffset) {
+    // General comments: 
+    // 1. The whole idea behind startPos, endPos and Read.pos in ConsensusGraph
+    //    is to provide a reference point for the main path when looking for the next 
+    //    read in addRelatedReads in Consensus.cpp. This is needed because we extend the 
+    //    mainPath to the left in some cases, and so curPos in Consensus::addRelatedReads
+    //    doesn't make sense unless we offset it by startPos which essentially tells us
+    //    where the current start position of mainPath is wrt to the start of the first read
+    //    in the contig (so startPos is always <=0). endPos is the end of the mainPath wrt
+    //    the start of the first read (e.g., it is equal to the length of the first read at 
+    //    the very start of the contig when there is only one read). It generally increases 
+    //    as we add reads to the right. endPos seems less important for us. Finally, for each 
+    //    read in the graph, there is a pos variable (0 for first read) which tells us roughly 
+    //    where on the mainPath the read lies (it is actually decided in Consensus::addRelatedReads
+    //    itself after the sort-merge procedure). The only use for this pos variable seems 
+    //    to be for computation for endPos and startPos in calculateMainPathGreedy after the 
+    //    new read is added in. The pos variable is also defined wrt the start of the first read.
+
+
     auto &originalString = mainPath.path;
     /// We use either the head or tail of mainPath as a reference to obtain an
     /// offsetGuess
-    //everything shifted by the startPos 
+
     const ssize_t offsetGuess =
         pos + (long)s.size() / 2 < (startPos + endPos) / 2
             ? pos - startPos
-            : originalString.size() - endPos + pos;
+            : originalString.size() - endPos + pos; 
+    // can remove above line for minimap case
+    // TODO: can we remove the Read.pos, startPos, endPos variables in the minimap case 
+    //       to help simplify things significantly?
+
     size_t editDis;
 
     RAItA Abegin = originalString.data();
@@ -207,6 +232,33 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
 		unsigned int j, k;
 		unsigned int count_same;
 		int i;
+
+        // TODO: fix below process to create editScript
+        // See comments in ConsensusGraph::updateGraph for its high-level functioning
+
+        // Based on my understanding the correct approach would be something like this:
+        // - beginOffset - this represents where the alignment starts on the reference 
+        //   (can be +ve or -ve). So if r->rs is +ve then beginOffset is simply r->rs. 
+        //   On the other hand if r->rs = 0 (so there is part of read to left), beginOffset
+        //   is -r->qs (that's how much read is shifted to left wrt reference).
+        // - Now if r->rs is +ve, then we need to add the soft clipped bases as insertions in
+        //   editScript. When r->rs = 0 (and hence beginOffset is -ve), the first 
+        //   |beginOffset| bases in the read (which are the soft clipped bases) will be added
+        //   to the graph in updateGraph directly. So we don't add them to editScript in this 
+        //   case.
+        // - endOffset - this represents where the alignment ends on the reference wrt end of 
+        //   reference. So if r->re < originalString.size() (i.e., the alignment ends 
+        //   before the last base in reference), endOffset is -ve and equal to 
+        //   (r->re-originalString.size()). If r->re == originalString.size(), the read alignment 
+        //   potentially extends beyond the end of reference, and endOffset is +ve and equal to 
+        //   (s.length()-r->qe). 
+        //   {WARNING: I'm assuming r->re & r->qe follows usual C/C++ style (i.e., the alignment 
+        //   is from [r->rs,r->re) where r->re is not included). Otherwise there mighht be error 
+        //   of +-1 in the computations.}
+        // - If endOffset is -ve, we need to add the soft-clipped bases at end to the editScript 
+        //   as insertions. If endOffset is +ve, these bases will be automatically added in 
+        //   the graph in updateGraph function, so we do not add them to editScript.
+        
     	beginOffset = r->rs - r->qs;
     	endOffset = (s.length()-r->qe) - (originalString.size()-r->re); 
 		//treat the head of the read as insertions
@@ -251,7 +303,7 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
       				}    	   				
       				break; 
 			    default: 
-			        throw std::runtime_error("Bad things happening");
+			        throw std::runtime_error("Encountered invalid CIGAR symbol!");
         	}           
 		}
 		//treat the tail of the read as insertions
@@ -302,6 +354,18 @@ void ConsensusGraph::updateGraph(const std::string &s,
                                  ssize_t beginOffset, ssize_t endOffset,
                                  read_t readId, long pos,
                                  bool reverseComplement) {
+
+    // How does the updateGraph function work (high level)?
+    // 1. If beginOffset is -ve, create |beginOffset| new nodes in the graph 
+    //    joined in a chain representing those bases in read 
+    //    (the chain will be essentially joined to position 0 of mainPath in graph).
+    // 2. Then begin adding nodes & edges to graph according to the editScript 
+    //    at the relevant place in the graph as determined by beginOffset 
+    //    (essentially starting at position 0 of mainPath when beginOffset is -ve)
+    // 3. Finally, if endOffset is +ve, create |endOffset| new nodes in the graph 
+    //    joined in a chain representing those bases in read (the chain begins 
+    //    in the graph where step 2 ends, which will be roughly the end of mainPath 
+    //    in this case). 
 
     const auto &edgeInPathEnd = mainPath.edges.end();
     auto edgeInPath = mainPath.edges.begin();
@@ -561,13 +625,15 @@ Path &ConsensusGraph::calculateMainPathGreedy() {
             currentNode->onMainPath = true;
             stringPath.push_back(currentNode->base);
         }
-        read_t endingReadId = *edgesInPath.back()->reads.begin();
+        read_t endingReadId = *edgesInPath.back()->reads.begin(); 
+        // TODO: why take the begin (i.e., first read through this last edge in path)?
+        // Is this a relic of the constant read length code?
         Read &endingRead = readsInGraph.at(endingReadId);
         endPos = endingRead.pos + endingRead.len;
     }
 
     // Extend to the left
-    // NOTE: I have changed mainPath.path to vector to spped up alignment,
+    // NOTE: I have changed mainPath.path to vector to speed up alignment,
     // but that means the code below is not efficient (inserting to start
     // of vector). Fortunately, this is currently a very small contributor
     // to the total time. But we might want to fix this if issues crop up later.
