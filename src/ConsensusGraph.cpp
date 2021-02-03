@@ -198,6 +198,7 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
     RAItA Aend = Abegin + originalString.size();
     RAItB Bbegin = s.c_str();
     RAItB Bend = Bbegin + s.length();
+    //we comment out the original aligner for the minimap
     // bool success = aligner->align(Abegin, Aend, Bbegin, Bend, offsetGuess,
     //                               beginOffset, endOffset, editScript, editDis);
     int hits;
@@ -259,12 +260,24 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
         //   as insertions. If endOffset is +ve, these bases will be automatically added in 
         //   the graph in updateGraph function, so we do not add them to editScript.
 
-    	beginOffset = r->rs - r->qs;
-    	endOffset = (s.length()-r->qe) - (originalString.size()-r->re); 
-		//treat the head of the read as insertions
-		for (i = 0; i < r->qs; ++i){
-      		editScript.push_back(Edit(INSERT, s[i]));             
-		}
+
+        //update the beginOffset by checking if r->rs is positive or not
+        //notice that I'm assuming the alignment is from [r->rs,r->re)!
+        //still need to double check that
+        if(r->rs >0){
+			beginOffset = r->rs;  
+			//add the soft clipped bases as insertions
+			for (i = 0; i < r->qs; ++i){
+      			editScript.push_back(Edit(INSERT, s[i]));             
+			}     	
+        }
+        else if(r->rs == 0){
+			beginOffset = -r->qs;        		
+        }
+        else{
+        	throw std::runtime_error("Encountered invalid reference start");
+        }
+
 		for (j = 0; j < r->p->n_cigar; ++j){ // IMPORTANT: this gives the CIGAR in the aligned regions. NO soft/hard clippings!
 			//std::cout<< (r->p->cigar[j]>>4) << "MIDNSH"[r->p->cigar[j]&0xf];
 			switch("MIDNSH"[r->p->cigar[j]&0xf]) {
@@ -307,10 +320,20 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
 			        throw std::runtime_error("Encountered invalid CIGAR symbol!");
         	}           
 		}
-		//treat the tail of the read as insertions
-		for (i = r->qe + 1; i < s.length(); ++i){
-      		editScript.push_back(Edit(INSERT, s[i]));  
 
+        //update the endOffset by checking if r->re is positive or not
+        if(r->re < originalString.size()){
+			endOffset = (r->re-originalString.size());
+			//add the soft clipped bases as insertions
+			for (i = r->qe; i < s.length(); ++i){
+      			editScript.push_back(Edit(INSERT, s[i]));             
+			}     	
+        }
+        else if(r->re == originalString.size()){
+			endOffset = (s.length()-r->qe);        		
+        }
+        else{
+        	throw std::runtime_error("Encountered invalid reference end");
         }
 		std::cout<<std::endl;
         //calculate the edit distance
