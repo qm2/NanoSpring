@@ -19,14 +19,18 @@ void Consensus::generateAndWriteConsensus() {
     std::vector<std::vector<read_t>> numReadsInContig(numThr);
     std::vector<std::vector<read_t>> loneReads(numThr);
     ConsensusGraph *cG = nullptr;
+    std::vector<CountStats> count_stats(numThr);
 #pragma omp parallel private(cG)
     {
         auto tid = omp_get_thread_num();
+        std::ofstream logfile("logfile"+std::to_string(tid), std::ofstream::out);
         std::string filePrefix = tempDir + tempFileName + std::to_string(tid);
         ConsensusGraphWriter cgw(filePrefix);
         read_t firstUnaddedRead = 0; 
+        int contigId = 0;
         // guarantee that all reads < firstUnaddedRead have been picked
         while ((cG = createGraph(firstUnaddedRead))) {
+            logfile<<"Thread: " << omp_get_thread_num() << ", Contig: " << contigId << ", First read number "<<cG->readsInGraph.begin()->first<<"\n";
             ssize_t initialStartPos = cG->startPos; // simply 0
             ssize_t initialEndPos = cG->endPos; // 
             const ssize_t len = initialEndPos - initialStartPos;
@@ -37,7 +41,7 @@ void Consensus::generateAndWriteConsensus() {
 
             while (true) {
                 std::cout << "right\n";
-                addRelatedReads(cG, curPos, len);
+                addRelatedReads(cG, curPos, len, count_stats[tid], logfile, contigId);
                 cG->printStatus();
                 curPos += offset;
                 // std::cout << "curPos " << curPos << " len " << len << " endPos "
@@ -52,7 +56,7 @@ void Consensus::generateAndWriteConsensus() {
                 if (curPos < cG->startPos)
                     break;
                 cG->printStatus();
-                addRelatedReads(cG, curPos, len);
+                addRelatedReads(cG, curPos, len, count_stats[tid], logfile, contigId);
                 curPos -= offset;
             }
             cG->writeMainPath(cgw);
@@ -61,6 +65,7 @@ void Consensus::generateAndWriteConsensus() {
             if (cG->getNumReads() == 1)
                 loneReads[tid].push_back(cG->readsInGraph.begin()->first);
             delete cG;
+            contigId++;
         }
     } // pragma omp parallel
 
@@ -75,12 +80,21 @@ void Consensus::generateAndWriteConsensus() {
         for (auto &r: v)
            std::cout << std::dec << ":" << r; 
     }
+
+    // compute total count stats by adding for all threads
+    CountStats summary;
+    for (auto &c : count_stats)
+        summary = summary + c;
+
     std::cout << "\n";
     std::cout << "#LoneReads = " << totalNumLoneReads << "\n";
+    std::cout << "MinHash passed " << summary.countMinHash << std::dec << " reads\n";
+    std::cout << "MinHash passed & not already in graph " << summary.countMinHashNotInGraph << std::dec << " reads\n";
+    std::cout << "Merge Sort passed " << summary.countMergeSort << std::dec << " reads\n";
+    std::cout << "Aligner passed " << summary.countAligner << std::dec << " reads\n";
 }
 
-void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
-                                size_t len) {
+void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, CountStats &cs, std::ofstream &logfile, int contigId) {
     // Find reads likely to have overlaps
     ssize_t offsetInMainPath = curPos - cG->startPos;
     if (len == 0 || offsetInMainPath < 0 ||
@@ -103,6 +117,7 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
         rF->getFilteredReads(reverseComplement ? reverseComplementString
                                                : originalString,
                              results);
+        cs.countMinHash += results.size();
         // std::cout << "Found " << results.size() << " reads\n";
         // for (read_t r : results)
         // std::cout << r << " ";
@@ -113,6 +128,9 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
             // std::cout << "Working on read " << r << '\n';
             if (inGraph[r])
                 continue;
+
+            cs.countMinHashNotInGraph++;
+            logfile<<"Thread: " << omp_get_thread_num() << ", Contig: " << contigId << ", Read passed MinHash "<<r<<"\n";
             ssize_t relPos;
             std::string readStr;
             if (reverseComplement)
@@ -123,9 +141,11 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
                 readStr = rD->getRead(r);
 
             if (!rA->align(originalString, readStr, relPos)) {
+                logfile<<"Thread: " << omp_get_thread_num() << ", Contig: " << contigId << ", Read failed Sort-Merge "<<r<<"\n";
                 continue;
             }
-
+            logfile<<"Thread: " << omp_get_thread_num() << ", Contig: " << contigId << ", Read passed Sort-Merge "<<r<<"\n";
+            cs.countMergeSort++;
             ssize_t pos = curPos + relPos;
             std::vector<Edit> editScript;
             ssize_t beginOffset, endOffset;
@@ -145,12 +165,15 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
                 if (!cG->addRead(readStr, pos, editScript, beginOffset,
                                  endOffset)) {
                     // read doesn't align, continue with next read
+                    logfile<<"Thread: " << omp_get_thread_num() << ", Contig: " << contigId << ", Read failed aligner "<<r<<"\n";
                     readStatusLock[r%numLocks].unlock();
                     continue;
                 } else {
                     // read added to graph
                     inGraph[r] = true;
                     readStatusLock[r%numLocks].unlock();
+                    readStatusLock[r%numLocks].unlock();
+                    cs.countAligner++;                    
                 }
             }
 #ifdef CHECKS

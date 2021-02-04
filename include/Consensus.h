@@ -11,6 +11,28 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <iostream>
+#include <fstream>
+
+
+// structure for stats 
+struct CountStats {
+    size_t countMinHash; // number of reads passing minhash filter
+    size_t countMinHashNotInGraph; // number of reads passing minhash filter that are not already in graph
+    size_t countMergeSort; // number of reads passing merge sort
+    size_t countAligner; // number of reads passing aligner
+    CountStats() {
+        countMinHash = countMinHashNotInGraph = countMergeSort = countAligner = 0;   
+    }
+    CountStats operator+(const CountStats &c) {
+        CountStats cs;
+        cs.countMinHash = countMinHash + c.countMinHash;
+        cs.countMinHashNotInGraph = countMinHashNotInGraph + c.countMinHashNotInGraph;
+        cs.countMergeSort = countMergeSort + c.countMergeSort;
+        cs.countAligner = countAligner + c.countAligner;
+        return cs;
+    }
+};
 
 class Consensus {
 public:
@@ -106,8 +128,11 @@ private:
      * @param cG
      * @param curPos
      * @param len The length of the mainPath used to get filtered reads
+     * @param cs for collecting stats
+     * @param logfile for writing pass/fail info to log
+     * @param contigId current contig id for logging purposes
      */
-    void addRelatedReads(ConsensusGraph *cG, ssize_t curPos, size_t len);
+    void addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, CountStats &cs, std::ofstream &logfile, int contigId);
 
     /**
      * @brief Create consensus graph by picking previously unadded read

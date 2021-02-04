@@ -297,8 +297,8 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
                             editScript.push_back(Edit(DELETE,Abegin[rpos]));
                             editScript.push_back(Edit(INSERT,s[qpos]));                           	
                         }
-      					qpos++;
-        	            rpos++;
+                        qpos++;
+                        rpos++;
       				}
       				//check if we need to push the "same" again
       				if(count_same!=0){
@@ -313,8 +313,8 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
       				break; 
    				case 'D':
       				for(k=0; k<r->p->cigar[j]>>4;k++){
-      					editScript.push_back(Edit(DELETE, Abegin[rpos])); 
-      			      	rpos++; 
+                        editScript.push_back(Edit(DELETE, Abegin[rpos])); 
+                        rpos++; 
       				}    	   				
       				break; 
 			    default: 
@@ -324,14 +324,14 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
 
         //update the endOffset by checking if r->re is positive or not
         if(r->re < originalString.size()){
-			endOffset = (r->re-originalString.size());
+            endOffset = (r->re-originalString.size());
 			//add the soft clipped bases as insertions
-			for (i = r->qe; i < s.length(); ++i){
-      			editScript.push_back(Edit(INSERT, s[i]));             
+            for (i = r->qe; i < s.length(); ++i){
+                editScript.push_back(Edit(INSERT, s[i]));             
 			}     	
         }
         else if(r->re == originalString.size()){
-			endOffset = (s.length()-r->qe);        		
+            endOffset = (s.length()-r->qe);        		
         }
         else{
         	throw std::runtime_error("Encountered invalid reference end");

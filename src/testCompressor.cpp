@@ -8,11 +8,16 @@
 #include <gperftools/profiler.h>
 #include <iostream>
 #include <omp.h>
-// #include <gperftools/heap-profiler.h>
+#include <chrono> 
+using namespace std::chrono; 
+using namespace std;
+// #include <gperftools/heap-profiler.h> 
+
 
 int main(int argc, char **argv) {
+    auto start = high_resolution_clock::now(); 
     omp_set_nested(1);
-
+    // omp_set_num_threads(1);
 
     // if (!fork())
     //     return -1;
@@ -55,6 +60,10 @@ int main(int argc, char **argv) {
         else if (!extension.compare("fastq"))
             compressor.filetype = ReadData::Filetype::FASTQ;
         compressor.compress(argv[1], numThr);
+
+        auto stop = high_resolution_clock::now(); 
+        auto duration = duration_cast<seconds>(stop - start); 
+        cout << "Time taken by function: "<< duration.count() << " seconds" << endl; 
     }
     // ProfilerStop();
 }
