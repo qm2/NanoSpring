@@ -194,8 +194,9 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
 
     size_t editDis;
 
-    RAItA Abegin = originalString.data();
-    RAItA Aend = Abegin + originalString.size();
+    std::string originalStringCopy(originalString.begin(),originalString.end());
+    RAItA Abegin = originalStringCopy.c_str();
+//    RAItA Aend = Abegin + originalString.size();
     RAItB Bbegin = s.c_str();
     RAItB Bend = Bbegin + s.length();
     //we comment out the original aligner for the minimap
@@ -335,12 +336,16 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
         else{
         	throw std::runtime_error("Encountered invalid reference end");
         }
-		std::cout<<std::endl;
         //calculate the edit distance
 		editDis = r->blen - r->mlen + r->p->n_ambi;
-		std::cout<<editDis<<std::endl;		
+		std::cout<< "editDis: " << editDis<<std::endl;		
 		free(r->p);
-	}
+        if (hits > 1) {
+            // cleanup
+            for (int i = 1; i < hits; i++)
+                free(reg[i].p);
+            }
+    }
 	else{
 		//return fail when there are not hits
 		success = false;
