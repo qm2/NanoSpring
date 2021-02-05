@@ -222,18 +222,18 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
     //we only want forward matches: use rev in mm_reg1_t
     mm_reg1_t* reg = mm_map(idx, s.length(), s.c_str(), &hits, b, &mopt, NULL);
     editScript.clear();
-	//experiment how many hits there are
-	if(hits > 0) { 
+    //experiment how many hits there are
+    if(hits > 0) { 
         //if we have multiple hits, just stick with first hit
-		mm_reg1_t *r = &reg[0];
-		assert(r->p); 
-		//qpos is the current position on the query read
-		//rpos is the current position on the reference read
-		int qpos = r->qs;
-		int rpos = r->rs;
-		unsigned int j, k;
-		unsigned int count_same;
-		int i;
+        mm_reg1_t *r = &reg[0];
+        assert(r->p); 
+        //qpos is the current position on the query read
+        //rpos is the current position on the reference read
+        int qpos = r->qs;
+        int rpos = r->rs;
+        unsigned int j, k;
+        unsigned int count_same;
+        int i;
 
         // TODO: fix below process to create editScript
         // See comments in ConsensusGraph::updateGraph for its high-level functioning
@@ -266,95 +266,95 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
         //notice that I'm assuming the alignment is from [r->rs,r->re)!
         //still need to double check that
         if(r->rs >0){
-			beginOffset = r->rs;  
-			//add the soft clipped bases as insertions
-			for (i = 0; i < r->qs; ++i){
-      			editScript.push_back(Edit(INSERT, s[i]));             
-			}     	
+            beginOffset = r->rs;  
+            //add the soft clipped bases as insertions
+            for (i = 0; i < r->qs; ++i){
+                editScript.push_back(Edit(INSERT, s[i]));             
+            }       
         }
         else if(r->rs == 0){
-			beginOffset = -r->qs;        		
+            beginOffset = -r->qs;               
         }
         else{
-        	throw std::runtime_error("Encountered invalid reference start");
+            throw std::runtime_error("Encountered invalid reference start");
         }
 
-		for (j = 0; j < r->p->n_cigar; ++j){ // IMPORTANT: this gives the CIGAR in the aligned regions. NO soft/hard clippings!
-			//std::cout<< (r->p->cigar[j]>>4) << "MIDNSH"[r->p->cigar[j]&0xf];
-			switch("MIDNSH"[r->p->cigar[j]&0xf]) {
-    			case 'M':
-    			    //fix: handle the substitute and same differently
-    			    count_same = 0;
-      				for(k=0; k<r->p->cigar[j]>>4;k++){
+        for (j = 0; j < r->p->n_cigar; ++j){ // IMPORTANT: this gives the CIGAR in the aligned regions. NO soft/hard clippings!
+            //std::cout<< (r->p->cigar[j]>>4) << "MIDNSH"[r->p->cigar[j]&0xf];
+            switch("MIDNSH"[r->p->cigar[j]&0xf]) {
+                case 'M':
+                    //fix: handle the substitute and same differently
+                    count_same = 0;
+                    for(k=0; k<r->p->cigar[j]>>4;k++){
                         if(s[qpos] == Abegin[rpos]){
-                    		count_same++;
+                            count_same++;
                         }
                         else{
                             if (count_same > 0)
-      				    	    editScript.push_back(Edit(SAME, count_same));
-      				    	count_same = 0; // reset count_same
-      				    	//add the substitute as one insert and one delete
+                                editScript.push_back(Edit(SAME, count_same));
+                            count_same = 0; // reset count_same
+                            //add the substitute as one insert and one delete
                             editScript.push_back(Edit(DELETE,Abegin[rpos]));
-                            editScript.push_back(Edit(INSERT,s[qpos]));                           	
+                            editScript.push_back(Edit(INSERT,s[qpos]));                             
                         }
                         qpos++;
                         rpos++;
-      				}
-      				//check if we need to push the "same" again
-      				if(count_same!=0){
-      				    editScript.push_back(Edit(SAME, count_same));      					
-      				}
-      				break; 
-   				case 'I':
-      				for(k=0; k<r->p->cigar[j]>>4;k++){
-      					editScript.push_back(Edit(INSERT, s[qpos])); 
-      					qpos++; 
-      				}   				
-      				break; 
-   				case 'D':
-      				for(k=0; k<r->p->cigar[j]>>4;k++){
+                    }
+                    //check if we need to push the "same" again
+                    if(count_same!=0){
+                        editScript.push_back(Edit(SAME, count_same));                       
+                    }
+                    break; 
+                case 'I':
+                    for(k=0; k<r->p->cigar[j]>>4;k++){
+                        editScript.push_back(Edit(INSERT, s[qpos])); 
+                        qpos++; 
+                    }                   
+                    break; 
+                case 'D':
+                    for(k=0; k<r->p->cigar[j]>>4;k++){
                         editScript.push_back(Edit(DELETE, Abegin[rpos])); 
                         rpos++; 
-      				}    	   				
-      				break; 
-			    default: 
-			        throw std::runtime_error("Encountered invalid CIGAR symbol!");
-        	}           
-		}
+                    }                       
+                    break; 
+                default: 
+                    throw std::runtime_error("Encountered invalid CIGAR symbol!");
+            }           
+        }
 
         //update the endOffset by checking if r->re is positive or not
         if(r->re < originalString.size()){
             endOffset = (r->re-originalString.size());
-			//add the soft clipped bases as insertions
+            //add the soft clipped bases as insertions
             for (i = r->qe; i < s.length(); ++i){
                 editScript.push_back(Edit(INSERT, s[i]));             
-			}     	
+            }       
         }
         else if(r->re == originalString.size()){
-            endOffset = (s.length()-r->qe);        		
+            endOffset = (s.length()-r->qe);             
         }
         else{
-        	throw std::runtime_error("Encountered invalid reference end");
+            throw std::runtime_error("Encountered invalid reference end");
         }
         //calculate the edit distance
-		editDis = r->blen - r->mlen + r->p->n_ambi;
-		std::cout<< "editDis: " << editDis<<std::endl;		
-		free(r->p);
+        editDis = r->blen - r->mlen + r->p->n_ambi;
+        std::cout<< "editDis: " << editDis<<std::endl;      
+        free(r->p);
         if (hits > 1) {
             // cleanup
             for (int i = 1; i < hits; i++)
                 free(reg[i].p);
             }
     }
-	else{
-		//return fail when there are not hits
-		success = false;
-	}
+    else{
+        //return fail when there are not hits
+        success = false;
+    }
     //return the correct beginOffset and endOffset   
-	editScript.shrink_to_fit();
-	free(reg);  
-	mm_tbuf_destroy(b);
-	mm_idx_destroy(idx);       
+    editScript.shrink_to_fit();
+    free(reg);  
+    mm_tbuf_destroy(b);
+    mm_idx_destroy(idx);       
     //number of hits
     //edit distance as threshold
     //length of alignment as fraction
