@@ -172,7 +172,6 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
                     // read added to graph
                     inGraph[r] = true;
                     readStatusLock[r%numLocks].unlock();
-                    readStatusLock[r%numLocks].unlock();
                     cs.countAligner++;                    
                 }
             }

@@ -184,11 +184,6 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
     /// We use either the head or tail of mainPath as a reference to obtain an
     /// offsetGuess
 
-    const ssize_t offsetGuess =
-        pos + (long)s.size() / 2 < (startPos + endPos) / 2
-            ? pos - startPos
-            : originalString.size() - endPos + pos; 
-    // can remove above line for minimap case
     // TODO: can we remove the Read.pos, startPos, endPos variables in the minimap case 
     //       to help simplify things significantly?
 
@@ -235,7 +230,6 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
         unsigned int count_same;
         int i;
 
-        // TODO: fix below process to create editScript
         // See comments in ConsensusGraph::updateGraph for its high-level functioning
 
         // Based on my understanding the correct approach would be something like this:
@@ -254,17 +248,12 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
         //   (r->re-originalString.size()). If r->re == originalString.size(), the read alignment 
         //   potentially extends beyond the end of reference, and endOffset is +ve and equal to 
         //   (s.length()-r->qe). 
-        //   {WARNING: I'm assuming r->re & r->qe follows usual C/C++ style (i.e., the alignment 
-        //   is from [r->rs,r->re) where r->re is not included). Otherwise there mighht be error 
-        //   of +-1 in the computations.}
         // - If endOffset is -ve, we need to add the soft-clipped bases at end to the editScript 
         //   as insertions. If endOffset is +ve, these bases will be automatically added in 
         //   the graph in updateGraph function, so we do not add them to editScript.
 
 
         //update the beginOffset by checking if r->rs is positive or not
-        //notice that I'm assuming the alignment is from [r->rs,r->re)!
-        //still need to double check that
         if(r->rs >0){
             beginOffset = r->rs;  
             //add the soft clipped bases as insertions
@@ -375,7 +364,6 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
     if (numUnchanged == 0)
         return false;
     return true;
-    // updateGraph(s, editScript, beginOffset, endOffset, readId, pos);
 }
 
 void ConsensusGraph::updateGraph(const std::string &s,
