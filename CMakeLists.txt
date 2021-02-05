@@ -20,7 +20,7 @@ endif()
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "CHECKS=${CHECKS} (Use -DCHECKS=True to enable all checks")
-
+message(STATUS "Directory: ${CMAKE_CURRENT_SOURCE_DIR}")
 find_package(OpenMP)
 
 ###############################
@@ -69,40 +69,13 @@ endif()
 
 #######################################################
 #minimap2
-add_library(minimap2
-    STATIC
-        minimap2/kthread.c
-        minimap2/kalloc.c
-        minimap2/ksw2_extz2_sse.c
-        minimap2/ksw2_extd2_sse.c
-        minimap2/ksw2_exts2_sse.c
-        minimap2/misc.c
-        minimap2/bseq.c
-        minimap2/sketch.c
-        minimap2/sdust.c
-        minimap2/options.c
-        minimap2/index.c
-        minimap2/chain.c
-        minimap2/align.c
-        minimap2/hit.c
-        minimap2/map.c
-        minimap2/format.c
-        minimap2/pe.c
-        minimap2/esterr.c
-        minimap2/splitidx.c
-        minimap2/ksw2_ll_sse.c
+
+add_custom_target(
+   MINIMAP2
+   COMMAND make clean && make
+   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/minimap2/
 )
 
-target_include_directories(minimap2 
-    PRIVATE minimap2)
-    
-# link with dependencies
-target_link_libraries(minimap2 -lz -ldl -lm -lpthread)
-
-target_compile_options(minimap2 
-    PRIVATE 
-    -g -Wall -O2 -Wc++-compat -msse4.1 
-    )
 
 #######################################################
 # the NanoporeCompressionLib library
@@ -174,12 +147,14 @@ endif()
 target_compile_definitions(NanoporeCompressionLib PUBLIC "$<$<CONFIG:Debug>:DEBUG>")
 target_compile_definitions(NanoporeCompressionLib PUBLIC "$<$<CONFIG:RelWithDebInfo>:DEBUG>")
 
+add_dependencies(NanoporeCompressionLib MINIMAP2)
 
 target_link_libraries(NanoporeCompressionLib 
     PRIVATE 
         libbsc
-        minimap2
+        ${CMAKE_CURRENT_SOURCE_DIR}/minimap2/libminimap2.a
         Boost::filesystem
+        -lz -ldl -lm -lpthread
     )
 
 target_link_libraries(NanoporeCompressionLib 
