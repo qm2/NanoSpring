@@ -101,7 +101,7 @@ target_link_libraries(minimap2 -lz -ldl -lm -lpthread)
 
 target_compile_options(minimap2 
     PRIVATE 
-    -g -Wall -O2 -Wc++-compat 
+    -g -Wall -O2 -Wc++-compat -msse4.1 
     )
 
 #######################################################
