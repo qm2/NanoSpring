@@ -159,9 +159,8 @@ void ConsensusGraph::initialize(const std::string &seed, read_t readId,
     // Rest will be inserted later when calculateMainPathGreedy is called
 }
 
-bool ConsensusGraph::addRead(const std::string &s, long pos,
-                             std::vector<Edit> &editScript,
-                             ssize_t &beginOffset, ssize_t &endOffset) {
+bool ConsensusGraph::addRead(const std::string &s, long pos, std::vector<Edit> &editScript,
+            ssize_t &beginOffset, ssize_t &endOffset, size_t m_k, size_t m_w, size_t hashBits) {
     // General comments: 
     // 1. The whole idea behind startPos, endPos and Read.pos in ConsensusGraph
     //    is to provide a reference point for the main path when looking for the next 
@@ -211,7 +210,7 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
     // std::cout<<"k:"<<iopt.k<<"w:"<<iopt.w<<std::endl;
     // std::cout<<"flag:"<<iopt.flag<<"bits:"<<iopt.bucket_bits<<hits<<std::endl;      
     //the defalut parameters are: 15 10 false 14
-    mm_idx_t * idx = mm_idx_str(15, 10, false, 14, 1, &Abegin, NULL);
+    mm_idx_t * idx = mm_idx_str(m_k, m_w, false, hashBits, 1, &Abegin, NULL);
     mm_mapopt_update(&mopt, idx);
     //use the index to align with the current read
     //we only want forward matches: use rev in mm_reg1_t
@@ -327,7 +326,9 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
         }
         //calculate the edit distance
         editDis = r->blen - r->mlen + r->p->n_ambi;
-        std::cout<< "editDis: " << editDis<<std::endl;      
+#ifdef LOG
+        std::cout<< "editDis: " << editDis<<std::endl;     
+#endif
         free(r->p);
         if (hits > 1) {
             // cleanup

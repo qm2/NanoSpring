@@ -20,6 +20,7 @@ endif()
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "CHECKS=${CHECKS} (Use -DCHECKS=True to enable all checks")
+message(STATUS "LOG=${LOG} (Use -LOG=True to output log files for analysis")
 message(STATUS "Directory: ${CMAKE_CURRENT_SOURCE_DIR}")
 find_package(OpenMP)
 
@@ -142,6 +143,11 @@ if ( CHECKS )
     target_compile_options(NanoporeCompressionLib 
         PRIVATE 
         -DCHECKS)
+endif()
+if ( LOG )
+    target_compile_options(NanoporeCompressionLib 
+        PRIVATE 
+        -DLOG)
 endif()
 
 target_compile_definitions(NanoporeCompressionLib PUBLIC "$<$<CONFIG:Debug>:DEBUG>")

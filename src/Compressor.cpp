@@ -43,6 +43,10 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
         consensus.tempDir = tempDir;
         consensus.tempFileName = tempFileName;
         consensus.numThr = numThr;
+        //parameters for minimap2
+        consensus.m_k = m_k;
+        consensus.m_w = m_w;
+        consensus.hashBits = hashBits; 
 
         consensus.generateAndWriteConsensus();
     }

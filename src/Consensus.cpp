@@ -22,15 +22,20 @@ void Consensus::generateAndWriteConsensus() {
     std::vector<CountStats> count_stats(numThr);
 #pragma omp parallel private(cG)
     {
-        auto tid = omp_get_thread_num();
-        std::ofstream logfile("logfile"+std::to_string(tid), std::ofstream::out);
+        auto tid = omp_get_thread_num();   
+        std::ofstream logfile;
+#ifdef LOG
+        logfile.open("logfile"+std::to_string(tid), std::ofstream::out);
+#endif
         std::string filePrefix = tempDir + tempFileName + std::to_string(tid);
         ConsensusGraphWriter cgw(filePrefix);
         read_t firstUnaddedRead = 0; 
         int contigId = 0;
         // guarantee that all reads < firstUnaddedRead have been picked
         while ((cG = createGraph(firstUnaddedRead))) {
+#ifdef LOG
             logfile<<"Thread: " << omp_get_thread_num() << ", Contig: " << contigId << ", First read number "<<cG->readsInGraph.begin()->first<<"\n";
+#endif 
             ssize_t initialStartPos = cG->startPos; // simply 0
             ssize_t initialEndPos = cG->endPos; // 
             const ssize_t len = initialEndPos - initialStartPos;
@@ -67,6 +72,9 @@ void Consensus::generateAndWriteConsensus() {
             delete cG;
             contigId++;
         }
+#ifdef LOG
+        logfile.close();
+#endif
     } // pragma omp parallel
 
     // now perform last step, combining files from threads and writing metadata
@@ -92,6 +100,7 @@ void Consensus::generateAndWriteConsensus() {
     std::cout << "MinHash passed & not already in graph " << summary.countMinHashNotInGraph << std::dec << " reads\n";
     std::cout << "Merge Sort passed " << summary.countMergeSort << std::dec << " reads\n";
     std::cout << "Aligner passed " << summary.countAligner << std::dec << " reads\n";
+
 }
 
 void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, CountStats &cs, std::ofstream &logfile, int contigId) {
@@ -130,7 +139,9 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
                 continue;
 
             cs.countMinHashNotInGraph++;
+#ifdef LOG
             logfile<<"Thread: " << omp_get_thread_num() << ", Contig: " << contigId << ", Read passed MinHash "<<r<<"\n";
+#endif 
             ssize_t relPos;
             std::string readStr;
             if (reverseComplement)
@@ -141,10 +152,14 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
                 readStr = rD->getRead(r);
 
             if (!rA->align(originalString, readStr, relPos)) {
+#ifdef LOG
                 logfile<<"Thread: " << omp_get_thread_num() << ", Contig: " << contigId << ", Read failed Sort-Merge "<<r<<"\n";
+#endif 
                 continue;
             }
+#ifdef LOG
             logfile<<"Thread: " << omp_get_thread_num() << ", Contig: " << contigId << ", Read passed Sort-Merge "<<r<<"\n";
+#endif 
             cs.countMergeSort++;
             ssize_t pos = curPos + relPos;
             std::vector<Edit> editScript;
@@ -163,9 +178,11 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
                     continue;
                 }
                 if (!cG->addRead(readStr, pos, editScript, beginOffset,
-                                 endOffset)) {
+                                 endOffset, m_k, m_w, hashBits)) {
                     // read doesn't align, continue with next read
+#ifdef LOG
                     logfile<<"Thread: " << omp_get_thread_num() << ", Contig: " << contigId << ", Read failed aligner "<<r<<"\n";
+#endif 
                     readStatusLock[r%numLocks].unlock();
                     continue;
                 } else {
@@ -175,6 +192,7 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
                     cs.countAligner++;                    
                 }
             }
+
 #ifdef CHECKS
             {
                 // Check editScript applied to originalString is readStr
@@ -221,8 +239,8 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
 #endif
             cG->calculateMainPathGreedy();
 #ifdef CHECKS
-            std::cout << "Added read " << r << " first unadded read "
-                      << firstUnaddedRead << std::endl;
+            // std::cout << "Added read " << r << " first unadded read "
+            //           << firstUnaddedRead << std::endl;
             assert(checkRead(cG, r));
             assert(cG->checkNoCycle());
 #endif

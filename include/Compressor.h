@@ -10,7 +10,7 @@
 class Compressor {
 public:
     /** Parameters for filtering **/
-    size_t k, n, overlapSketchThreshold;
+    size_t k, n, overlapSketchThreshold, m_k, m_w, hashBits;
     ReadData::Filetype filetype = ReadData::Filetype::READ;
     ReadAligner *rA;
     /** Parameters for consensus **/

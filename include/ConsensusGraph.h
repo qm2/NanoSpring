@@ -246,7 +246,7 @@ public:
      */
     __attribute__((warn_unused_result)) bool
     addRead(const std::string &s, long pos, std::vector<Edit> &editScript,
-            ssize_t &beginOffset, ssize_t &endOffset);
+            ssize_t &beginOffset, ssize_t &endOffset, size_t m_k, size_t m_w, size_t hashBits);
 
     /**
      * @brief Updates the graph with the new read s, and the alignment results
