@@ -93,8 +93,10 @@ void Consensus::generateAndWriteConsensus() {
     std::cout << "LoneReads";
     for (auto &v: loneReads) {
         totalNumLoneReads += v.size();
+#ifdef LOG
         for (auto &r: v)
            std::cout << std::dec << ":" << r; 
+#endif
     }
 
     // compute total count stats by adding for all threads

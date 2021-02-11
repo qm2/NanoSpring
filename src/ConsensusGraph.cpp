@@ -204,6 +204,8 @@ bool ConsensusGraph::addRead(const std::string &s, std::vector<Edit> &editScript
     //0 correpons to map-ont
     mm_set_opt(0, &iopt, &mopt);
     mopt.flag |= MM_F_CIGAR;
+    mopt.flag |= MM_F_FOR_ONLY; 
+    // only forward alignment, no reverse complement (which is handled elsewhere)
     //call the mm_idx_str to return the index for the reference read    
     // std::cout<<"k:"<<iopt.k<<"w:"<<iopt.w<<std::endl;
     // std::cout<<"flag:"<<iopt.flag<<"bits:"<<iopt.bucket_bits<<hits<<std::endl;      
