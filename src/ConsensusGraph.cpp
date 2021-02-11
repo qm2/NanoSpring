@@ -159,7 +159,7 @@ void ConsensusGraph::initialize(const std::string &seed, read_t readId,
     // Rest will be inserted later when calculateMainPathGreedy is called
 }
 
-bool ConsensusGraph::addRead(const std::string &s, long pos, std::vector<Edit> &editScript,
+bool ConsensusGraph::addRead(const std::string &s, std::vector<Edit> &editScript,
             ssize_t &beginOffset, ssize_t &endOffset, size_t m_k, size_t m_w, size_t hashBits) {
     // General comments: 
     // 1. The whole idea behind startPos, endPos and Read.pos in ConsensusGraph
@@ -189,10 +189,8 @@ bool ConsensusGraph::addRead(const std::string &s, long pos, std::vector<Edit> &
     size_t editDis;
 
     std::string originalStringCopy(originalString.begin(),originalString.end());
-    RAItA Abegin = originalStringCopy.c_str();
-//    RAItA Aend = Abegin + originalString.size();
-    RAItB Bbegin = s.c_str();
-    RAItB Bend = Bbegin + s.length();
+    const char* Abegin = originalStringCopy.c_str();
+    const char* Bbegin = s.c_str();
     //we comment out the original aligner for the minimap
     // bool success = aligner->align(Abegin, Aend, Bbegin, Bend, offsetGuess,
     //                               beginOffset, endOffset, editScript, editDis);
@@ -1082,10 +1080,12 @@ void ConsensusGraph::removeEdge(Edge *e,
             cgw.editBaseFile << ".\n";
             cgw.idFile << ".\n";
             cgw.complementFile << ".\n";
+#ifdef LOG
             std::cout << "AvgEditDis "
                       << totalEditDis / (double)readsInGraph.size()
                       << std::endl;
             printStatus();
+#endif
         }
 
         read_t ConsensusGraph::getNumReads() { return readsInGraph.size(); }

@@ -45,9 +45,13 @@ void Consensus::generateAndWriteConsensus() {
             ssize_t curPos = cG->startPos;
 
             while (true) {
+#ifdef LOG
                 std::cout << "right\n";
+#endif
                 addRelatedReads(cG, curPos, len, count_stats[tid], logfile, contigId);
+#ifdef LOG
                 cG->printStatus();
+#endif
                 curPos += offset;
                 // std::cout << "curPos " << curPos << " len " << len << " endPos "
                 //          << cG->endPos << '\n';
@@ -57,10 +61,14 @@ void Consensus::generateAndWriteConsensus() {
 
             curPos = initialStartPos - offset;
             while (true) {
+#ifdef LOG
                 std::cout << "left\n";
+#endif
                 if (curPos < cG->startPos)
                     break;
+#ifdef LOG
                 cG->printStatus();
+#endif
                 addRelatedReads(cG, curPos, len, count_stats[tid], logfile, contigId);
                 curPos -= offset;
             }
@@ -177,7 +185,7 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
                     readStatusLock[r%numLocks].unlock();
                     continue;
                 }
-                if (!cG->addRead(readStr, pos, editScript, beginOffset,
+                if (!cG->addRead(readStr, editScript, beginOffset,
                                  endOffset, m_k, m_w, hashBits)) {
                     // read doesn't align, continue with next read
 #ifdef LOG
