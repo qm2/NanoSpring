@@ -210,7 +210,7 @@ bool ConsensusGraph::addRead(const std::string &s, std::vector<Edit> &editScript
     // std::cout<<"k:"<<iopt.k<<"w:"<<iopt.w<<std::endl;
     // std::cout<<"flag:"<<iopt.flag<<"bits:"<<iopt.bucket_bits<<hits<<std::endl;      
     //the defalut parameters are: 15 10 false 14
-    mm_idx_t * idx = mm_idx_str(m_k, m_w, false, hashBits, 1, &Abegin, NULL);
+    mm_idx_t * idx = mm_idx_str(m_w, m_k, false, hashBits, 1, &Abegin, NULL);
     mm_mapopt_update(&mopt, idx);
     //use the index to align with the current read
     //we only want forward matches: use rev in mm_reg1_t
