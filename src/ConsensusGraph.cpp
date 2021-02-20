@@ -217,6 +217,7 @@ bool ConsensusGraph::addRead(const std::string &s, std::vector<Edit> &editScript
     mm_reg1_t* reg = mm_map(idx, s.length(), s.c_str(), &hits, b, &mopt, NULL);
     editScript.clear();
     //experiment how many hits there are
+
     if(hits > 0) { 
         //if we have multiple hits, just stick with first hit
         mm_reg1_t *r = &reg[0];
@@ -228,6 +229,26 @@ bool ConsensusGraph::addRead(const std::string &s, std::vector<Edit> &editScript
         unsigned int j, k;
         unsigned int count_same;
         int i;
+        int alignedLen;
+    	
+    	//add a filtering metric        
+    	//calculate the edit distance
+    	editDis = r->blen - r->mlen + r->p->n_ambi;
+    	//calculate the aligned length; notice that I use the aligned length for the query read here
+    	alignedLen = r->qe - r->qs;
+    	//first check if the read is at the beginnning or the end of reference sequence
+    	// if( (r->qs <= r->rs) && ((s.length()-r->qe)<=(originalString.size()-r->re))){
+    		//check editDis/alignedLen
+    		// // std::cout<<"editDis/alignedLen: "<< editDis/(double)alignedLen<<std::endl;
+    		// std::cout<<"(double)alignedLen/s.length() "<< (double)alignedLen/s.length()<<std::endl;    		
+    	if(editDis/(double)alignedLen >= 0.2 || (double)alignedLen/s.length()<=0.6 ){
+    		success = false;
+    		free(reg);  
+    		mm_tbuf_destroy(b);
+    		mm_idx_destroy(idx); 
+    		return false;
+    	}
+    	// }
 
         // See comments in ConsensusGraph::updateGraph for its high-level functioning
 
@@ -324,8 +345,7 @@ bool ConsensusGraph::addRead(const std::string &s, std::vector<Edit> &editScript
         else{
             throw std::runtime_error("Encountered invalid reference end");
         }
-        //calculate the edit distance
-        editDis = r->blen - r->mlen + r->p->n_ambi;
+
 #ifdef LOG
         std::cout<< "editDis: " << editDis<<std::endl;     
 #endif
