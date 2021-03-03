@@ -236,19 +236,20 @@ bool ConsensusGraph::addRead(const std::string &s, std::vector<Edit> &editScript
     	editDis = r->blen - r->mlen + r->p->n_ambi;
     	//calculate the aligned length; notice that I use the aligned length for the query read here
     	alignedLen = r->qe - r->qs;
+    	std::cout<<"read's length"<<r->qe - r->qs<<"consensus's length"<<r->re - r->rs<<std::endl;
     	//first check if the read is at the beginnning or the end of reference sequence
-    	// if( (r->qs <= r->rs) && ((s.length()-r->qe)<=(originalString.size()-r->re))){
+    	if( (r->rs > 0) && (r->re < originalString.size())){
     		//check editDis/alignedLen
-    		// // std::cout<<"editDis/alignedLen: "<< editDis/(double)alignedLen<<std::endl;
+    		// std::cout<<"editDis/alignedLen: "<< editDis/(double)alignedLen<<std::endl;
     		// std::cout<<"(double)alignedLen/s.length() "<< (double)alignedLen/s.length()<<std::endl;    		
-    	if(editDis/(double)alignedLen >= 0.2 || (double)alignedLen/s.length()<=0.6 ){
-    		success = false;
-    		free(reg);  
-    		mm_tbuf_destroy(b);
-    		mm_idx_destroy(idx); 
-    		return false;
+	    	if(editDis/(double)alignedLen >= 0.2 || (double)alignedLen/s.length()<=0.4 ){
+	    		success = false;
+	    		free(reg);  
+	    		mm_tbuf_destroy(b);
+	    		mm_idx_destroy(idx); 
+	    		return false;
+	    	}
     	}
-    	// }
 
         // See comments in ConsensusGraph::updateGraph for its high-level functioning
 
