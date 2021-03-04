@@ -17,7 +17,7 @@ using namespace std;
 int main(int argc, char **argv) {
     auto start = high_resolution_clock::now(); 
     omp_set_nested(1);
-    // omp_set_num_threads(1);
+    omp_set_num_threads(20);
 
     // if (!fork())
     //     return -1;

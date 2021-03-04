@@ -236,7 +236,6 @@ bool ConsensusGraph::addRead(const std::string &s, std::vector<Edit> &editScript
     	editDis = r->blen - r->mlen + r->p->n_ambi;
     	//calculate the aligned length; notice that I use the aligned length for the query read here
     	alignedLen = r->qe - r->qs;
-    	std::cout<<"read's length"<<r->qe - r->qs<<"consensus's length"<<r->re - r->rs<<std::endl;
     	//first check if the read is at the beginnning or the end of reference sequence
     	if( (r->rs > 0) && (r->re < originalString.size())){
     		//check editDis/alignedLen

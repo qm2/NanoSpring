@@ -9,11 +9,47 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <ios>
+#include <unistd.h>
+#include <string>
+
+void mem_usage(double& vm_usage, double& resident_set) {
+   // from https://www.tutorialspoint.com/how-to-get-memory-usage-at-runtime-using-cplusplus
+   using namespace std;
+   vm_usage = 0.0;
+   resident_set = 0.0;
+   ifstream stat_stream("/proc/self/stat",ios_base::in); //get info from proc
+   // directory
+   //create some variables to get info
+   string pid, comm, state, ppid, pgrp, session, tty_nr;
+   string tpgid, flags, minflt, cminflt, majflt, cmajflt;
+   string utime, stime, cutime, cstime, priority, nice;
+   string O, itrealvalue, starttime;
+   unsigned long vsize;
+   long rss;
+   stat_stream >> pid >> comm >> state >> ppid >> pgrp >> session >> tty_nr
+   >> tpgid >> flags >> minflt >> cminflt >> majflt >> cmajflt
+   >> utime >> stime >> cutime >> cstime >> priority >> nice
+   >> O >> itrealvalue >> starttime >> vsize >> rss; // don't care
+   // about the rest
+   stat_stream.close();
+   long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024; // for x86-64 is configured
+   // to use 2MB pages
+   vm_usage = vsize / 1024.0;
+   resident_set = rss * page_size_kb;
+   cout << "resident_set: " << resident_set << " KB\n";
+}
 
 void Compressor::compress(const char *inputFileName, const int numThr) const {
+	std::cout<<"number of threads: "<<numThr<<std::endl;
+	double vm_usage, resident_set;
+	std::cout << "Entering compress():\n";
+    mem_usage(vm_usage, resident_set);
     omp_set_num_threads(numThr);
     ReadData rD;
     rD.loadFromFile(inputFileName, filetype);
+    std::cout << "After rD.loadFromFile():\n";
+    mem_usage(vm_usage, resident_set);
 
     // (inputFileName, k, n);
     MinHashReadFilter rF;
@@ -29,7 +65,8 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
         std::cout << "Calculating MinHashes took " << duration.count()
                   << " milliseconds" << std::endl;
     }
-
+    std::cout << "After minhash computation:\n";
+    mem_usage(vm_usage, resident_set);
     // We clear the temp directories and create them if they do not
     // exist
     DirectoryUtils::clearDir(tempDir);
