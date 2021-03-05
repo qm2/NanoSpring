@@ -324,6 +324,8 @@ public:
 
     read_t getNumReads();
 
+    size_t getNumEdges();
+
     /**
      * @brief Does a sanity check on the graph structure.
      *

@@ -20,6 +20,8 @@ void Consensus::generateAndWriteConsensus() {
     std::vector<std::vector<read_t>> loneReads(numThr);
     ConsensusGraph *cG = nullptr;
     std::vector<CountStats> count_stats(numThr);
+    std::vector<ssize_t> edgesInGraph(numThr);
+
 #pragma omp parallel private(cG)
     {
         auto tid = omp_get_thread_num();   
@@ -36,6 +38,8 @@ void Consensus::generateAndWriteConsensus() {
 #ifdef LOG
             logfile<<"Thread: " << omp_get_thread_num() << ", Contig: " << contigId << ", First read number "<<cG->readsInGraph.begin()->first<<"\n";
 #endif 
+            //start to count the number of edges in this graph
+            edgesInGraph[tid] = 0;
             ssize_t initialStartPos = cG->startPos; // simply 0
             ssize_t initialEndPos = cG->endPos; // 
             const ssize_t len = initialEndPos - initialStartPos;
@@ -43,7 +47,11 @@ void Consensus::generateAndWriteConsensus() {
             size_t offset = rD->avgReadLen / 4;
 
             ssize_t curPos = cG->startPos;
-
+            // flag for too many edges in the graph
+            bool edgesTooMany = false;
+            //total number of edges in all threads
+            ssize_t edgesTotal = 0;
+            ssize_t edgesAverage = 0;
             while (true) {
 #ifdef LOG
                 std::cout << "right\n";
@@ -52,25 +60,52 @@ void Consensus::generateAndWriteConsensus() {
 #ifdef LOG
                 cG->printStatus();
 #endif
+                //update the edges vector
+                edgesInGraph[tid] = cG->getNumEdges();
                 curPos += offset;
                 // std::cout << "curPos " << curPos << " len " << len << " endPos "
                 //          << cG->endPos << '\n';
-                if (curPos + len > cG->endPos)
+
+                // calculate the total number and average number of edges in all threads
+                // notice that this may not be accurate
+                edgesTotal = 0;
+                for(std::vector<ssize_t>::iterator it = edgesInGraph.begin(); it != edgesInGraph.end(); ++it)
+    				edgesTotal += *it;
+                edgesAverage = edgesTotal/numThr;
+                if (curPos + len > cG->endPos){  
+                	// std::cout << "total number of edges in all threads: " << edgesTotal << '\n';
+                	// std::cout << "average number of edges in all threads: " << edgesAverage << '\n';                	            	
                     break;
+                }else if (cG->getNumEdges()>=edgesAverage && edgesTotal>=numThr*600000){  
+                    edgesTooMany = true;
+                    break;
+                }
             }
 
             curPos = initialStartPos - offset;
-            while (true) {
+            while (!edgesTooMany) {
 #ifdef LOG
                 std::cout << "left\n";
 #endif
-                if (curPos < cG->startPos)
+                edgesTotal = 0;
+                for(std::vector<ssize_t>::iterator it = edgesInGraph.begin(); it != edgesInGraph.end(); ++it)
+    				edgesTotal += *it;
+                edgesAverage = edgesTotal/numThr;
+                if (curPos < cG->startPos){
+                	// std::cout << "total number of edges in all threads: " << edgesTotal << '\n';
+                	// std::cout << "average number of edges in all threads: " << edgesAverage << '\n';
                     break;
+                }else if (cG->getNumEdges()>=edgesAverage && edgesTotal>=numThr*600000){  
+                    edgesTooMany = true;
+                    break;
+                }
 #ifdef LOG
                 cG->printStatus();
 #endif
                 addRelatedReads(cG, curPos, len, count_stats[tid], logfile, contigId);
                 curPos -= offset;
+                //update the edges vector
+                edgesInGraph[tid] = cG->getNumEdges();
             }
             cG->writeMainPath(cgw);
             cG->writeReads(cgw);

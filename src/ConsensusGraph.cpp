@@ -1112,6 +1112,8 @@ void ConsensusGraph::removeEdge(Edge *e,
 
         read_t ConsensusGraph::getNumReads() { return readsInGraph.size(); }
 
+        size_t ConsensusGraph::getNumEdges(){return numEdges;} 
+
         size_t ConsensusGraph::read2EditScript(ConsensusGraph::Read &r,
                                                read_t id,
                                                std::vector<Edit> &editScript,
