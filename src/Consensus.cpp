@@ -36,7 +36,7 @@ void Consensus::generateAndWriteConsensus() {
         // guarantee that all reads < firstUnaddedRead have been picked
         while ((cG = createGraph(firstUnaddedRead))) {
 #ifdef LOG
-            logfile<<"Thread: " << omp_get_thread_num() << ", Contig: " << contigId << ", First read number "<<cG->readsInGraph.begin()->first<<"\n";
+            logfile<< "Contig: " << contigId << ", First read number "<<cG->readsInGraph.begin()->first<<", read length: " << cG->endPos - cG->startPos << "\n";
 #endif 
             //start to count the number of edges in this graph
             edgesInGraph[tid] = 0;
@@ -76,7 +76,8 @@ void Consensus::generateAndWriteConsensus() {
                 	// std::cout << "total number of edges in all threads: " << edgesTotal << '\n';
                 	// std::cout << "average number of edges in all threads: " << edgesAverage << '\n';                	            	
                     break;
-                }else if (cG->getNumEdges()>=edgesAverage && edgesTotal>=numThr*600000){  
+                }else if (cG->getNumEdges()>=1200000){
+               //else if (cG->getNumEdges()>=edgesAverage && edgesTotal>=numThr*600000){  
                     edgesTooMany = true;
                     break;
                 }
@@ -95,7 +96,8 @@ void Consensus::generateAndWriteConsensus() {
                 	// std::cout << "total number of edges in all threads: " << edgesTotal << '\n';
                 	// std::cout << "average number of edges in all threads: " << edgesAverage << '\n';
                     break;
-                }else if (cG->getNumEdges()>=edgesAverage && edgesTotal>=numThr*600000){  
+                }else if (cG->getNumEdges()>=1200000){  
+               //else if (cG->getNumEdges()>=edgesAverage && edgesTotal>=numThr*600000){  
                     edgesTooMany = true;
                     break;
                 }
@@ -185,7 +187,7 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
 
             cs.countMinHashNotInGraph++;
 #ifdef LOG
-            logfile<<"Thread: " << omp_get_thread_num() << ", Contig: " << contigId << ", Read passed MinHash "<<r<<"\n";
+            logfile<<"Contig: " << contigId << ", Read passed MinHash "<<r<<", read length: " << rD->getRead(r).length()<< "\n";
 #endif 
             ssize_t relPos;
             std::string readStr;
@@ -198,12 +200,12 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
 
             if (!rA->align(originalString, readStr, relPos)) {
 #ifdef LOG
-                logfile<<"Thread: " << omp_get_thread_num() << ", Contig: " << contigId << ", Read failed Sort-Merge "<<r<<"\n";
+                logfile<< "Contig: " << contigId << ", Read failed Sort-Merge "<<r<<"\n";
 #endif 
                 continue;
             }
 #ifdef LOG
-            logfile<<"Thread: " << omp_get_thread_num() << ", Contig: " << contigId << ", Read passed Sort-Merge "<<r<<"\n";
+            logfile<<"Contig: " << contigId << ", Read passed Sort-Merge "<<r<<"\n";
 #endif 
             cs.countMergeSort++;
             ssize_t pos = curPos + relPos;
@@ -226,12 +228,15 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
                                  endOffset, m_k, m_w, hashBits)) {
                     // read doesn't align, continue with next read
 #ifdef LOG
-                    logfile<<"Thread: " << omp_get_thread_num() << ", Contig: " << contigId << ", Read failed aligner "<<r<<"\n";
+                    logfile<< "Contig: " << contigId << ", Read failed aligner "<<r<<"\n";
 #endif 
                     readStatusLock[r%numLocks].unlock();
                     continue;
                 } else {
                     // read added to graph
+#ifdef LOG
+                    logfile<< "Contig: " << contigId << ", Read passed aligner "<<r<<"\n";
+#endif 
                     inGraph[r] = true;
                     readStatusLock[r%numLocks].unlock();
                     cs.countAligner++;                    
