@@ -243,10 +243,17 @@ bool ConsensusGraph::addRead(const std::string &s, std::vector<Edit> &editScript
     		// std::cout<<"(double)alignedLen/s.length() "<< (double)alignedLen/s.length()<<std::endl;    		
 	    	if(editDis/(double)alignedLen >= 0.2 || (double)alignedLen/s.length()<=0.4 ){
 	    		success = false;
-	    		free(reg);  
-	    		mm_tbuf_destroy(b);
-	    		mm_idx_destroy(idx); 
+	    		free(r->p);
+                if (hits > 1) {
+                    // cleanup
+                    for (int i = 1; i < hits; i++)
+                        free(reg[i].p);
+                }    
+                free(reg);  
+                mm_tbuf_destroy(b);
+                mm_idx_destroy(idx);
 	    		return false;
+
 	    	}
     	}
 
