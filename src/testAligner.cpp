@@ -35,9 +35,13 @@ void TestAligner::test(const size_t k, const size_t kMerNumTh,
                        const size_t baseOverlapTh) {
     ReadAligner *rA = new MergeSortReadAligner(k, kMerNumTh);
     size_t randomReadIndex = rand() % rD.getNumReads();
-    const std::string &randomRead = rD.getRead(randomReadIndex);
+
+    std::string randomRead;
+    rD.getRead(randomReadIndex, randomRead);
+    std::string readStr0;
+    rD.getRead(0, readStr0);   
     const long randomPos = rD.getReadPos()[randomReadIndex];
-    const long th = rD.getRead(0).size() - baseOverlapTh;
+    const long th = readStr0.size() - baseOverlapTh;
     std::cout << "Pos of read is " << randomPos << std::endl;
     size_t numPositives = 0;
     size_t truePositives = 0;
@@ -47,7 +51,7 @@ void TestAligner::test(const size_t k, const size_t kMerNumTh,
     size_t trueNegatives = 0;
     double posError = 0;
     size_t numReads = rD.getNumReads();
-    size_t readLen = rD.getRead(0).size();
+    size_t readLen = readStr0.size();
 #pragma omp parallel for reduction(+ : numPositives, numNegatives, \
     falsePositives, truePositives, falseNegatives, trueNegatives, posError)
     for (size_t i = 0; i < numReads; ++i) {
@@ -56,7 +60,9 @@ void TestAligner::test(const size_t k, const size_t kMerNumTh,
         //        if (i % 1000 == 0)
         //            std::cout << i << std::endl;
         ssize_t relPos;
-        if (rA->align(randomRead, rD.getRead(i), relPos)) {
+        std::string readStr;
+        rD.getRead(i, readStr);
+        if (rA->align(randomRead, readStr, relPos)) {
             // std::cout << "Real " << (long) nR.readPos[i] - (long) randomPos
             //<< " Predicted " << relPos << std::endl;
             posError +=

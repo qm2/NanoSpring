@@ -119,6 +119,7 @@ add_library(NanoporeCompressionLib
         include/OmpMutex.h
         include/DirectoryUtils.h
         include/Types.h
+        include/StringToBits.h
         )
 
 target_include_directories(NanoporeCompressionLib 

@@ -59,8 +59,11 @@ void MinHashReadFilter::initialize(ReadData &rD) {
         // do it at the same time.
         std::vector<kMer_t> kMersVec(maxNumkMers), hashesVec(maxNumkMers*n);
 #pragma omp for
-        for (read_t i = 0; i < numReads; ++i)
-            string2Sketch(rD.getRead(i), sketches + i * n, kMersVec, hashesVec);
+        for (read_t i = 0; i < numReads; ++i){
+            std::string readStr;
+            rD.getRead(i, readStr);
+            string2Sketch(readStr, sketches + i * n, kMersVec, hashesVec);
+        }
     } // pragma omp parallel
 
     populateHashTables();
@@ -135,9 +138,12 @@ FilterStats MinHashReadFilter::getFilterStats(size_t overlapBaseThreshold,
         read_t realI = readPosSorted[i].second;
         for (read_t j = i + 1; j < numReads; ++j) {
             read_t realJ = readPosSorted[j].second;
+            std::string readStr1, readStr2;
+            rD->getRead(realI, readStr1);
+            rD->getRead(realJ, readStr2);
             size_t minEnd =
-                std::min((*readPos)[realI] + rD->getRead(realI).size(),
-                         (*readPos)[realJ] + rD->getRead(realJ).size());
+                std::min((*readPos)[realI] + readStr1.size(),
+                         (*readPos)[realJ] + readStr2.size());
             size_t maxBegin = std::max((*readPos)[realI], (*readPos)[realJ]);
             if (minEnd > maxBegin + overlapBaseThreshold)
                 numOverlaps++;
@@ -172,9 +178,12 @@ FilterStats MinHashReadFilter::getFilterStats(size_t overlapBaseThreshold,
             if (*it <= i)
                 continue;
             if (matches.count(*it) >= overlapSketchThreshold) {
+                std::string readStr1, readStr2;
+                rD->getRead(i, readStr1);
+                rD->getRead(*it, readStr2);
                 ssize_t minEnd =
-                    std::min((*readPos)[i] + rD->getRead(i).size(),
-                             (*readPos)[*it] + rD->getRead(*it).size());
+                    std::min((*readPos)[i] + readStr1.size(),
+                             (*readPos)[*it] + readStr2.size());
                 ssize_t maxBegin = std::max((*readPos)[i], (*readPos)[*it]);
                 if (minEnd - maxBegin < (ssize_t)overlapBaseThreshold)
                     falsePositives++;

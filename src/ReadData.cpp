@@ -38,6 +38,7 @@ void ReadData::loadFromReadFile(const char *fileName) {
         size_t last_index = index;
         index = line.find(':', last_index + 1);
         assert(index != std::string::npos);
+        ssize_t readLen = 0;
         readPos.push_back(std::stol(line.substr(last_index + 1, index)));
         {
             std::unique_ptr<std::string> ptr(
@@ -48,12 +49,21 @@ void ReadData::loadFromReadFile(const char *fileName) {
         //        std::cout << editStrings.back() << std::endl;
         std::getline(infile, line);
         {
-            std::unique_ptr<std::string> ptr(new std::string(line));
+            // std::unique_ptr<std::string> ptr(new std::string(line));
+            // readData.push_back(std::move(ptr));
+            const char *cstr = line.c_str();
+            readLen = std::strlen(cstr);
+            std::unique_ptr<DnaBitset> ptr(new DnaBitset(cstr, readLen));
             readData.push_back(std::move(ptr));
+            readPos.push_back(0);
         }
-        totalNumBases += readData.back()->size();
-        if (readData.back()->size() > maxReadLen)
-            maxReadLen = readData.back()->size();
+        // totalNumBases += readData.back()->size();
+        // if (readData.back()->size() > maxReadLen)
+        //     maxReadLen = readData.back()->size();
+        totalNumBases += readLen;
+        if (readLen > maxReadLen)
+            maxReadLen = readLen;
+
         numReads++;
         if (numReads == std::numeric_limits<read_t>::max()) {
             throw std::runtime_error(
@@ -80,12 +90,19 @@ void ReadData::loadFromFastqFile(const char *fileName) {
     std::string line;
     size_t totalNumBases = 0;
     maxReadLen = 0;
+    ssize_t readLen = 0;
     while (std::getline(infile, line)) {
         std::getline(infile, line);
         {
-            std::unique_ptr<std::string> ptr(new std::string(line));
+            // std::unique_ptr<std::string> ptr(new std::string(line));
+            //convert to c style string  
+            const char *cstr = line.c_str();
+            // readData.push_back(std::move(ptr));
+            readLen = std::strlen(cstr);
+            std::unique_ptr<DnaBitset> ptr(new DnaBitset(cstr, readLen));
             readData.push_back(std::move(ptr));
             readPos.push_back(0);
+
         }
         {
             std::unique_ptr<std::string> ptr(new std::string());
@@ -93,9 +110,12 @@ void ReadData::loadFromFastqFile(const char *fileName) {
         }
         std::getline(infile, line);
         std::getline(infile, line);
-        totalNumBases += readData.back()->size();
-        if (readData.back()->size() > maxReadLen)
-            maxReadLen = readData.back()->size();
+        // totalNumBases += readData.back()->size();
+        // if (readData.back()->size() > maxReadLen)
+        //     maxReadLen = readData.back()->size();
+        totalNumBases += readLen;
+        if (readLen > maxReadLen)
+            maxReadLen = readLen;
         numReads++;
         if (numReads == std::numeric_limits<read_t>::max()) {
             throw std::runtime_error(
@@ -113,11 +133,16 @@ void ReadData::loadFromFastqFile(const char *fileName) {
 
 read_t ReadData::getNumReads() { return numReads; }
 
-std::string &ReadData::getRead(read_t readId) { return *readData[readId]; }
+void ReadData::getRead(read_t readId, std::string &readStr){
+	readData[readId]->to_string(readStr);
+}
 
 std::vector<unsigned long> &ReadData::getReadPos() { return readPos; }
 
-std::vector<std::unique_ptr<std::string>> &ReadData::getReadData() {
+// std::vector<std::unique_ptr<std::string>> &ReadData::getReadData() {
+//     return readData;
+// }
+std::vector<std::unique_ptr<DnaBitset>> &ReadData::getReadData() {
     return readData;
 }
 

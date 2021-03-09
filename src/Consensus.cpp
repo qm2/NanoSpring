@@ -186,17 +186,18 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
                 continue;
 
             cs.countMinHashNotInGraph++;
+            ssize_t relPos;            
+            std::string readStr, readStr1;
+            rD->getRead(r,readStr1);
 #ifdef LOG
-            logfile<<"Contig: " << contigId << ", Read passed MinHash "<<r<<", read length: " << rD->getRead(r).length()<< "\n";
+            logfile<<"Contig: " << contigId << ", Read passed MinHash "<<r<<", read length: " << readStr1.length()<< "\n";
 #endif 
-            ssize_t relPos;
-            std::string readStr;
             if (reverseComplement)
                 ReadData::toReverseComplement(
-                    rD->getRead(r).begin(), rD->getRead(r).end(),
+                    readStr1.begin(), readStr1.end(),
                     std::inserter(readStr, readStr.end()));
             else
-                readStr = rD->getRead(r);
+                readStr = readStr1;
 
             if (!rA->align(originalString, readStr, relPos)) {
 #ifdef LOG
@@ -300,28 +301,30 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
 
 bool Consensus::checkRead(ConsensusGraph *cG, read_t read) {
     std::string result;
+    std::string readStr;
     bool temp = cG->getRead(read, std::inserter(result, result.end()));
     assert(temp);
     if (!temp)
         return false;
+    rD->getRead(read, readStr);
     if (!cG->readsInGraph.at(read).reverseComplement) {
-        if (result != rD->getRead(read)) {
+        if (result != readStr) {
             std::cout << "readInGraph:\n" << result << "\n";
-            std::cout << "actualRead:\n" << rD->getRead(read) << "\n";
+            std::cout << "actualRead:\n" << readStr << "\n";
         }
-        return result == rD->getRead(read);
+        return result == readStr;
     }
     std::string reverseComplement;
     ReadData::toReverseComplement(
         result.begin(), result.end(),
         std::inserter(reverseComplement, reverseComplement.end()));
-    if (reverseComplement != rD->getRead(read)) {
+    if (reverseComplement != readStr) {
         std::cout << "readInGraphRerseComplement:\n"
                   << reverseComplement << "\n";
         std::cout << "readInGraph:\n" << result << "\n";
-        std::cout << "actualRead:\n" << rD->getRead(read) << "\n";
+        std::cout << "actualRead:\n" << readStr << "\n";
     }
-    return reverseComplement == rD->getRead(read);
+    return reverseComplement == readStr;
 }
 
 void Consensus::finishWriteConsensus(const std::vector<std::vector<read_t>>& numReadsInContig) {
@@ -348,7 +351,9 @@ ConsensusGraph *Consensus::createGraph(read_t &firstUnaddedRead) {
     if (!getRead(read))
         return nullptr;
     ConsensusGraph *cG = new ConsensusGraph(aligner);
-    cG->initialize(rD->getRead(read), read, 0);
+    std::string readStr;
+    rD->getRead(read, readStr);
+    cG->initialize(readStr, read, 0);
     cG->calculateMainPathGreedy();
     firstUnaddedRead = read + 1;
     return cG;
