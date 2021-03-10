@@ -2,7 +2,7 @@
 #define C3C2DD2A_9114_4E1C_B89E_18F31D007DCB
 
 #include "Types.h"
-#include "StringToBits.h"
+#include "dnaToBits.h"
 #include <memory>
 #include <string>
 #include <vector>

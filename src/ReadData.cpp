@@ -31,7 +31,6 @@ void ReadData::loadFromReadFile(const char *fileName) {
     size_t totalNumBases = 0;
     maxReadLen = 0;
     while (std::getline(infile, line)) {
-        //        std::cout << line << std::endl;
         size_t index = line.find(':');
         assert(index != std::string::npos);
         reverse.push_back(line[index - 1] == 'c');
@@ -45,21 +44,14 @@ void ReadData::loadFromReadFile(const char *fileName) {
                 new std::string(line.substr(index + 1)));
             editStrings.push_back(std::move(ptr));
         }
-        //        std::cout << readPos.back() << std::endl;
-        //        std::cout << editStrings.back() << std::endl;
         std::getline(infile, line);
         {
-            // std::unique_ptr<std::string> ptr(new std::string(line));
-            // readData.push_back(std::move(ptr));
+            readLen = line.size();
             const char *cstr = line.c_str();
-            readLen = std::strlen(cstr);
             std::unique_ptr<DnaBitset> ptr(new DnaBitset(cstr, readLen));
             readData.push_back(std::move(ptr));
             readPos.push_back(0);
         }
-        // totalNumBases += readData.back()->size();
-        // if (readData.back()->size() > maxReadLen)
-        //     maxReadLen = readData.back()->size();
         totalNumBases += readLen;
         if (readLen > maxReadLen)
             maxReadLen = readLen;
@@ -94,11 +86,9 @@ void ReadData::loadFromFastqFile(const char *fileName) {
     while (std::getline(infile, line)) {
         std::getline(infile, line);
         {
-            // std::unique_ptr<std::string> ptr(new std::string(line));
+            readLen = line.size();
             //convert to c style string  
             const char *cstr = line.c_str();
-            // readData.push_back(std::move(ptr));
-            readLen = std::strlen(cstr);
             std::unique_ptr<DnaBitset> ptr(new DnaBitset(cstr, readLen));
             readData.push_back(std::move(ptr));
             readPos.push_back(0);
@@ -110,9 +100,6 @@ void ReadData::loadFromFastqFile(const char *fileName) {
         }
         std::getline(infile, line);
         std::getline(infile, line);
-        // totalNumBases += readData.back()->size();
-        // if (readData.back()->size() > maxReadLen)
-        //     maxReadLen = readData.back()->size();
         totalNumBases += readLen;
         if (readLen > maxReadLen)
             maxReadLen = readLen;

@@ -31,7 +31,8 @@ void Consensus::generateAndWriteConsensus() {
 #endif
         std::string filePrefix = tempDir + tempFileName + std::to_string(tid);
         ConsensusGraphWriter cgw(filePrefix);
-        read_t firstUnaddedRead = 0; 
+        read_t firstUnaddedRead = uint64_t(tid*rD->getNumReads())/numThr;
+        // start equally spaced to avoid lock contention 
         int contigId = 0;
         // guarantee that all reads < firstUnaddedRead have been picked
         while ((cG = createGraph(firstUnaddedRead))) {
@@ -212,6 +213,7 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
             ssize_t pos = curPos + relPos;
             std::vector<Edit> editScript;
             ssize_t beginOffset, endOffset;
+
             if (!readStatusLock[r%numLocks].try_lock()) {
                 // we only try_lock here since missing a read
                 // is not a major issue and lock contention should be a rare event anyway.
