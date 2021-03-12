@@ -48,7 +48,7 @@ private:
     void generateRead(const std::string &genome, std::string &read,
                       std::ifstream &posFile, std::ifstream &editTypeFile,
                       std::ifstream &editBaseFile,
-                      std::ifstream &complementFile) const;
+                      bool reverseComplement) const;
 };
 
 #endif /* C7EF1708_1404_4E39_A140_F2F9914B7F6A */

@@ -54,17 +54,10 @@ void Decompressor::decompress(const char *inputFileName,
         std::cout << "BSC decompression done!\n";
     }
 
-    unpack();
-
-    generateReads(outputFileName);
-}
-
-void Decompressor::unpack() {
-    std::cout << "Unpacking..." << std::endl;
+    // extract information from the metaDataFile
     std::ifstream metaDataFile;
     metaDataFile.open(tempDir + "metaData");
-    std::string line;
-
+    std::string line;    
     while (std::getline(metaDataFile, line)) {
         size_t delimPos = line.find('=');
         if (delimPos == std::string::npos)
@@ -79,108 +72,201 @@ void Decompressor::unpack() {
             numEncodingThreads = std::stol(line.substr(delimPos + 1));
             std::cout << "NumEncodingThreads:" << numEncodingThreads << std::endl;
         }
-    }
-
-    // since the compressed files are on a per-thread level, we first combine the
-    // files with common extension (TODO: use better solution with parallelized decompression)
-    std::set<std::string> extensions;
-    DirectoryUtils::getAllExtensions(
-            tempDir, std::inserter(extensions, extensions.end()));
-    // Now we combine the files (note delimiter already present so not added here)
-    for (const std::string &ext : extensions)
-        DirectoryUtils::combineFilesWithExt(tempDir + tempFilename, ext, numEncodingThreads, false);
+    }    
     
-    // Unpack all files in directory with extensions
-    boost::filesystem::directory_iterator endIt;
-    for (boost::filesystem::directory_iterator it(tempDir); it != endIt; ++it) {
-        if (!boost::filesystem::is_regular_file(*it))
-            continue;
-        boost::filesystem::path fullPath = it->path();
-        std::string filename = fullPath.filename().string();
-        const auto &ext = fullPath.extension();
-        if (ext.empty())
-            continue;
-        DirectoryUtils::unpack(fullPath.string());
-    }
-}
-
-void Decompressor::generateReads(const char *outputFileName) const {
-    std::string reads[numReads];
-    for (size_t i = 0; i < numContigs; ++i)
-        generateReads(reads, i);
-    std::ofstream outFile;
-    outFile.open(outputFileName);
-    for (read_t i = 0; i < numReads; ++i)
-        outFile << reads[i] << '\n';
-}
-
-void Decompressor::generateReads(std::string *reads, size_t contigId) const {
-    std::string currentFilename =
-        tempDir + tempFilename + std::to_string(contigId);
-    // First we read the genome
-    std::string genome;
-    {
+    //create a string vector
+    std::vector<std::string> reads(numReads);
+    
+    //loop through each thread
+    for (size_t i = 0; i < numEncodingThreads; ++i){
+        std::string currentFilename = tempDir + tempFilename + std::to_string(i);
+        //open all the files for this thread
         std::ifstream genomeFile;
         genomeFile.open(currentFilename + ".genome");
-        genomeFile >> genome;
+        std::ifstream idFile, posFile, editTypeFile, editBaseFile, complementFile;
+        idFile.open(currentFilename + ".id");
+        posFile.open(currentFilename + ".pos");
+        editTypeFile.open(currentFilename + ".type");
+        editBaseFile.open(currentFilename + ".base");
+        complementFile.open(currentFilename + ".complement");
+        // read each genome in seris
+        std::string genome;
+        // used to skip the line with '.'
+        std:: string dot;
+        while(std::getline(genomeFile, genome))
+        {
+            //the id for the current read
+            read_t id = 0;
+            while (true) {
+                char c;
+                complementFile.get(c);
+                //break if it reaches the end of a read
+                if(c == '\n'){
+                    //skip the '\n' for id file
+                    idFile.get(c);
+                    break;
+                }
+                //check if it is complement or not
+                bool reverseComplement = (c == 'c');
+                complementFile.get(c);
+                //read in the id
+                read_t idInc;
+                idFile >> idInc;
+                idFile.get(c);
+                id = id + idInc;
+                generateRead(genome, reads[id], posFile, editTypeFile, editBaseFile,
+                             reverseComplement);
+            }
+            //skip the line with '.' 
+            std::getline(genomeFile, dot);
+            std::getline(idFile, dot);
+            std::getline(posFile, dot);
+            std::getline(editTypeFile, dot);
+            std::getline(editBaseFile, dot);
+            std::getline(complementFile, dot);
+        }
+        //close all files
         genomeFile.close();
+        idFile.close();
+        posFile.close();
+        editTypeFile.close();
+        editBaseFile.close();
+        complementFile.close();
     }
-    std::ifstream idFile, posFile, editTypeFile, editBaseFile, complementFile;
-    idFile.open(currentFilename + ".id");
-    posFile.open(currentFilename + ".pos");
-    editTypeFile.open(currentFilename + ".type");
-    editBaseFile.open(currentFilename + ".base");
-    complementFile.open(currentFilename + ".complement");
-    read_t id = 0;
-    while (true) {
-        read_t idInc;
-        idFile >> idInc;
-        char c;
-        idFile.get(c);
-        if (!idFile)
-            break;
-        id = id + idInc;
-        generateRead(genome, reads[id], posFile, editTypeFile, editBaseFile,
-                     complementFile);
-        // std::cout << id << " ";
-    }
-    idFile.close();
-    posFile.close();
-    editTypeFile.close();
-    editBaseFile.close();
-    complementFile.close();
 
-    // Now we deal with unaligned reads
-    // std::ifstream unalignedIdsFile, unalignedReadsFile;
-    // unalignedIdsFile.open(currentFilename + ".unalignedIds",
-    // std::ios::binary); unalignedReadsFile.open(currentFilename +
-    // ".unalignedReads"); id = 0; while (true) {
-    //     read_t idInc;
-    //     unalignedIdsFile >> idInc;
-    //     char c;
-    //     unalignedIdsFile.get(c);
-    //     if (!unalignedIdsFile)
-    //         break;
-    //     id = id + idInc;
-    //     unalignedReadsFile >> reads[id];
-    //     // std::cout << id << " ";
-    // }
-    // unalignedIdsFile.close();
-    // unalignedReadsFile.close();
+    //output the reads to a file
+    std::ofstream outFile;
+    outFile.open(outputFileName);
+    for(auto it = std::begin(reads); it != std::end(reads); ++it) {
+        outFile << *it << '\n';
+    }
+
+
+    // unpack();
+
+    // generateReads(outputFileName);
 }
+
+// void Decompressor::unpack() {
+//     std::cout << "Unpacking..." << std::endl;
+//     std::ifstream metaDataFile;
+//     metaDataFile.open(tempDir + "metaData");
+//     std::string line;
+
+//     while (std::getline(metaDataFile, line)) {
+//         size_t delimPos = line.find('=');
+//         if (delimPos == std::string::npos)
+//             continue;
+//         if (line.substr(0, delimPos) == "numReads") {
+//             numReads = std::stol(line.substr(delimPos + 1));
+//             std::cout << "NumReads:" << numReads << std::endl;
+//         } else if (line.substr(0, delimPos) == "numContigs") {
+//             numContigs = std::stol(line.substr(delimPos + 1));
+//             std::cout << "NumContigs:" << numContigs << std::endl;
+//         } else if (line.substr(0, delimPos) == "numThr") {
+//             numEncodingThreads = std::stol(line.substr(delimPos + 1));
+//             std::cout << "NumEncodingThreads:" << numEncodingThreads << std::endl;
+//         }
+//     }
+
+//     // since the compressed files are on a per-thread level, we first combine the
+//     // files with common extension (TODO: use better solution with parallelized decompression)
+//     std::set<std::string> extensions;
+//     DirectoryUtils::getAllExtensions(
+//             tempDir, std::inserter(extensions, extensions.end()));
+//     // Now we combine the files (note delimiter already present so not added here)
+//     for (const std::string &ext : extensions)
+//         DirectoryUtils::combineFilesWithExt(tempDir + tempFilename, ext, numEncodingThreads, false);
+    
+//     // Unpack all files in directory with extensions
+//     boost::filesystem::directory_iterator endIt;
+//     for (boost::filesystem::directory_iterator it(tempDir); it != endIt; ++it) {
+//         if (!boost::filesystem::is_regular_file(*it))
+//             continue;
+//         boost::filesystem::path fullPath = it->path();
+//         std::string filename = fullPath.filename().string();
+//         const auto &ext = fullPath.extension();
+//         if (ext.empty())
+//             continue;
+//         DirectoryUtils::unpack(fullPath.string());
+//     }
+// }
+
+// void Decompressor::generateReads(const char *outputFileName) const {
+//     std::string reads[numReads];
+//     for (size_t i = 0; i < numContigs; ++i)
+//         generateReads(reads, i);
+//     std::ofstream outFile;
+//     outFile.open(outputFileName);
+//     for (read_t i = 0; i < numReads; ++i)
+//         outFile << reads[i] << '\n';
+// }
+
+// void Decompressor::generateReads(std::string *reads, size_t contigId) const {
+//     std::string currentFilename =
+//         tempDir + tempFilename + std::to_string(contigId);
+//     // First we read the genome
+//     std::string genome;
+//     {
+//         std::ifstream genomeFile;
+//         genomeFile.open(currentFilename + ".genome");
+//         genomeFile >> genome;
+//         genomeFile.close();
+//     }
+//     std::ifstream idFile, posFile, editTypeFile, editBaseFile, complementFile;
+//     idFile.open(currentFilename + ".id");
+//     posFile.open(currentFilename + ".pos");
+//     editTypeFile.open(currentFilename + ".type");
+//     editBaseFile.open(currentFilename + ".base");
+//     complementFile.open(currentFilename + ".complement");
+//     read_t id = 0;
+//     while (true) {
+//         read_t idInc;
+//         idFile >> idInc;
+//         char c;
+//         idFile.get(c);
+//         if (!idFile)
+//             break;
+//         id = id + idInc;
+//         generateRead(genome, reads[id], posFile, editTypeFile, editBaseFile,
+//                      complementFile);
+//         // std::cout << id << " ";
+//     }
+//     idFile.close();
+//     posFile.close();
+//     editTypeFile.close();
+//     editBaseFile.close();
+//     complementFile.close();
+
+//     // Now we deal with unaligned reads
+//     // std::ifstream unalignedIdsFile, unalignedReadsFile;
+//     // unalignedIdsFile.open(currentFilename + ".unalignedIds",
+//     // std::ios::binary); unalignedReadsFile.open(currentFilename +
+//     // ".unalignedReads"); id = 0; while (true) {
+//     //     read_t idInc;
+//     //     unalignedIdsFile >> idInc;
+//     //     char c;
+//     //     unalignedIdsFile.get(c);
+//     //     if (!unalignedIdsFile)
+//     //         break;
+//     //     id = id + idInc;
+//     //     unalignedReadsFile >> reads[id];
+//     //     // std::cout << id << " ";
+//     // }
+//     // unalignedIdsFile.close();
+//     // unalignedReadsFile.close();
+// }
 
 void Decompressor::generateRead(const std::string &genome, std::string &read,
                                 std::ifstream &posFile,
                                 std::ifstream &editTypeFile,
                                 std::ifstream &editBaseFile,
-                                std::ifstream &complementFile) const {
+                                bool reverseComplement) const {
     size_t curPos;
     char c;
     posFile >> curPos;
     posFile.get(c);
-    complementFile.get(c);
-    bool reverseComplement = (c == 'c');
-    complementFile.get(c);
+
     while (true) {
         // First we handle the unchanged bases
         size_t numUnchanged;
@@ -219,6 +305,5 @@ void Decompressor::generateRead(const std::string &genome, std::string &read,
     // Read the line breaks in editBase
     editBaseFile.get(c);
     assert(c == '\n');
-
     // std::cout << read << '\n';
 }
