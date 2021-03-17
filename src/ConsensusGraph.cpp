@@ -28,9 +28,6 @@ void Edge::addRead(read_t read) {
 
 Node::Node(const char base) : base(base) {}
 
-// void Node::addEdge(Edge *e) {
-//    edgesOut[e->sink] = e;
-//}
 
 Edge *Node::getEdgeTo(Node *n) {
     const auto &it = std::find_if(
@@ -188,8 +185,7 @@ bool ConsensusGraph::addRead(const std::string &s, std::vector<Edit> &editScript
 
     size_t editDis;
 
-    std::string originalStringCopy(originalString.begin(),originalString.end());
-    const char* Abegin = originalStringCopy.c_str();
+    const char* Abegin = originalString.c_str();
     int hits;
 
     bool success = true;
@@ -584,7 +580,7 @@ Path &ConsensusGraph::calculateMainPathGreedy() {
     }
 
     // Extend to the left
-    // NOTE: I have changed mainPath.path to vector to speed up alignment,
+    // NOTE: I have changed mainPath.path to string to simplify alignment,
     // but that means the code below is not efficient (inserting to start
     // of vector). Fortunately, this is currently a very small contributor
     // to the total time. But we might want to fix this if issues crop up later.

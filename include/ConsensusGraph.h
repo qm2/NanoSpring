@@ -145,7 +145,7 @@ public:
 class Path {
 public:
     std::deque<Edge *> edges;
-    std::vector<char> path;
+    std::string path;
 
     /**
      * Returns the average weight of the edges on path
