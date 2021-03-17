@@ -18,7 +18,7 @@ public:
     /** The temp directories **/
     std::string tempDir = "tempRaw/";
     /** The output filenames to use in temp directories **/
-    std::string tempFileName = "Contig";
+    std::string tempFileName = "Stream";
 
     std::string outputFileName = "compressedFile";
 

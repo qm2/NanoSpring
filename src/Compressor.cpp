@@ -87,7 +87,7 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
 
         consensus.generateAndWriteConsensus();
     }
-
+    
     {
 // We first compress all the files in the temp directory (we compress
 // only files with extensions)
@@ -102,7 +102,7 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
 #pragma omp parallel num_threads(numThr)
 #pragma omp for
             for (int i = 0; i < numThr; i++) {
-                std::string fullPath = tempDir + tempFileName + std::to_string(i) + ext;
+                std::string fullPath = tempDir + tempFileName + ".tid."+ std::to_string(i) + ext;
                 std::string outPath = fullPath + "Compressed";
                 bsc::BSC_compress(fullPath.c_str(), outPath.c_str());
                 uncompressedSizes[i] = boost::filesystem::file_size(fullPath);

@@ -13,7 +13,7 @@ public:
     // std::string tarFileName = "originalFile";
 
     // The output filenames to use in temp directories
-    std::string tempFilename = "Contig";
+    std::string tempFilename = "Stream";
 
     void decompress(const char *inputFileName, const char *outputFileName,
                     const int numThreads);

@@ -66,7 +66,7 @@ void Decompressor::decompress(const char *inputFileName,
 #pragma omp parallel for
     for (size_t i = 0; i < numEncodingThreads; ++i){
         for (auto &s : suffix) {
-            std::string uncompressedFile = tempDir+"/"+"Contig"+std::to_string(i)+s;
+            std::string uncompressedFile = tempDir+"/"+tempFilename+".tid."+std::to_string(i)+s;
             std::string compressedFile = uncompressedFile + "Compressed";
             bsc::BSC_decompress(compressedFile.c_str(), uncompressedFile.c_str());
         }
@@ -79,20 +79,18 @@ void Decompressor::decompress(const char *inputFileName,
     //loop through each thread
 #pragma omp parallel for
     for (size_t i = 0; i < numEncodingThreads; ++i){
-        std::string currentFilename = tempDir + tempFilename + std::to_string(i);
+        std::string currentFilename = tempDir + tempFilename + ".tid." + std::to_string(i);
         //open all the files for this thread
         std::ifstream genomeFile;
         genomeFile.open(currentFilename + ".genome");
         std::ifstream idFile, posFile, editTypeFile, editBaseFile, complementFile;
-        idFile.open(currentFilename + ".id");
-        posFile.open(currentFilename + ".pos");
+        idFile.open(currentFilename + ".id", std::ios::binary);
+        posFile.open(currentFilename + ".pos", std::ios::binary);
         editTypeFile.open(currentFilename + ".type");
         editBaseFile.open(currentFilename + ".base");
         complementFile.open(currentFilename + ".complement");
         // read each genome in seris
         std::string genome;
-        // used to skip the line with '.'
-        std:: string dot;
         std::string currentRead;
         while(std::getline(genomeFile, genome))
         {
@@ -101,31 +99,20 @@ void Decompressor::decompress(const char *inputFileName,
             while (true) {
                 char c;
                 complementFile.get(c);
-                //break if it reaches the end of a read
+                //break after we cover all reads in contig
                 if(c == '\n'){
-                    //skip the '\n' for id file
-                    idFile.get(c);
                     break;
                 }
                 //check if it is complement or not
                 bool reverseComplement = (c == 'c');
-                complementFile.get(c);
                 //read in the id
                 read_t idInc;
-                idFile >> idInc;
-                idFile.get(c);
+                idFile.read((char*)&idInc, sizeof(read_t));
                 id = id + idInc;
                 generateRead(genome, currentRead, posFile, editTypeFile, editBaseFile,
                              reverseComplement);
                 reads[id] = new DnaBitset(currentRead.c_str(), currentRead.size());
             }
-            //skip the line with '.' 
-            std::getline(genomeFile, dot);
-            std::getline(idFile, dot);
-            std::getline(posFile, dot);
-            std::getline(editTypeFile, dot);
-            std::getline(editBaseFile, dot);
-            std::getline(complementFile, dot);
         }
         //close all files
         genomeFile.close();
@@ -157,16 +144,13 @@ void Decompressor::generateRead(const std::string &genome, std::string &read,
                                 std::ifstream &editBaseFile,
                                 bool reverseComplement) const {
     read.clear();
-    size_t curPos;
-    char c;
-    posFile >> curPos;
-    posFile.get(c);
+    uint32_t curPos;
+    posFile.read((char*)&curPos,sizeof(uint32_t));
 
     while (true) {
         // First we handle the unchanged bases
         size_t numUnchanged;
-        posFile >> numUnchanged;
-        posFile.get(c);
+        posFile.read((char*)&numUnchanged,sizeof(uint32_t));
         for (size_t i = 0; i < numUnchanged; ++i) {
             read.push_back(genome[curPos++]);
         }
@@ -195,9 +179,4 @@ void Decompressor::generateRead(const std::string &genome, std::string &read,
         ReadData::toReverseComplement(temp.begin(), temp.end(),
                                       std::inserter(read, read.end()));
     }
-    // We need to read extra '\n'
-    posFile.get(c);
-    // Read the line breaks in editBase
-    editBaseFile.get(c);
-    assert(c == '\n');
 }

@@ -299,7 +299,7 @@ public:
      * @param pos outputs the relative position in mainPath
      */
     size_t read2EditScript(Read &r, read_t id, std::vector<Edit> &editScript,
-                           size_t &pos);
+                           uint32_t &pos);
 
     /**
      * @brief Write the edit strings of the reads in a single file f
@@ -307,15 +307,6 @@ public:
      * @param f
      */
     void writeReads(ConsensusGraphWriter &cgw);
-
-    /**
-     * @brief Write the raw data into tempDir with file names .pos, .genome,
-     * .type, .base, .id, .unalignedReads, .unalignedIds;
-     * The .id file is delta encoded
-     *
-     * @param filename
-     */
-    void writeReads(const std::string &filename);
 
     /**
      * Prints the info of the ConsensusGraph. For debugging purposes
@@ -474,15 +465,6 @@ private:
                    std::vector<read_t> *reads2Split);
 
     /**
-     * Write the edits trings of the reads into a single file
-     * @param f
-     * @param r
-     * @param id
-     * @return Edit distance
-     */
-    size_t writeRead(std::ofstream &f, Read &r, read_t id);
-
-    /**
      * @brief
      *
      * @param posFile Here we store the number of unchanged bases before the
@@ -513,7 +495,6 @@ private:
      */
     void clearMainPath();
 
-    // void writeGraph(std::ofstream &f);
 };
 
 /******************************************************************************/

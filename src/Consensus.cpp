@@ -29,7 +29,7 @@ void Consensus::generateAndWriteConsensus() {
 #ifdef LOG
         logfile.open("logfile"+std::to_string(tid), std::ofstream::out);
 #endif
-        std::string filePrefix = tempDir + tempFileName + std::to_string(tid);
+        std::string filePrefix = tempDir + tempFileName + ".tid." + std::to_string(tid);
         ConsensusGraphWriter cgw(filePrefix);
         read_t firstUnaddedRead = uint64_t(tid*rD->getNumReads())/numThr;
         // start equally spaced to avoid lock contention 
