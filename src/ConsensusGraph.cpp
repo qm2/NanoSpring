@@ -190,11 +190,8 @@ bool ConsensusGraph::addRead(const std::string &s, std::vector<Edit> &editScript
 
     std::string originalStringCopy(originalString.begin(),originalString.end());
     const char* Abegin = originalStringCopy.c_str();
-    const char* Bbegin = s.c_str();
-    //we comment out the original aligner for the minimap
-    // bool success = aligner->align(Abegin, Aend, Bbegin, Bend, offsetGuess,
-    //                               beginOffset, endOffset, editScript, editDis);
     int hits;
+
     bool success = true;
     //initialize the local buffer
     mm_tbuf_t *b = mm_tbuf_init();
@@ -237,11 +234,12 @@ bool ConsensusGraph::addRead(const std::string &s, std::vector<Edit> &editScript
     	//calculate the aligned length; notice that I use the aligned length for the query read here
     	alignedLen = r->qe - r->qs;
     	//first check if the read is at the beginnning or the end of reference sequence
-    	if( (r->rs > 0) && (r->re < originalString.size())){
+    	if((r->rs > 0) && (r->re < originalString.size())){
     		//check editDis/alignedLen
     		// std::cout<<"editDis/alignedLen: "<< editDis/(double)alignedLen<<std::endl;
     		// std::cout<<"(double)alignedLen/s.length() "<< (double)alignedLen/s.length()<<std::endl;    		
-	    	if(editDis/(double)alignedLen >= 0.2 || (double)alignedLen/s.length()<=0.4 ){
+            // 1.0 and 0.0: no filter
+            if(editDis/(double)alignedLen >= 1.0 || (double)alignedLen/s.length()<=0.0 ){
 	    		success = false;
 	    		free(r->p);
                 if (hits > 1) {
