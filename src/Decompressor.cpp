@@ -3,17 +3,23 @@
 #include "DirectoryUtils.h"
 #include "ReadData.h"
 #include "bsc_helper.h"
+#include "dnaToBits.h"
 #include <boost/filesystem.hpp>
 #include <cassert>
 #include <fstream>
 #include <iostream>
 #include <set>
+#include <omp.h>
+#include <vector>
+#include <string>
 
 void Decompressor::decompress(const char *inputFileName,
-                              const char *outputFileName) {
-    DirectoryUtils::clearDir(tempDir);
+                              const char *outputFileName,
+                              const int numThreads) {
+    std::cout << "numDecodingThreads: " << numThreads << "\n";
+    omp_set_num_threads(numThreads);
 
-    // bsc::BSC_decompress(inputFileName, tarFileName.c_str());
+    DirectoryUtils::clearDir(tempDir);
 
     // Untar
     {
@@ -25,33 +31,6 @@ void Decompressor::decompress(const char *inputFileName,
             throw std::runtime_error(
                 "Error occurred during tar archive extraction.");
         std::cout << "Tar extraction done!\n";
-    }
-
-    // bsc Decompress
-    {
-        std::cout << "BSC decompression ...";
-        boost::filesystem::path tempPath(tempDir);
-        boost::filesystem::directory_iterator endIt;
-        for (boost::filesystem::directory_iterator it(tempDir); it != endIt;
-             ++it) {
-            if (boost::filesystem::is_regular_file(*it)) {
-                const boost::filesystem::path &fullPath = it->path();
-                const std::string filename = fullPath.filename().string();
-                // We only decompress files ending with "Compressed"
-                const std::string ending("Compressed");
-                if (filename.length() < ending.length())
-                    continue;
-                if (filename.compare(filename.length() - ending.length(),
-                                     ending.length(), ending) != 0)
-                    continue;
-                const std::string &fullPathString = fullPath.string();
-                std::string outPath = fullPathString.substr(
-                    0, fullPathString.length() - ending.length());
-                bsc::BSC_decompress(fullPath.string().c_str(), outPath.c_str());
-                boost::filesystem::remove(fullPath);
-            }
-        }
-        std::cout << "BSC decompression done!\n";
     }
 
     // extract information from the metaDataFile
@@ -72,12 +51,33 @@ void Decompressor::decompress(const char *inputFileName,
             numEncodingThreads = std::stol(line.substr(delimPos + 1));
             std::cout << "NumEncodingThreads:" << numEncodingThreads << std::endl;
         }
-    }    
+    }
     
-    //create a string vector
-    std::vector<std::string> reads(numReads);
-    
+    // bsc Decompress
+
+    std::vector<std::string> suffix = {".genome",
+                                      ".id",
+                                      ".pos",
+                                      ".type",
+                                      ".base",
+                                      ".complement"};
+    std::cout << "BSC decompression ...";
     //loop through each thread
+#pragma omp parallel for
+    for (size_t i = 0; i < numEncodingThreads; ++i){
+        for (auto &s : suffix) {
+            std::string uncompressedFile = tempDir+"/"+"Contig"+std::to_string(i)+s;
+            std::string compressedFile = uncompressedFile + "Compressed";
+            bsc::BSC_decompress(compressedFile.c_str(), uncompressedFile.c_str());
+        }
+    }
+    std::cout << "BSC decompression done!\n";
+    
+    //create a DnaBits vector (to reduce memory consumption of decompressor)
+    std::vector<DnaBitset*> reads(numReads);
+    std::cout << "Generating reads...";
+    //loop through each thread
+#pragma omp parallel for
     for (size_t i = 0; i < numEncodingThreads; ++i){
         std::string currentFilename = tempDir + tempFilename + std::to_string(i);
         //open all the files for this thread
@@ -93,6 +93,7 @@ void Decompressor::decompress(const char *inputFileName,
         std::string genome;
         // used to skip the line with '.'
         std:: string dot;
+        std::string currentRead;
         while(std::getline(genomeFile, genome))
         {
             //the id for the current read
@@ -114,8 +115,9 @@ void Decompressor::decompress(const char *inputFileName,
                 idFile >> idInc;
                 idFile.get(c);
                 id = id + idInc;
-                generateRead(genome, reads[id], posFile, editTypeFile, editBaseFile,
+                generateRead(genome, currentRead, posFile, editTypeFile, editBaseFile,
                              reverseComplement);
+                reads[id] = new DnaBitset(currentRead.c_str(), currentRead.size());
             }
             //skip the line with '.' 
             std::getline(genomeFile, dot);
@@ -133,135 +135,28 @@ void Decompressor::decompress(const char *inputFileName,
         editBaseFile.close();
         complementFile.close();
     }
+    std::cout << "Done!\n";
 
     //output the reads to a file
     std::ofstream outFile;
     outFile.open(outputFileName);
-    for(auto it = std::begin(reads); it != std::end(reads); ++it) {
-        outFile << *it << '\n';
+    std::cout << "Writing to file...";
+    std::string currentRead;
+    // TODO: can we parallelize the to_string part somehow
+    for (size_t i = 0; i < numReads; i++) {
+        reads[i]->to_string(currentRead);
+        delete reads[i];
+        outFile << currentRead << '\n';
     }
-
-
-    // unpack();
-
-    // generateReads(outputFileName);
+    std::cout << "Done!\n";
 }
-
-// void Decompressor::unpack() {
-//     std::cout << "Unpacking..." << std::endl;
-//     std::ifstream metaDataFile;
-//     metaDataFile.open(tempDir + "metaData");
-//     std::string line;
-
-//     while (std::getline(metaDataFile, line)) {
-//         size_t delimPos = line.find('=');
-//         if (delimPos == std::string::npos)
-//             continue;
-//         if (line.substr(0, delimPos) == "numReads") {
-//             numReads = std::stol(line.substr(delimPos + 1));
-//             std::cout << "NumReads:" << numReads << std::endl;
-//         } else if (line.substr(0, delimPos) == "numContigs") {
-//             numContigs = std::stol(line.substr(delimPos + 1));
-//             std::cout << "NumContigs:" << numContigs << std::endl;
-//         } else if (line.substr(0, delimPos) == "numThr") {
-//             numEncodingThreads = std::stol(line.substr(delimPos + 1));
-//             std::cout << "NumEncodingThreads:" << numEncodingThreads << std::endl;
-//         }
-//     }
-
-//     // since the compressed files are on a per-thread level, we first combine the
-//     // files with common extension (TODO: use better solution with parallelized decompression)
-//     std::set<std::string> extensions;
-//     DirectoryUtils::getAllExtensions(
-//             tempDir, std::inserter(extensions, extensions.end()));
-//     // Now we combine the files (note delimiter already present so not added here)
-//     for (const std::string &ext : extensions)
-//         DirectoryUtils::combineFilesWithExt(tempDir + tempFilename, ext, numEncodingThreads, false);
-    
-//     // Unpack all files in directory with extensions
-//     boost::filesystem::directory_iterator endIt;
-//     for (boost::filesystem::directory_iterator it(tempDir); it != endIt; ++it) {
-//         if (!boost::filesystem::is_regular_file(*it))
-//             continue;
-//         boost::filesystem::path fullPath = it->path();
-//         std::string filename = fullPath.filename().string();
-//         const auto &ext = fullPath.extension();
-//         if (ext.empty())
-//             continue;
-//         DirectoryUtils::unpack(fullPath.string());
-//     }
-// }
-
-// void Decompressor::generateReads(const char *outputFileName) const {
-//     std::string reads[numReads];
-//     for (size_t i = 0; i < numContigs; ++i)
-//         generateReads(reads, i);
-//     std::ofstream outFile;
-//     outFile.open(outputFileName);
-//     for (read_t i = 0; i < numReads; ++i)
-//         outFile << reads[i] << '\n';
-// }
-
-// void Decompressor::generateReads(std::string *reads, size_t contigId) const {
-//     std::string currentFilename =
-//         tempDir + tempFilename + std::to_string(contigId);
-//     // First we read the genome
-//     std::string genome;
-//     {
-//         std::ifstream genomeFile;
-//         genomeFile.open(currentFilename + ".genome");
-//         genomeFile >> genome;
-//         genomeFile.close();
-//     }
-//     std::ifstream idFile, posFile, editTypeFile, editBaseFile, complementFile;
-//     idFile.open(currentFilename + ".id");
-//     posFile.open(currentFilename + ".pos");
-//     editTypeFile.open(currentFilename + ".type");
-//     editBaseFile.open(currentFilename + ".base");
-//     complementFile.open(currentFilename + ".complement");
-//     read_t id = 0;
-//     while (true) {
-//         read_t idInc;
-//         idFile >> idInc;
-//         char c;
-//         idFile.get(c);
-//         if (!idFile)
-//             break;
-//         id = id + idInc;
-//         generateRead(genome, reads[id], posFile, editTypeFile, editBaseFile,
-//                      complementFile);
-//         // std::cout << id << " ";
-//     }
-//     idFile.close();
-//     posFile.close();
-//     editTypeFile.close();
-//     editBaseFile.close();
-//     complementFile.close();
-
-//     // Now we deal with unaligned reads
-//     // std::ifstream unalignedIdsFile, unalignedReadsFile;
-//     // unalignedIdsFile.open(currentFilename + ".unalignedIds",
-//     // std::ios::binary); unalignedReadsFile.open(currentFilename +
-//     // ".unalignedReads"); id = 0; while (true) {
-//     //     read_t idInc;
-//     //     unalignedIdsFile >> idInc;
-//     //     char c;
-//     //     unalignedIdsFile.get(c);
-//     //     if (!unalignedIdsFile)
-//     //         break;
-//     //     id = id + idInc;
-//     //     unalignedReadsFile >> reads[id];
-//     //     // std::cout << id << " ";
-//     // }
-//     // unalignedIdsFile.close();
-//     // unalignedReadsFile.close();
-// }
 
 void Decompressor::generateRead(const std::string &genome, std::string &read,
                                 std::ifstream &posFile,
                                 std::ifstream &editTypeFile,
                                 std::ifstream &editBaseFile,
                                 bool reverseComplement) const {
+    read.clear();
     size_t curPos;
     char c;
     posFile >> curPos;
@@ -305,5 +200,4 @@ void Decompressor::generateRead(const std::string &genome, std::string &read,
     // Read the line breaks in editBase
     editBaseFile.get(c);
     assert(c == '\n');
-    // std::cout << read << '\n';
 }

@@ -15,7 +15,8 @@ public:
     // The output filenames to use in temp directories
     std::string tempFilename = "Contig";
 
-    void decompress(const char *inputFileName, const char *outputFileName);
+    void decompress(const char *inputFileName, const char *outputFileName,
+                    const int numThreads);
 
 private:
     // Number of contigs, number of reads and number of encoding threads; initialized by bscDecompress
@@ -49,6 +50,7 @@ private:
                       std::ifstream &posFile, std::ifstream &editTypeFile,
                       std::ifstream &editBaseFile,
                       bool reverseComplement) const;
+
 };
 
 #endif /* C7EF1708_1404_4E39_A140_F2F9914B7F6A */
