@@ -70,7 +70,7 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
     // We clear the temp directories and create them if they do not
     // exist
     DirectoryUtils::clearDir(tempDir);
-
+ 
     Consensus consensus;
     {
         consensus.rD = &rD;
@@ -133,4 +133,6 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
         if (ls_status)
             throw std::runtime_error("Error occurred during ls command.");
     }
+
+    boost::filesystem::remove_all(tempDir);
 }

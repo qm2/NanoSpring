@@ -136,6 +136,8 @@ void Decompressor::decompress(const char *inputFileName,
         outFile << currentRead << '\n';
     }
     std::cout << "Done!\n";
+
+    boost::filesystem::remove_all(tempDir);
 }
 
 void Decompressor::generateRead(const std::string &genome, std::string &read,
