@@ -156,7 +156,7 @@ void ConsensusGraph::initialize(const std::string &seed, read_t readId,
     // Rest will be inserted later when calculateMainPathGreedy is called
 }
 
-bool ConsensusGraph::addRead(const std::string &s, std::vector<Edit> &editScript,
+bool ConsensusGraph::alignRead(const std::string &s, std::vector<Edit> &editScript,
             ssize_t &beginOffset, ssize_t &endOffset, size_t m_k, size_t m_w, size_t hashBits) {
     // General comments: 
     // 1. The whole idea behind startPos, endPos and Read.pos in ConsensusGraph

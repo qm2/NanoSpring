@@ -31,8 +31,7 @@ void Consensus::generateAndWriteConsensus() {
 #endif
         std::string filePrefix = tempDir + tempFileName + ".tid." + std::to_string(tid);
         ConsensusGraphWriter cgw(filePrefix);
-        read_t firstUnaddedRead = uint64_t(tid*rD->getNumReads())/numThr;
-        // start equally spaced to avoid lock contention 
+        read_t firstUnaddedRead = 0;
         int contigId = 0;
         // guarantee that all reads < firstUnaddedRead have been picked
         while ((cG = createGraph(firstUnaddedRead))) {
@@ -214,35 +213,35 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
             std::vector<Edit> editScript;
             ssize_t beginOffset, endOffset;
 
-            if (!readStatusLock[r%numLocks].try_lock()) {
-                // we only try_lock here since missing a read
-                // is not a major issue and lock contention should be a rare event anyway.
-                // On the other hand, waiting for another thread to finish alignment is not
-                // worthwhile.
+            bool alignStatus = cG->alignRead(readStr, editScript, beginOffset,
+                                endOffset, m_k, m_w, hashBits);
+            if (!alignStatus) {
+#ifdef LOG
+                logfile<< "Contig: " << contigId << ", Read failed aligner "<<r<<"\n";
+#endif
                 continue;
             } else {
-                // check again that read is available (variables flushed after lock is set)
-                if (inGraph[r]) {
-                    // read already taken, continue with next read
-                    readStatusLock[r%numLocks].unlock();
-                    continue;
-                }
-                if (!cG->addRead(readStr, editScript, beginOffset,
-                                 endOffset, m_k, m_w, hashBits)) {
-                    // read doesn't align, continue with next read
-#ifdef LOG
-                    logfile<< "Contig: " << contigId << ", Read failed aligner "<<r<<"\n";
-#endif 
-                    readStatusLock[r%numLocks].unlock();
+                if (!readStatusLock[r%numLocks].try_lock()) {
+                    // we only try_lock here since missing a read
+                    // is not a major issue and lock contention should be a rare event anyway.
+                    // Note that if some other thread has locked the read, they are guaranteed
+                    // to pick it up.
                     continue;
                 } else {
+                    // check again that read is available (variables flushed after lock is set)
+                    if (inGraph[r]) {
+                        // read already taken, continue with next read
+                        readStatusLock[r%numLocks].unlock();
+                        continue;
+                    }
+
                     // read added to graph
 #ifdef LOG
                     logfile<< "Contig: " << contigId << ", Read passed aligner "<<r<<"\n";
-#endif 
+#endif
                     inGraph[r] = true;
                     readStatusLock[r%numLocks].unlock();
-                    cs.countAligner++;                    
+                    cs.countAligner++;
                 }
             }
 
@@ -372,14 +371,21 @@ bool Consensus::getRead(read_t &read) {
         return false;
     while (read < numReads) {
         if (!inGraph[read]) {
-            std::lock_guard<OmpMutex> lg(readStatusLock[read%numLocks]);
-            // check once again inside locked region (since variables are flushed)
-            if (!inGraph[read]) {
-                inGraph[read] = true;
-                return true;
+            if (!readStatusLock[read%numLocks].try_lock()) {
+                // couldn't obtain lock, that's fine, some other thread
+                // will take the read
+                read++;
+            } else {
+                // check once again inside locked region (since variables are flushed)
+                if (!inGraph[read]) {
+                    inGraph[read] = true;
+                    readStatusLock[read%numLocks].unlock();
+                    return true;
+                }
             }
+        } else {
+            read++;
         }
-        read++;
     }
     return false;
 }

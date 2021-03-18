@@ -239,12 +239,12 @@ public:
     void initialize(const std::string &seed, read_t readId, long pos);
 
     /**
-     * Adds a string to the consensus graph. Does not update mainPath or list of
-     * reads.
+     * Aligns a string to the consensus graph mainPath. 
+     * Does not update mainPath or list of reads.
      * @param s String of read to add
      */
     __attribute__((warn_unused_result)) bool
-    addRead(const std::string &s, std::vector<Edit> &editScript,
+    alignRead(const std::string &s, std::vector<Edit> &editScript,
             ssize_t &beginOffset, ssize_t &endOffset, size_t m_k, size_t m_w, size_t hashBits);
 
     /**
