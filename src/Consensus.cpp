@@ -186,7 +186,7 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
                 continue;
 
             cs.countMinHashNotInGraph++;
-            ssize_t relPos;            
+
             std::string readStr, readStr1;
             rD->getRead(r,readStr1);
 #ifdef LOG
@@ -199,22 +199,29 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
             else
                 readStr = readStr1;
 
-            if (!rA->align(originalString, readStr, relPos)) {
+            bool use_sort_merge = false;
+            ssize_t pos_sort_merge;
+            if (use_sort_merge) {
+                ssize_t relPos;            
+                if (!rA->align(originalString, readStr, relPos)) {
 #ifdef LOG
-                logfile<< "Contig: " << contigId << ", Read failed Sort-Merge "<<r<<"\n";
+                    logfile<< "Contig: " << contigId << ", Read failed Sort-Merge "<<r<<"\n";
 #endif 
-                continue;
+                    continue;
+                }
+#ifdef LOG
+                logfile<<"Contig: " << contigId << ", Read passed Sort-Merge "<<r<<"\n";
+#endif
+                cs.countMergeSort++;
+                pos_sort_merge = curPos + relPos;
             }
-#ifdef LOG
-            logfile<<"Contig: " << contigId << ", Read passed Sort-Merge "<<r<<"\n";
-#endif 
-            cs.countMergeSort++;
-            ssize_t pos = curPos + relPos;
+
             std::vector<Edit> editScript;
             ssize_t beginOffset, endOffset;
-
-            bool alignStatus = cG->alignRead(readStr, editScript, beginOffset,
+            ssize_t pos;
+            bool alignStatus = cG->alignRead(readStr, editScript, pos, beginOffset,
                                 endOffset, m_k, m_w, hashBits);
+            
             if (!alignStatus) {
 #ifdef LOG
                 logfile<< "Contig: " << contigId << ", Read failed aligner "<<r<<"\n";
