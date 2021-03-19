@@ -46,12 +46,6 @@ public:
      */
     ReadAligner *rA;
 
-    /**
-     * @brief The detailed aligner that aligns reads to the consensus senquence.
-     *
-     */
-    ConsensusGraph::StringAligner_t *aligner;
-
     // Directory for storing the temp files (.genome, .pos, .type, .id metaData)
     std::string tempDir = "tempRaw/";
 

@@ -4,7 +4,6 @@
 #include "Contig.h"
 #include "Edits.h"
 #include "ReadData.h"
-#include "StringAligner.h"
 #include <deque>
 #include <fstream>
 #include <functional>
@@ -185,10 +184,6 @@ public:
  */
 class ConsensusGraph {
 public:
-    typedef const char *RAItA;
-    typedef const char *RAItB;
-    typedef StringAligner<RAItA, RAItB> StringAligner_t;
-
     /** Starting and ending positions of mainPath in contig **/
     ssize_t startPos, endPos;
 
@@ -228,7 +223,7 @@ public:
      of the read) **/
     std::map<read_t, Read> readsInGraph;
 
-    ConsensusGraph(StringAligner_t *aligner);
+    ConsensusGraph();
 
     /**
      * Initializes the graph from a seeding read
@@ -361,8 +356,6 @@ private:
     size_t leftMostUnchangedNodeOffset = 0;
     size_t numNodes = 0;
     size_t numEdges = 0;
-
-    StringAligner_t *aligner;
 
     Node *createNode(char base);
 

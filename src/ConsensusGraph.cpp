@@ -1126,8 +1126,7 @@ void ConsensusGraph::removeEdge(Edge *e,
             return editDis;
         }
         
-        ConsensusGraph::ConsensusGraph(StringAligner_t *aligner)
-            : aligner(aligner) {}
+        ConsensusGraph::ConsensusGraph() {}
 
         ConsensusGraph::Read::Read(long pos, Node *start, size_t len,
                                    bool reverseComplement)

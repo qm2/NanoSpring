@@ -358,7 +358,7 @@ ConsensusGraph *Consensus::createGraph(read_t &firstUnaddedRead) {
     read_t read = firstUnaddedRead;
     if (!getRead(read))
         return nullptr;
-    ConsensusGraph *cG = new ConsensusGraph(aligner);
+    ConsensusGraph *cG = new ConsensusGraph;
     std::string readStr;
     rD->getRead(read, readStr);
     cG->initialize(readStr, read, 0);
