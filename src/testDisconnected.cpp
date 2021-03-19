@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
 
         cG.initialize(std::string("AB"), 0, 0);
         Node *A = cG.readsInGraph.at(0).start;
-        Node *B = A->edgesOut.front().first;
+        Node *B = A->edgesOut.front()->sink;
         cG.calculateMainPathGreedy();
 
         Node *C = cG.createNode('C');

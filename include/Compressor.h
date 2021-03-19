@@ -10,7 +10,7 @@
 class Compressor {
 public:
     /** Parameters for filtering **/
-    size_t k, n, overlapSketchThreshold;
+    size_t k, n, overlapSketchThreshold, m_k, m_w, hashBits;
     ReadData::Filetype filetype = ReadData::Filetype::READ;
     ReadAligner *rA;
     /** Parameters for consensus **/
@@ -18,7 +18,7 @@ public:
     /** The temp directories **/
     std::string tempDir = "tempRaw/";
     /** The output filenames to use in temp directories **/
-    std::string tempFileName = "Contig";
+    std::string tempFileName = "Stream";
 
     std::string outputFileName = "compressedFile";
 

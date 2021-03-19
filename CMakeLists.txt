@@ -20,7 +20,8 @@ endif()
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "CHECKS=${CHECKS} (Use -DCHECKS=True to enable all checks")
-
+message(STATUS "LOG=${LOG} (Use -LOG=True to output log files for analysis")
+message(STATUS "Directory: ${CMAKE_CURRENT_SOURCE_DIR}")
 find_package(OpenMP)
 
 ###############################
@@ -68,6 +69,16 @@ if(OpenMP_CXX_FOUND)
 endif()
 
 #######################################################
+#minimap2
+
+add_custom_target(
+   MINIMAP2
+   COMMAND make clean && make
+   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/minimap2/
+)
+
+
+#######################################################
 # the NanoporeCompressionLib library
 add_library(NanoporeCompressionLib 
     STATIC 
@@ -87,6 +98,7 @@ add_library(NanoporeCompressionLib
         src/ConsensusGraph.cpp
         src/OmpMutex.cpp
         src/DirectoryUtils.cpp
+        src/dnaToBits.cpp
         src/testNotOnMainPath.cpp
         src/testDisconnected.cpp
         include/AlignerTester.h
@@ -108,11 +120,13 @@ add_library(NanoporeCompressionLib
         include/OmpMutex.h
         include/DirectoryUtils.h
         include/Types.h
+        include/dnaToBits.h
         )
 
 target_include_directories(NanoporeCompressionLib 
     PUBLIC include src
-    PRIVATE libbsc)
+    PRIVATE libbsc
+    PRIVATE minimap2)
 
 target_compile_options(NanoporeCompressionLib 
     PRIVATE 
@@ -132,15 +146,23 @@ if ( CHECKS )
         PRIVATE 
         -DCHECKS)
 endif()
+if ( LOG )
+    target_compile_options(NanoporeCompressionLib 
+        PRIVATE 
+        -DLOG)
+endif()
 
 target_compile_definitions(NanoporeCompressionLib PUBLIC "$<$<CONFIG:Debug>:DEBUG>")
 target_compile_definitions(NanoporeCompressionLib PUBLIC "$<$<CONFIG:RelWithDebInfo>:DEBUG>")
 
+add_dependencies(NanoporeCompressionLib MINIMAP2)
 
 target_link_libraries(NanoporeCompressionLib 
     PRIVATE 
         libbsc
+        ${CMAKE_CURRENT_SOURCE_DIR}/minimap2/libminimap2.a
         Boost::filesystem
+        -lz -ldl -lm -lpthread
     )
 
 target_link_libraries(NanoporeCompressionLib 
@@ -180,3 +202,6 @@ target_link_libraries(testNotOnMainPath PRIVATE NanoporeCompressionLib profiler)
 
 add_executable(testDisconnected src/testDisconnected.cpp)
 target_link_libraries(testDisconnected PRIVATE NanoporeCompressionLib profiler)
+
+
+

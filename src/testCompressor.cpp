@@ -8,11 +8,16 @@
 #include <gperftools/profiler.h>
 #include <iostream>
 #include <omp.h>
-// #include <gperftools/heap-profiler.h>
+#include <chrono> 
+using namespace std::chrono; 
+using namespace std;
+// #include <gperftools/heap-profiler.h> 
+
 
 int main(int argc, char **argv) {
+    auto start = high_resolution_clock::now(); 
     omp_set_nested(1);
-
+    //omp_set_num_threads(10);
 
     // if (!fork())
     //     return -1;
@@ -26,17 +31,20 @@ int main(int argc, char **argv) {
     if (argc == 3)
        numThr = atoi(argv[2]); 
     {
-        size_t k, n, overlapSketchThreshold, editSlack;
+        //modifed the input parameters for the minimap2 version
+        size_t k, n, overlapSketchThreshold, m_k, m_w, hashBits;
+        //original parameter for aligner
         double maxErrorRate;
-        std::cout << "k n overlapSketchThreshold\neditSlack maxErrorRate"
+        size_t editSlack;
+        std::cout << "k n overlapSketchThreshold\nminimap:k minimap:w minimap:hashBits"
                   << std::endl;
-        std::cin >> k >> n >> overlapSketchThreshold >> editSlack >>
-            maxErrorRate;
+        std::cin >> k >> n >> overlapSketchThreshold >>  m_k >>
+             m_w >> hashBits;
         if (k == 0)
             return 0;
-        std::cout << "k n overlapSketchThreshold editSlack maxErrorRate\n"
+        std::cout << "k n overlapSketchThreshold minimap:k minimap:w minimap:hashBits\n"
                   << k << " " << n << " " << overlapSketchThreshold << " "
-                  << editSlack << " " << maxErrorRate << std::endl;
+                  << m_k << " " << m_w << " " << hashBits << std::endl;
         MergeSortReadAligner rA(21, 10);
         LocalMyersRollBack<ConsensusGraph::RAItA, ConsensusGraph::RAItB>
             localMyersRollBackAligner(100, 200, editSlack, maxErrorRate);
@@ -45,6 +53,9 @@ int main(int argc, char **argv) {
         compressor.k = k;
         compressor.n = n;
         compressor.overlapSketchThreshold = overlapSketchThreshold;
+        compressor.m_k = m_k;
+        compressor.m_w = m_w;
+        compressor.hashBits = hashBits;        
         compressor.rA = &rA;
         compressor.aligner = aligner;
         const std::string filename(argv[1]);
@@ -55,6 +66,10 @@ int main(int argc, char **argv) {
         else if (!extension.compare("fastq"))
             compressor.filetype = ReadData::Filetype::FASTQ;
         compressor.compress(argv[1], numThr);
+
+        auto stop = high_resolution_clock::now(); 
+        auto duration = duration_cast<seconds>(stop - start); 
+        cout << "Time taken by function: "<< duration.count() << " seconds" << endl; 
     }
     // ProfilerStop();
 }

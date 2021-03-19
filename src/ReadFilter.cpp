@@ -57,10 +57,13 @@ void MinHashReadFilter::initialize(ReadData &rD) {
         // to avoid thread contention during repeated allocation and deallocation.
         // Note that memory allocation typically leads to waits when multiple threads
         // do it at the same time.
-        std::vector<kMer_t> kMersVec(maxNumkMers), hashesVec(maxNumkMers*n);
+        std::vector<kMer_t> kMersVec(maxNumkMers), hashesVec(n);
+        std::string readStr;
 #pragma omp for
-        for (read_t i = 0; i < numReads; ++i)
-            string2Sketch(rD.getRead(i), sketches + i * n, kMersVec, hashesVec);
+        for (read_t i = 0; i < numReads; ++i){
+            rD.getRead(i, readStr);
+            string2Sketch(readStr, sketches + i * n, kMersVec, hashesVec);
+        }
     } // pragma omp parallel
 
     populateHashTables();
@@ -117,7 +120,7 @@ void MinHashReadFilter::getFilteredReads(const std::string &s,
     results.clear();
     kMer_t sketch[n];
     size_t numKmers = s.size() - k + 1;
-    std::vector<kMer_t> kMersVec(numKmers), hashesVec(numKmers*n);
+    std::vector<kMer_t> kMersVec(numKmers), hashesVec(n); // preallocation
     string2Sketch(s, sketch, kMersVec, hashesVec);
     getFilteredReads(sketch, results);
 }
@@ -135,9 +138,12 @@ FilterStats MinHashReadFilter::getFilterStats(size_t overlapBaseThreshold,
         read_t realI = readPosSorted[i].second;
         for (read_t j = i + 1; j < numReads; ++j) {
             read_t realJ = readPosSorted[j].second;
+            std::string readStr1, readStr2;
+            rD->getRead(realI, readStr1);
+            rD->getRead(realJ, readStr2);
             size_t minEnd =
-                std::min((*readPos)[realI] + rD->getRead(realI).size(),
-                         (*readPos)[realJ] + rD->getRead(realJ).size());
+                std::min((*readPos)[realI] + readStr1.size(),
+                         (*readPos)[realJ] + readStr2.size());
             size_t maxBegin = std::max((*readPos)[realI], (*readPos)[realJ]);
             if (minEnd > maxBegin + overlapBaseThreshold)
                 numOverlaps++;
@@ -172,9 +178,12 @@ FilterStats MinHashReadFilter::getFilterStats(size_t overlapBaseThreshold,
             if (*it <= i)
                 continue;
             if (matches.count(*it) >= overlapSketchThreshold) {
+                std::string readStr1, readStr2;
+                rD->getRead(i, readStr1);
+                rD->getRead(*it, readStr2);
                 ssize_t minEnd =
-                    std::min((*readPos)[i] + rD->getRead(i).size(),
-                             (*readPos)[*it] + rD->getRead(*it).size());
+                    std::min((*readPos)[i] + readStr1.size(),
+                             (*readPos)[*it] + readStr2.size());
                 ssize_t maxBegin = std::max((*readPos)[i], (*readPos)[*it]);
                 if (minEnd - maxBegin < (ssize_t)overlapBaseThreshold)
                     falsePositives++;
@@ -210,33 +219,41 @@ char MinHashReadFilter::baseToInt(const char base) {
     return (base & 0b10) | ((base & 0b100) >> 2);
 }
 
-template <typename InputIt, typename OutputIt>
-void MinHashReadFilter::calcSketch(const size_t numKMers, const size_t n,
-                                   InputIt hashes, OutputIt sketches) {
-    // This code has been optimized such that
-    // 1. we are accessing memory in sequence
-    // 2. We only try to increment pointers
-    OutputIt sketchesEnd = sketches + n;
-    for (OutputIt tempSketches = sketches; tempSketches != sketchesEnd;
-         ++tempSketches)
-        *tempSketches = ~(kMer_t)0;
-    InputIt hashesEnd = hashes + numKMers * n;
-    OutputIt tempSketches = sketches;
-    for (InputIt tempHashes = hashes; tempHashes != hashesEnd;
-         ++tempHashes, ++tempSketches) {
-        tempSketches = tempSketches == sketchesEnd ? sketches : tempSketches;
-        *tempSketches = std::min(*tempSketches, *tempHashes);
-    }
-}
-
 void MinHashReadFilter::string2Sketch(const std::string &s, kMer_t *sketch, std::vector<kMer_t> &kMers, std::vector<kMer_t> &hashes) {
     ssize_t numKMers = s.length() - k + 1;
     if (numKMers < 0)
         return;
-    string2KMers(s, k, kMers.begin());
-    for (size_t i = 0; i < (size_t)numKMers; ++i)
-        hashKMer(kMers[i], hashes.begin() + i * n);
-    calcSketch(numKMers, n, hashes.begin(), sketch);
+    string2KMers(s, k, kMers);
+    // set sketch to -1 (max possible)
+    for (size_t j = 0; j < n; j++)
+        sketch[j] = (kMer_t)(-1);
+    // now compute sketch
+    for (size_t i = 0; i < (size_t)numKMers; ++i) {
+        hashKMer(kMers[i], hashes);
+        for (size_t j = 0; j < n; j++)
+            sketch[j] = std::min(hashes[j],sketch[j]);
+    }
+}
+
+void MinHashReadFilter::hashKMer(kMer_t kMer, std::vector<kMer_t> &hashes) {
+    for (size_t l = 0; l < n; l++)
+        hashes[l] = hasher(kMer^randNumbers[l]);
+}
+
+void MinHashReadFilter::string2KMers(const std::string &s, const size_t k,
+                                     std::vector<kMer_t> &kMers) {
+    ssize_t maxI = s.length() - k + 1;
+    if (maxI <= 0)
+        return;
+    kMer_t currentKMer = kMerToInt(s.substr(0, k));
+    kMers[0] = currentKMer;
+    const unsigned long long mask = (1ull << (2 * k)) - 1;
+    for (size_t i = 1; i < (size_t)maxI; ++i) {
+        currentKMer =
+            ((currentKMer << 2) | MinHashReadFilter::baseToInt(s[i + k - 1])) &
+            mask;
+        kMers[i] = currentKMer;
+    }
 }
 
 MinHashReadFilter::~MinHashReadFilter() {

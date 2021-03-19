@@ -6,6 +6,8 @@
 #include <fstream>
 #include <iostream>
 #include <stack>
+#include <zlib.h>
+#include "minimap.h"
 
 Edge::Edge(Node *source, Node *sink, read_t read) : source(source), sink(sink) {
     count = 1;
@@ -26,28 +28,24 @@ void Edge::addRead(read_t read) {
 
 Node::Node(const char base) : base(base) {}
 
-// void Node::addEdge(Edge *e) {
-//    edgesOut[e->sink] = e;
-//}
 
 Edge *Node::getEdgeTo(Node *n) {
     const auto &it = std::find_if(
         edgesOut.begin(), edgesOut.end(),
-        [&](const std::pair<Node *, Edge *> &p) { return (p.first == n); });
+        [&](const Edge* p) { return (p->sink == n); });
     if (it == edgesOut.end()) {
         return nullptr;
     } else {
-        return it->second;
+        return *it;
     }
 }
 
 Edge *Node::getEdgeToSide(char base) {
     const auto &end = edgesOut.end();
     for (auto it = edgesOut.begin(); it != end; it++) {
-        Edge *e = it->second;
-        Node *n = e->sink;
+        Node *n = (*it)->sink;
         if (!n->onMainPath && n->base == base)
-            return e;
+            return *it;
     }
     return nullptr;
 }
@@ -57,7 +55,7 @@ Edge *Node::getBestEdgeOut() {
     read_t bestCount = 0;
     const auto &end = edgesOut.end();
     for (auto it = edgesOut.begin(); it != end; ++it) {
-        Edge *e = it->second;
+        Edge *e = *it;
         if (e->count > bestCount) {
             bestCount = e->count;
             bestEdge = e;
@@ -82,9 +80,9 @@ Edge *Node::getBestEdgeIn() {
 
 Edge *Node::getEdgeInRead(read_t read) const {
     for (auto e : edgesOut) {
-        if (std::binary_search(e.second->reads.begin(), e.second->reads.end(),
+        if (std::binary_search(e->reads.begin(), e->reads.end(),
                                read)) {
-            return e.second;
+            return e;
         }
     }
     return nullptr;
@@ -123,16 +121,17 @@ ConsensusGraphWriter::ConsensusGraphWriter(const std::string &filePrefix) {
     const std::string idFileName = filePrefix + ".id";
     const std::string complementFileName = filePrefix + ".complement";
     const std::string genomeFileName = filePrefix + ".genome";
-    posFile.open(posFileName);
+    posFile.open(posFileName, std::ios::binary);
     editTypeFile.open(editTypeFileName);
     editBaseFile.open(editBaseFileName);
-    idFile.open(idFileName);
+    idFile.open(idFileName, std::ios::binary);
     complementFile.open(complementFileName);
     genomeFile.open(genomeFileName);
 }
 
 void ConsensusGraph::initialize(const std::string &seed, read_t readId,
                                 long pos) {
+    // pos is zero here                                
     size_t len = seed.length();
     Node *currentNode = createNode(seed[0]);
     // We create a read that points to this node
@@ -150,28 +149,226 @@ void ConsensusGraph::initialize(const std::string &seed, read_t readId,
         createEdge(currentNode, nextNode, readId);
         currentNode = nextNode;
     }
-    startPos = pos;
-    endPos = pos + 1;
+    startPos = pos; // = 0
+    endPos = pos + 1; 
+    // endPos is set to pos+1=1 here because we only inserted one base to mainPath
+    // Rest will be inserted later when calculateMainPathGreedy is called
 }
 
-bool ConsensusGraph::addRead(const std::string &s, long pos,
-                             std::vector<Edit> &editScript,
-                             ssize_t &beginOffset, ssize_t &endOffset) {
+bool ConsensusGraph::alignRead(const std::string &s, std::vector<Edit> &editScript,
+            ssize_t &beginOffset, ssize_t &endOffset, size_t m_k, size_t m_w, size_t hashBits) {
+    // General comments: 
+    // 1. The whole idea behind startPos, endPos and Read.pos in ConsensusGraph
+    //    is to provide a reference point for the main path when looking for the next 
+    //    read in addRelatedReads in Consensus.cpp. This is needed because we extend the 
+    //    mainPath to the left in some cases, and so curPos in Consensus::addRelatedReads
+    //    doesn't make sense unless we offset it by startPos which essentially tells us
+    //    where the current start position of mainPath is wrt to the start of the first read
+    //    in the contig (so startPos is always <=0). endPos is the end of the mainPath wrt
+    //    the start of the first read (e.g., it is equal to the length of the first read at 
+    //    the very start of the contig when there is only one read). It generally increases 
+    //    as we add reads to the right. endPos seems less important for us. Finally, for each 
+    //    read in the graph, there is a pos variable (0 for first read) which tells us roughly 
+    //    where on the mainPath the read lies (it is actually decided in Consensus::addRelatedReads
+    //    itself after the sort-merge procedure). The only use for this pos variable seems 
+    //    to be for computation for endPos and startPos in calculateMainPathGreedy after the 
+    //    new read is added in. The pos variable is also defined wrt the start of the first read.
+
+
     auto &originalString = mainPath.path;
     /// We use either the head or tail of mainPath as a reference to obtain an
     /// offsetGuess
-    const ssize_t offsetGuess =
-        pos + (long)s.size() / 2 < (startPos + endPos) / 2
-            ? pos - startPos
-            : originalString.size() - endPos + pos;
+
+    // TODO: can we remove the Read.pos, startPos, endPos variables in the minimap case 
+    //       to help simplify things significantly?
+
     size_t editDis;
 
-    RAItA Abegin = originalString.data();
-    RAItA Aend = Abegin + originalString.size();
-    RAItB Bbegin = s.c_str();
-    RAItB Bend = Bbegin + s.length();
-    bool success = aligner->align(Abegin, Aend, Bbegin, Bend, offsetGuess,
-                                  beginOffset, endOffset, editScript, editDis);
+    const char* Abegin = originalString.c_str();
+    int hits;
+
+    bool success = true;
+    //initialize the local buffer
+    mm_tbuf_t *b = mm_tbuf_init();
+    //initialize the mapopt and iopt
+    mm_idxopt_t iopt;
+    mm_mapopt_t mopt;
+    //0 correpons to map-ont
+    mm_set_opt(0, &iopt, &mopt);
+    mopt.flag |= MM_F_CIGAR;
+    mopt.flag |= MM_F_FOR_ONLY; 
+    // only forward alignment, no reverse complement (which is handled elsewhere)
+    //call the mm_idx_str to return the index for the reference read    
+    // std::cout<<"k:"<<iopt.k<<"w:"<<iopt.w<<std::endl;
+    // std::cout<<"flag:"<<iopt.flag<<"bits:"<<iopt.bucket_bits<<hits<<std::endl;      
+    //the defalut parameters are: 15 10 false 14
+    mm_idx_t * idx = mm_idx_str(m_w, m_k, false, hashBits, 1, &Abegin, NULL);
+    mm_mapopt_update(&mopt, idx);
+    //use the index to align with the current read
+    //we only want forward matches: use rev in mm_reg1_t
+    mm_reg1_t* reg = mm_map(idx, s.length(), s.c_str(), &hits, b, &mopt, NULL);
+    editScript.clear();
+    //experiment how many hits there are
+
+    if(hits > 0) { 
+        //if we have multiple hits, just stick with first hit
+        mm_reg1_t *r = &reg[0];
+        assert(r->p); 
+        //qpos is the current position on the query read
+        //rpos is the current position on the reference read
+        int qpos = r->qs;
+        int rpos = r->rs;
+        unsigned int j, k;
+        unsigned int count_same;
+        int i;
+        int alignedLen;
+    	
+    	//add a filtering metric        
+    	//calculate the edit distance
+    	editDis = r->blen - r->mlen + r->p->n_ambi;
+    	//calculate the aligned length; notice that I use the aligned length for the query read here
+    	alignedLen = r->qe - r->qs;
+    	//first check if the read is at the beginnning or the end of reference sequence
+    	if((r->rs > 0) && (r->re < originalString.size())){
+    		//check editDis/alignedLen
+    		// std::cout<<"editDis/alignedLen: "<< editDis/(double)alignedLen<<std::endl;
+    		// std::cout<<"(double)alignedLen/s.length() "<< (double)alignedLen/s.length()<<std::endl;    		
+            // 1.0 and 0.0: no filter
+            if(editDis/(double)alignedLen >= 1.0 || (double)alignedLen/s.length()<=0.0 ){
+	    		success = false;
+	    		free(r->p);
+                if (hits > 1) {
+                    // cleanup
+                    for (int i = 1; i < hits; i++)
+                        free(reg[i].p);
+                }    
+                free(reg);  
+                mm_tbuf_destroy(b);
+                mm_idx_destroy(idx);
+	    		return false;
+
+	    	}
+    	}
+
+        // See comments in ConsensusGraph::updateGraph for its high-level functioning
+
+        // Based on my understanding the correct approach would be something like this:
+        // - beginOffset - this represents where the alignment starts on the reference 
+        //   (can be +ve or -ve). So if r->rs is +ve then beginOffset is simply r->rs. 
+        //   On the other hand if r->rs = 0 (so there is part of read to left), beginOffset
+        //   is -r->qs (that's how much read is shifted to left wrt reference).
+        // - Now if r->rs is +ve, then we need to add the soft clipped bases as insertions in
+        //   editScript. When r->rs = 0 (and hence beginOffset is -ve), the first 
+        //   |beginOffset| bases in the read (which are the soft clipped bases) will be added
+        //   to the graph in updateGraph directly. So we don't add them to editScript in this 
+        //   case.
+        // - endOffset - this represents where the alignment ends on the reference wrt end of 
+        //   reference. So if r->re < originalString.size() (i.e., the alignment ends 
+        //   before the last base in reference), endOffset is -ve and equal to 
+        //   (r->re-originalString.size()). If r->re == originalString.size(), the read alignment 
+        //   potentially extends beyond the end of reference, and endOffset is +ve and equal to 
+        //   (s.length()-r->qe). 
+        // - If endOffset is -ve, we need to add the soft-clipped bases at end to the editScript 
+        //   as insertions. If endOffset is +ve, these bases will be automatically added in 
+        //   the graph in updateGraph function, so we do not add them to editScript.
+
+
+        //update the beginOffset by checking if r->rs is positive or not
+        if(r->rs >0){
+            beginOffset = r->rs;  
+            //add the soft clipped bases as insertions
+            for (i = 0; i < r->qs; ++i){
+                editScript.push_back(Edit(INSERT, s[i]));             
+            }       
+        }
+        else if(r->rs == 0){
+            beginOffset = -r->qs;               
+        }
+        else{
+            throw std::runtime_error("Encountered invalid reference start");
+        }
+
+        for (j = 0; j < r->p->n_cigar; ++j){ // IMPORTANT: this gives the CIGAR in the aligned regions. NO soft/hard clippings!
+            //std::cout<< (r->p->cigar[j]>>4) << "MIDNSH"[r->p->cigar[j]&0xf];
+            switch("MIDNSH"[r->p->cigar[j]&0xf]) {
+                case 'M':
+                    //fix: handle the substitute and same differently
+                    count_same = 0;
+                    for(k=0; k<r->p->cigar[j]>>4;k++){
+                        if(s[qpos] == Abegin[rpos]){
+                            count_same++;
+                        }
+                        else{
+                            if (count_same > 0)
+                                editScript.push_back(Edit(SAME, count_same));
+                            count_same = 0; // reset count_same
+                            //add the substitute as one insert and one delete
+                            editScript.push_back(Edit(DELETE,Abegin[rpos]));
+                            editScript.push_back(Edit(INSERT,s[qpos]));                             
+                        }
+                        qpos++;
+                        rpos++;
+                    }
+                    //check if we need to push the "same" again
+                    if(count_same!=0){
+                        editScript.push_back(Edit(SAME, count_same));                       
+                    }
+                    break; 
+                case 'I':
+                    for(k=0; k<r->p->cigar[j]>>4;k++){
+                        editScript.push_back(Edit(INSERT, s[qpos])); 
+                        qpos++; 
+                    }                   
+                    break; 
+                case 'D':
+                    for(k=0; k<r->p->cigar[j]>>4;k++){
+                        editScript.push_back(Edit(DELETE, Abegin[rpos])); 
+                        rpos++; 
+                    }                       
+                    break; 
+                default: 
+                    throw std::runtime_error("Encountered invalid CIGAR symbol!");
+            }           
+        }
+
+        //update the endOffset by checking if r->re is positive or not
+        if(r->re < originalString.size()){
+            endOffset = (r->re-originalString.size());
+            //add the soft clipped bases as insertions
+            for (i = r->qe; i < s.length(); ++i){
+                editScript.push_back(Edit(INSERT, s[i]));             
+            }       
+        }
+        else if(r->re == originalString.size()){
+            endOffset = (s.length()-r->qe);             
+        }
+        else{
+            throw std::runtime_error("Encountered invalid reference end");
+        }
+
+#ifdef LOG
+        std::cout<< "editDis: " << editDis<<std::endl;     
+#endif
+        free(r->p);
+        if (hits > 1) {
+            // cleanup
+            for (int i = 1; i < hits; i++)
+                free(reg[i].p);
+            }
+    }
+    else{
+        //return fail when there are not hits
+        success = false;
+    }
+    //return the correct beginOffset and endOffset   
+    editScript.shrink_to_fit();
+    free(reg);  
+    mm_tbuf_destroy(b);
+    mm_idx_destroy(idx);       
+    //number of hits
+    //edit distance as threshold
+    //length of alignment as fraction
+    //DP alignment score
     //    std::cout << "success ? " << success << std::endl;
     if (!success) {
         // std::cout << "Failed to add"
@@ -188,7 +385,6 @@ bool ConsensusGraph::addRead(const std::string &s, long pos,
     if (numUnchanged == 0)
         return false;
     return true;
-    // updateGraph(s, editScript, beginOffset, endOffset, readId, pos);
 }
 
 void ConsensusGraph::updateGraph(const std::string &s,
@@ -196,6 +392,18 @@ void ConsensusGraph::updateGraph(const std::string &s,
                                  ssize_t beginOffset, ssize_t endOffset,
                                  read_t readId, long pos,
                                  bool reverseComplement) {
+
+    // How does the updateGraph function work (high level)?
+    // 1. If beginOffset is -ve, create |beginOffset| new nodes in the graph 
+    //    joined in a chain representing those bases in read 
+    //    (the chain will be essentially joined to position 0 of mainPath in graph).
+    // 2. Then begin adding nodes & edges to graph according to the editScript 
+    //    at the relevant place in the graph as determined by beginOffset 
+    //    (essentially starting at position 0 of mainPath when beginOffset is -ve)
+    // 3. Finally, if endOffset is +ve, create |endOffset| new nodes in the graph 
+    //    joined in a chain representing those bases in read (the chain begins 
+    //    in the graph where step 2 ends, which will be roughly the end of mainPath 
+    //    in this case). 
 
     const auto &edgeInPathEnd = mainPath.edges.end();
     auto edgeInPath = mainPath.edges.begin();
@@ -346,98 +554,6 @@ void ConsensusGraph::updateGraph(const std::string &s,
         readId, Read(pos, initialNode, s.length(), reverseComplement)));
 }
 
-// Deprecated
-// Path &ConsensusGraph::calculateMainPath() {
-// mainPath.clear();
-
-//// First we set all the hasReached fields to false
-// traverseAndCall(startingNode, true, [](Node *) {});
-
-// std::deque<Node *> unfinishedNodes;
-// size_t globalMaxWeight = 0;
-// Node *globalMaxWeightNode = nullptr;
-// unfinishedNodes.push_back(startingNode);
-// while (!unfinishedNodes.empty()) {
-// Node *currentNode = unfinishedNodes.front();
-// if (currentNode->hasReached) {
-// unfinishedNodes.pop_front();
-// continue;
-//}
-
-// size_t maxWeight = 0;
-// bool hasPreviousWeights = true;
-// for (auto edgeIt : currentNode->edgesOut) {
-// Node *n = edgeIt.second->sink;
-// if (!n->hasReached) {
-//// std::deque<Node *>::iterator temp = std::find(
-////     unfinishedNodes.begin(), unfinishedNodes.end(), n);
-//// if (temp != unfinishedNodes.end()) {
-////     std::cout << std::distance(unfinishedNodes.begin(),
-////     temp)
-////               << std::endl;
-////     std::cout << unfinishedNodes.size() << std::endl;
-////     std::raise(SIGINT);
-//// }
-//// if (unfinishedNodes.size() > 1000000) {
-////     std::cout << unfinishedNodes.size() << ' ';
-////     std::raise(SIGINT);
-//// }
-// unfinishedNodes.push_front(n);
-// hasPreviousWeights = false;
-// break;
-//}
-// size_t prevWeight = edgeIt.second->sink->cumulativeWeight;
-// size_t curWeight = prevWeight + edgeIt.second->count;
-// maxWeight = std::max(maxWeight, curWeight);
-//}
-// if (!hasPreviousWeights)
-// continue;
-// globalMaxWeightNode =
-// maxWeight >= globalMaxWeight ? currentNode : globalMaxWeightNode;
-// globalMaxWeight = std::max(maxWeight, globalMaxWeight);
-// unfinishedNodes.pop_front();
-// for (auto edgeIt : currentNode->edgesIn) {
-// unfinishedNodes.push_back(edgeIt->source);
-//}
-// currentNode->cumulativeWeight = maxWeight;
-// currentNode->hasReached = true;
-//}
-
-// startingNode = globalMaxWeightNode;
-
-// auto &edgesInPath = mainPath.edges;
-// auto &stringPath = mainPath.path;
-
-// stringPath.push_back(globalMaxWeightNode->base);
-// globalMaxWeightNode->onMainPath = true;
-////    std::cout << "max weight" << globalMaxWeight << std::endl;
-////    std::cout << "here" << std::endl;
-// while (globalMaxWeight > 0) {
-////        std::cout << "max weight" << globalMaxWeight << " "
-////                  << edgesInPath.size() << std::endl;
-// for (auto e : globalMaxWeightNode->edgesOut) {
-// if (e.second->count + e.first->cumulativeWeight ==
-// globalMaxWeight) {
-// edgesInPath.push_back(e.second);
-// globalMaxWeight -= e.second->count;
-// globalMaxWeightNode = e.first;
-// stringPath.push_back(globalMaxWeightNode->base);
-// e.first->onMainPath = true;
-// break;
-//};
-//}
-//}
-
-// read_t startingReadId = *edgesInPath.front()->reads.begin();
-// startPos = readsInGraph.at(startingReadId).pos;
-// read_t endingReadId = *edgesInPath.back()->reads.begin();
-// Read &endingRead = readsInGraph.at(endingReadId);
-// endPos = endingRead.pos + endingRead.len;
-////    printStatus();
-// removeCycles();
-// return mainPath;
-//}
-
 Path &ConsensusGraph::calculateMainPathGreedy() {
     clearMainPath();
 
@@ -455,13 +571,15 @@ Path &ConsensusGraph::calculateMainPathGreedy() {
             currentNode->onMainPath = true;
             stringPath.push_back(currentNode->base);
         }
-        read_t endingReadId = *edgesInPath.back()->reads.begin();
+        read_t endingReadId = *edgesInPath.back()->reads.begin(); 
+        // TODO: why take the begin (i.e., first read through this last edge in path)?
+        // Is this a relic of the constant read length code?
         Read &endingRead = readsInGraph.at(endingReadId);
         endPos = endingRead.pos + endingRead.len;
     }
 
     // Extend to the left
-    // NOTE: I have changed mainPath.path to vector to spped up alignment,
+    // NOTE: I have changed mainPath.path to string to simplify alignment,
     // but that means the code below is not efficient (inserting to start
     // of vector). Fortunately, this is currently a very small contributor
     // to the total time. But we might want to fix this if issues crop up later.
@@ -544,7 +662,7 @@ void ConsensusGraph::removeCycles() {
         // Work with copy to avoid iterator invalidation.
         auto edgesOutCopy = nodeOnPath->edgesOut;
         for (const auto &edgeIt : edgesOutCopy)
-            walkAndPrune(edgeIt.second, walkAndPruneCallStack);
+            walkAndPrune(edgeIt, walkAndPruneCallStack);
 
         if (edgeOnPath == edgeOnPathEnd)
             break;
@@ -560,7 +678,7 @@ void ConsensusGraph::removeCycles() {
         // Work with copy to avoid iterator invalidation.
         auto edgesOutCopy = nodeOnPath->edgesOut;
         for (const auto &edgeIt : edgesOutCopy)
-            walkAndPrune(edgeIt.second, walkAndPruneCallStack);
+            walkAndPrune(edgeIt, walkAndPruneCallStack);
 
         if (edgeOnPath == mainPath.edges.begin())
             break;
@@ -582,7 +700,7 @@ void ConsensusGraph::walkAndPrune(Edge *e, std::stack<Edge *> &callStack) {
         // Now put sink->edgesOut into stack
         for (auto it = sink->edgesOut.begin(); it != sink->edgesOut.end();
              ++it) {
-            callStack.push(it->second);
+            callStack.push(*it);
             // OLD COMMENT:
             // Here walkAndPrune will only change sink->edgesOut by 1. deleting
             // edge2WorkOn and 2. adding new edges that we don't need to prune.
@@ -680,7 +798,7 @@ void ConsensusGraph::splitPath(Node *newPre, Edge *e,
 
         // Now put sink->edgesOut into stack
         for (auto &it : oldCur->edgesOut)
-            callStack.emplace(this, newCur, it.second, readsInPath2Split);
+            callStack.emplace(this, newCur, it, readsInPath2Split);
     }
 }
 
@@ -708,7 +826,7 @@ Node *ConsensusGraph::createNode(char base) {
 
 Edge *ConsensusGraph::createEdge(Node *source, Node *sink, read_t read) {
     Edge *e = new Edge(source, sink, read);
-    source->edgesOut.push_back(std::make_pair(sink, e));
+    source->edgesOut.push_back(e);
     sink->edgesIn.push_back(e);
     numEdges++;
     return e;
@@ -717,7 +835,7 @@ Edge *ConsensusGraph::createEdge(Node *source, Node *sink, read_t read) {
 Edge *ConsensusGraph::createEdge(Node *source, Node *sink,
                                  std::vector<read_t> &reads) {
     Edge *e = new Edge(source, sink, reads);
-    source->edgesOut.push_back(std::make_pair(sink, e));
+    source->edgesOut.push_back(e);
     sink->edgesIn.push_back(e);
     numEdges++;
     return e;
@@ -742,8 +860,8 @@ void ConsensusGraph::removeEdge(Edge *e,
             if (!dontRemoveFromSource)
                 e->source->edgesOut.erase(std::find_if(
                     e->source->edgesOut.begin(), e->source->edgesOut.end(),
-                    [&](const std::pair<Node *, Edge *> &p) {
-                        return (p.first == e->sink);
+                    [&](const Edge *p) {
+                        return (p->sink == e->sink);
                     }));
 
             if (!dontRemoveFromSink)
@@ -766,7 +884,7 @@ void ConsensusGraph::removeEdge(Edge *e,
                 auto edgeIt = n->edgesOut.begin();
                 auto end = n->edgesOut.end();
                 while (edgeIt != end)
-                    removeEdge(edgeIt++->second, true, false);
+                    removeEdge(*(edgeIt++), true, false);
                 // don't remove from source node which is this node!
                 // Avoids iterator invalidation and speeds things up
             }
@@ -783,7 +901,7 @@ void ConsensusGraph::removeEdge(Edge *e,
                     nodesToRemove.pop();
                     removeNode(curNode);
                 } else {
-                    nodesToRemove.push(curNode->edgesOut.begin()->first);
+                    nodesToRemove.push(curNode->edgesOut.front()->sink);
                 }
             }
         }
@@ -861,7 +979,6 @@ void ConsensusGraph::removeEdge(Edge *e,
         void ConsensusGraph::writeMainPath(ConsensusGraphWriter &cgw) {
             cgw.genomeFile << std::string(mainPath.path.begin(), mainPath.path.end())
               << std::endl;
-            cgw.genomeFile << ".\n";
         }
 
         void ConsensusGraph::writeReads(ConsensusGraphWriter &cgw) {
@@ -877,33 +994,31 @@ void ConsensusGraph::removeEdge(Edge *e,
             read_t pasId = 0;
             for (auto it : readsInGraph) {
                 {
-                    cgw.idFile << it.first - pasId << ':';
-                    cgw.complementFile << (it.second.reverseComplement ? 'c' : 'n')
-                                   << ':';
+                    read_t diffId = it.first - pasId;
+                    cgw.idFile.write((char*)&diffId, std::ios::binary);
+                    cgw.complementFile << (it.second.reverseComplement ? 'c' : 'n');
                     pasId = it.first;
                 }
                 totalEditDis += writeRead(cgw.posFile, cgw.editTypeFile, cgw.editBaseFile,
                                           it.second, it.first);
             }
-            cgw.idFile << '\n';
             cgw.complementFile << '\n';
-            cgw.posFile << ".\n";
-            cgw.editTypeFile << ".\n";
-            cgw.editBaseFile << ".\n";
-            cgw.idFile << ".\n";
-            cgw.complementFile << ".\n";
+#ifdef LOG
             std::cout << "AvgEditDis "
                       << totalEditDis / (double)readsInGraph.size()
                       << std::endl;
             printStatus();
+#endif
         }
 
         read_t ConsensusGraph::getNumReads() { return readsInGraph.size(); }
 
+        size_t ConsensusGraph::getNumEdges(){return numEdges;} 
+
         size_t ConsensusGraph::read2EditScript(ConsensusGraph::Read &r,
                                                read_t id,
                                                std::vector<Edit> &editScript,
-                                               size_t &pos) {
+                                               uint32_t &pos) {
             editScript.clear();
             // First we store the initial position
             Node *curNode = r.start;
@@ -972,14 +1087,14 @@ void ConsensusGraph::removeEdge(Edge *e,
                                          std::ofstream &editBaseFile, Read &r,
                                          read_t id) {
 
-            size_t offset;
+            uint32_t offset;
             std::vector<Edit> editScript;
             size_t editDis = read2EditScript(r, id, editScript, offset);
-            posFile << offset << ':';
+            posFile.write((char*)&offset,sizeof(uint32_t));
 
             std::vector<Edit> newEditScript;
             editDis = Edit::optimizeEditScript(editScript, newEditScript);
-            size_t unchangedCount = 0;
+            uint32_t unchangedCount = 0;
             for (Edit e : newEditScript) {
                 switch (e.editType) {
                 case SAME: {
@@ -987,20 +1102,20 @@ void ConsensusGraph::removeEdge(Edge *e,
                     break;
                 }
                 case INSERT: {
-                    posFile << unchangedCount << ':';
+                    posFile.write((char*)&unchangedCount, sizeof(uint32_t));
                     unchangedCount = 0;
                     editTypeFile << 'i';
                     editBaseFile << e.editInfo.ins;
                     break;
                 }
                 case DELETE: {
-                    posFile << unchangedCount << ':';
+                    posFile.write((char*)&unchangedCount, sizeof(uint32_t));
                     unchangedCount = 0;
                     editTypeFile << 'd';
                     break;
                 }
                 case SUBSTITUTION: {
-                    posFile << unchangedCount << ':';
+                    posFile.write((char*)&unchangedCount, sizeof(uint32_t));
                     unchangedCount = 0;
                     editTypeFile << 's';
                     editBaseFile << e.editInfo.sub;
@@ -1009,69 +1124,12 @@ void ConsensusGraph::removeEdge(Edge *e,
                 }
             }
 
-            posFile << unchangedCount << ':';
-            unchangedCount = 0;
+            posFile.write((char*)&unchangedCount, sizeof(uint32_t));
 
-            posFile << '\n';
             editTypeFile << '\n';
-            editBaseFile << '\n';
             return editDis;
         }
         
-        /*
-        // NOTE: Commenting this out since it doesn't seem to be in use.
-        // Please remove if not needed. 
-        // -Shubham
-        void ConsensusGraph::writeReads(std::ofstream &f) {
-            // First we write the index of each character into the
-            // cumulativeWeight field of the nodes on mainPath
-            mainPath.edges.front()->source->cumulativeWeight = 0;
-            size_t i = 0;
-            for (auto e : mainPath.edges) {
-                e->sink->cumulativeWeight = ++i;
-            }
-            size_t totalEditDis = 0;
-            for (auto it : readsInGraph) {
-                totalEditDis += writeRead(f, it.second, it.first);
-            }
-            std::cout << "AvgEditDis "
-                      << totalEditDis / (double)readsInGraph.size()
-                      << std::endl;
-        }
-        */
-
-        size_t ConsensusGraph::writeRead(std::ofstream &f, Read &r, read_t id) {
-
-            std::vector<Edit> editScript;
-            size_t pos;
-            size_t editDis = read2EditScript(r, id, editScript, pos);
-            std::vector<Edit> newEditScript;
-
-            editDis = Edit::optimizeEditScript(editScript, newEditScript);
-
-            f << std::to_string(id) << ":" << std::to_string(pos) << "\n";
-
-            for (Edit e : newEditScript) {
-                switch (e.editType) {
-                case SAME:
-                    f << 'u' << std::to_string(e.editInfo.num);
-                    break;
-                case DELETE:
-                    f << 'd';
-                    break;
-                case INSERT:
-                    f << 'i' << e.editInfo.ins;
-                    break;
-                case SUBSTITUTION:
-                    f << 's' << e.editInfo.sub;
-                    break;
-                }
-            }
-
-            f << std::endl;
-            return editDis;
-        }
-
         ConsensusGraph::ConsensusGraph(StringAligner_t *aligner)
             : aligner(aligner) {}
 
@@ -1112,13 +1170,14 @@ void ConsensusGraph::removeEdge(Edge *e,
                     currentNode->cumulativeWeight = 1;
                     bool hasUnvisitedChild = false;
                     for (auto it : currentNode->edgesOut) {
+                        Node *n = it->sink;
                         // A back edge
-                        if (it.first->cumulativeWeight == 1)
+                        if (n->cumulativeWeight == 1)
                             return false;
                         // == status means has not visited
-                        if (it.first->hasReached == status) {
-                            nodes2Visit.push(it.first);
-                            it.first->hasReached = !status;
+                        if (n->hasReached == status) {
+                            nodes2Visit.push(n);
+                            n->hasReached = !status;
                             hasUnvisitedChild = true;
                             continue;
                         }
@@ -1150,7 +1209,7 @@ void ConsensusGraph::removeEdge(Edge *e,
                 f(currentNode);
 
                 for (auto edgeIt : currentNode->edgesOut) {
-                    Node *n = edgeIt.second->sink;
+                    Node *n = edgeIt->sink;
                     if (n->hasReached == status) {
                         unfinishedNodes.push_front(n);
                     }

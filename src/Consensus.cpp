@@ -11,6 +11,7 @@
 #include <memory>
 #include <mutex>
 #include <set>
+#include "minimap.h"
 
 void Consensus::generateAndWriteConsensus() {
     initialize();
@@ -18,41 +19,95 @@ void Consensus::generateAndWriteConsensus() {
     std::vector<std::vector<read_t>> numReadsInContig(numThr);
     std::vector<std::vector<read_t>> loneReads(numThr);
     ConsensusGraph *cG = nullptr;
+    std::vector<CountStats> count_stats(numThr);
+    std::vector<ssize_t> edgesInGraph(numThr);
+
 #pragma omp parallel private(cG)
     {
-        auto tid = omp_get_thread_num();
-        std::string filePrefix = tempDir + tempFileName + std::to_string(tid);
+        auto tid = omp_get_thread_num();   
+        std::ofstream logfile;
+#ifdef LOG
+        logfile.open("logfile"+std::to_string(tid), std::ofstream::out);
+#endif
+        std::string filePrefix = tempDir + tempFileName + ".tid." + std::to_string(tid);
         ConsensusGraphWriter cgw(filePrefix);
-        read_t firstUnaddedRead = 0; 
+        read_t firstUnaddedRead = 0;
+        int contigId = 0;
         // guarantee that all reads < firstUnaddedRead have been picked
         while ((cG = createGraph(firstUnaddedRead))) {
-            ssize_t initialStartPos = cG->startPos;
-            ssize_t initialEndPos = cG->endPos;
+#ifdef LOG
+            logfile<< "Contig: " << contigId << ", First read number "<<cG->readsInGraph.begin()->first<<", read length: " << cG->endPos - cG->startPos << "\n";
+#endif 
+            //start to count the number of edges in this graph
+            edgesInGraph[tid] = 0;
+            ssize_t initialStartPos = cG->startPos; // simply 0
+            ssize_t initialEndPos = cG->endPos; // 
             const ssize_t len = initialEndPos - initialStartPos;
             // TODO: Experiment with this
             size_t offset = rD->avgReadLen / 4;
 
             ssize_t curPos = cG->startPos;
-
+            // flag for too many edges in the graph
+            bool edgesTooMany = false;
+            //total number of edges in all threads
+            ssize_t edgesTotal = 0;
+            ssize_t edgesAverage = 0;
             while (true) {
+#ifdef LOG
                 std::cout << "right\n";
-                addRelatedReads(cG, curPos, len);
+#endif
+                addRelatedReads(cG, curPos, len, count_stats[tid], logfile, contigId);
+#ifdef LOG
                 cG->printStatus();
+#endif
+                //update the edges vector
+                edgesInGraph[tid] = cG->getNumEdges();
                 curPos += offset;
                 // std::cout << "curPos " << curPos << " len " << len << " endPos "
                 //          << cG->endPos << '\n';
-                if (curPos + len > cG->endPos)
+
+                // calculate the total number and average number of edges in all threads
+                // notice that this may not be accurate
+                edgesTotal = 0;
+                for(std::vector<ssize_t>::iterator it = edgesInGraph.begin(); it != edgesInGraph.end(); ++it)
+    				edgesTotal += *it;
+                edgesAverage = edgesTotal/numThr;
+                if (curPos + len > cG->endPos){  
+                	// std::cout << "total number of edges in all threads: " << edgesTotal << '\n';
+                	// std::cout << "average number of edges in all threads: " << edgesAverage << '\n';                	            	
                     break;
+                }else if (cG->getNumEdges()>=1200000){
+               //else if (cG->getNumEdges()>=edgesAverage && edgesTotal>=numThr*600000){  
+                    edgesTooMany = true;
+                    break;
+                }
             }
 
             curPos = initialStartPos - offset;
-            while (true) {
+            while (!edgesTooMany) {
+#ifdef LOG
                 std::cout << "left\n";
-                if (curPos < cG->startPos)
+#endif
+                edgesTotal = 0;
+                for(std::vector<ssize_t>::iterator it = edgesInGraph.begin(); it != edgesInGraph.end(); ++it)
+    				edgesTotal += *it;
+                edgesAverage = edgesTotal/numThr;
+                if (curPos < cG->startPos){
+                	// std::cout << "total number of edges in all threads: " << edgesTotal << '\n';
+                	// std::cout << "average number of edges in all threads: " << edgesAverage << '\n';
                     break;
+                }else if (cG->getNumEdges()>=1200000){  
+               //else if (cG->getNumEdges()>=edgesAverage && edgesTotal>=numThr*600000){  
+                    edgesTooMany = true;
+                    break;
+                }
+#ifdef LOG
                 cG->printStatus();
-                addRelatedReads(cG, curPos, len);
+#endif
+                addRelatedReads(cG, curPos, len, count_stats[tid], logfile, contigId);
                 curPos -= offset;
+                //update the edges vector
+                edgesInGraph[tid] = cG->getNumEdges();
             }
             cG->writeMainPath(cgw);
             cG->writeReads(cgw);
@@ -60,7 +115,11 @@ void Consensus::generateAndWriteConsensus() {
             if (cG->getNumReads() == 1)
                 loneReads[tid].push_back(cG->readsInGraph.begin()->first);
             delete cG;
+            contigId++;
         }
+#ifdef LOG
+        logfile.close();
+#endif
     } // pragma omp parallel
 
     // now perform last step, combining files from threads and writing metadata
@@ -71,15 +130,27 @@ void Consensus::generateAndWriteConsensus() {
     std::cout << "LoneReads";
     for (auto &v: loneReads) {
         totalNumLoneReads += v.size();
+#ifdef LOG
         for (auto &r: v)
            std::cout << std::dec << ":" << r; 
+#endif
     }
+
+    // compute total count stats by adding for all threads
+    CountStats summary;
+    for (auto &c : count_stats)
+        summary = summary + c;
+
     std::cout << "\n";
     std::cout << "#LoneReads = " << totalNumLoneReads << "\n";
+    std::cout << "MinHash passed " << summary.countMinHash << std::dec << " reads\n";
+    std::cout << "MinHash passed & not already in graph " << summary.countMinHashNotInGraph << std::dec << " reads\n";
+    std::cout << "Merge Sort passed " << summary.countMergeSort << std::dec << " reads\n";
+    std::cout << "Aligner passed " << summary.countAligner << std::dec << " reads\n";
+
 }
 
-void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
-                                size_t len) {
+void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, CountStats &cs, std::ofstream &logfile, int contigId) {
     // Find reads likely to have overlaps
     ssize_t offsetInMainPath = curPos - cG->startPos;
     if (len == 0 || offsetInMainPath < 0 ||
@@ -102,6 +173,7 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
         rF->getFilteredReads(reverseComplement ? reverseComplementString
                                                : originalString,
                              results);
+        cs.countMinHash += results.size();
         // std::cout << "Found " << results.size() << " reads\n";
         // for (read_t r : results)
         // std::cout << r << " ";
@@ -112,46 +184,67 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
             // std::cout << "Working on read " << r << '\n';
             if (inGraph[r])
                 continue;
-            ssize_t relPos;
-            std::string readStr;
+
+            cs.countMinHashNotInGraph++;
+            ssize_t relPos;            
+            std::string readStr, readStr1;
+            rD->getRead(r,readStr1);
+#ifdef LOG
+            logfile<<"Contig: " << contigId << ", Read passed MinHash "<<r<<", read length: " << readStr1.length()<< "\n";
+#endif 
             if (reverseComplement)
                 ReadData::toReverseComplement(
-                    rD->getRead(r).begin(), rD->getRead(r).end(),
+                    readStr1.begin(), readStr1.end(),
                     std::inserter(readStr, readStr.end()));
             else
-                readStr = rD->getRead(r);
+                readStr = readStr1;
 
             if (!rA->align(originalString, readStr, relPos)) {
+#ifdef LOG
+                logfile<< "Contig: " << contigId << ", Read failed Sort-Merge "<<r<<"\n";
+#endif 
                 continue;
             }
-
+#ifdef LOG
+            logfile<<"Contig: " << contigId << ", Read passed Sort-Merge "<<r<<"\n";
+#endif 
+            cs.countMergeSort++;
             ssize_t pos = curPos + relPos;
             std::vector<Edit> editScript;
             ssize_t beginOffset, endOffset;
-            if (!readStatusLock[r%numLocks].try_lock()) {
-                // we only try_lock here since missing a read
-                // is not a major issue and lock contention should be a rare event anyway.
-                // On the other hand, waiting for another thread to finish alignment is not
-                // worthwhile.
+
+            bool alignStatus = cG->alignRead(readStr, editScript, beginOffset,
+                                endOffset, m_k, m_w, hashBits);
+            if (!alignStatus) {
+#ifdef LOG
+                logfile<< "Contig: " << contigId << ", Read failed aligner "<<r<<"\n";
+#endif
                 continue;
             } else {
-                // check again that read is available (variables flushed after lock is set)
-                if (inGraph[r]) {
-                    // read already taken, continue with next read
-                    readStatusLock[r%numLocks].unlock();
-                    continue;
-                }
-                if (!cG->addRead(readStr, pos, editScript, beginOffset,
-                                 endOffset)) {
-                    // read doesn't align, continue with next read
-                    readStatusLock[r%numLocks].unlock();
+                if (!readStatusLock[r%numLocks].try_lock()) {
+                    // we only try_lock here since missing a read
+                    // is not a major issue and lock contention should be a rare event anyway.
+                    // Note that if some other thread has locked the read, they are guaranteed
+                    // to pick it up.
                     continue;
                 } else {
+                    // check again that read is available (variables flushed after lock is set)
+                    if (inGraph[r]) {
+                        // read already taken, continue with next read
+                        readStatusLock[r%numLocks].unlock();
+                        continue;
+                    }
+
                     // read added to graph
+#ifdef LOG
+                    logfile<< "Contig: " << contigId << ", Read passed aligner "<<r<<"\n";
+#endif
                     inGraph[r] = true;
                     readStatusLock[r%numLocks].unlock();
+                    cs.countAligner++;
                 }
             }
+
 #ifdef CHECKS
             {
                 // Check editScript applied to originalString is readStr
@@ -198,8 +291,8 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
 #endif
             cG->calculateMainPathGreedy();
 #ifdef CHECKS
-            std::cout << "Added read " << r << " first unadded read "
-                      << firstUnaddedRead << std::endl;
+            // std::cout << "Added read " << r << " first unadded read "
+            //           << firstUnaddedRead << std::endl;
             assert(checkRead(cG, r));
             assert(cG->checkNoCycle());
 #endif
@@ -209,28 +302,30 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos,
 
 bool Consensus::checkRead(ConsensusGraph *cG, read_t read) {
     std::string result;
+    std::string readStr;
     bool temp = cG->getRead(read, std::inserter(result, result.end()));
     assert(temp);
     if (!temp)
         return false;
+    rD->getRead(read, readStr);
     if (!cG->readsInGraph.at(read).reverseComplement) {
-        if (result != rD->getRead(read)) {
+        if (result != readStr) {
             std::cout << "readInGraph:\n" << result << "\n";
-            std::cout << "actualRead:\n" << rD->getRead(read) << "\n";
+            std::cout << "actualRead:\n" << readStr << "\n";
         }
-        return result == rD->getRead(read);
+        return result == readStr;
     }
     std::string reverseComplement;
     ReadData::toReverseComplement(
         result.begin(), result.end(),
         std::inserter(reverseComplement, reverseComplement.end()));
-    if (reverseComplement != rD->getRead(read)) {
+    if (reverseComplement != readStr) {
         std::cout << "readInGraphRerseComplement:\n"
                   << reverseComplement << "\n";
         std::cout << "readInGraph:\n" << result << "\n";
-        std::cout << "actualRead:\n" << rD->getRead(read) << "\n";
+        std::cout << "actualRead:\n" << readStr << "\n";
     }
-    return reverseComplement == rD->getRead(read);
+    return reverseComplement == readStr;
 }
 
 void Consensus::finishWriteConsensus(const std::vector<std::vector<read_t>>& numReadsInContig) {
@@ -257,7 +352,9 @@ ConsensusGraph *Consensus::createGraph(read_t &firstUnaddedRead) {
     if (!getRead(read))
         return nullptr;
     ConsensusGraph *cG = new ConsensusGraph(aligner);
-    cG->initialize(rD->getRead(read), read, 0);
+    std::string readStr;
+    rD->getRead(read, readStr);
+    cG->initialize(readStr, read, 0);
     cG->calculateMainPathGreedy();
     firstUnaddedRead = read + 1;
     return cG;
@@ -274,14 +371,21 @@ bool Consensus::getRead(read_t &read) {
         return false;
     while (read < numReads) {
         if (!inGraph[read]) {
-            std::lock_guard<OmpMutex> lg(readStatusLock[read%numLocks]);
-            // check once again inside locked region (since variables are flushed)
-            if (!inGraph[read]) {
-                inGraph[read] = true;
-                return true;
+            if (!readStatusLock[read%numLocks].try_lock()) {
+                // couldn't obtain lock, that's fine, some other thread
+                // will take the read
+                read++;
+            } else {
+                // check once again inside locked region (since variables are flushed)
+                if (!inGraph[read]) {
+                    inGraph[read] = true;
+                    readStatusLock[read%numLocks].unlock();
+                    return true;
+                }
             }
+        } else {
+            read++;
         }
-        read++;
     }
     return false;
 }

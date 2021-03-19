@@ -91,7 +91,7 @@ public:
     //    void addEdge(Edge *e);
 
     // The edges with this node as source
-    std::vector<std::pair<Node *, Edge *>> edgesOut;
+    std::vector<Edge *> edgesOut;
 
     std::vector<Edge *> edgesIn;
 
@@ -145,7 +145,7 @@ public:
 class Path {
 public:
     std::deque<Edge *> edges;
-    std::vector<char> path;
+    std::string path;
 
     /**
      * Returns the average weight of the edges on path
@@ -239,14 +239,13 @@ public:
     void initialize(const std::string &seed, read_t readId, long pos);
 
     /**
-     * Adds a string to the consensus graph. Does not update mainPath or list of
-     * reads.
+     * Aligns a string to the consensus graph mainPath. 
+     * Does not update mainPath or list of reads.
      * @param s String of read to add
-     * @param pos Relative position of read in contig
      */
     __attribute__((warn_unused_result)) bool
-    addRead(const std::string &s, long pos, std::vector<Edit> &editScript,
-            ssize_t &beginOffset, ssize_t &endOffset);
+    alignRead(const std::string &s, std::vector<Edit> &editScript,
+            ssize_t &beginOffset, ssize_t &endOffset, size_t m_k, size_t m_w, size_t hashBits);
 
     /**
      * @brief Updates the graph with the new read s, and the alignment results
@@ -300,7 +299,7 @@ public:
      * @param pos outputs the relative position in mainPath
      */
     size_t read2EditScript(Read &r, read_t id, std::vector<Edit> &editScript,
-                           size_t &pos);
+                           uint32_t &pos);
 
     /**
      * @brief Write the edit strings of the reads in a single file f
@@ -310,20 +309,13 @@ public:
     void writeReads(ConsensusGraphWriter &cgw);
 
     /**
-     * @brief Write the raw data into tempDir with file names .pos, .genome,
-     * .type, .base, .id, .unalignedReads, .unalignedIds;
-     * The .id file is delta encoded
-     *
-     * @param filename
-     */
-    void writeReads(const std::string &filename);
-
-    /**
      * Prints the info of the ConsensusGraph. For debugging purposes
      */
     void printStatus();
 
     read_t getNumReads();
+
+    size_t getNumEdges();
 
     /**
      * @brief Does a sanity check on the graph structure.
@@ -473,15 +465,6 @@ private:
                    std::vector<read_t> *reads2Split);
 
     /**
-     * Write the edits trings of the reads into a single file
-     * @param f
-     * @param r
-     * @param id
-     * @return Edit distance
-     */
-    size_t writeRead(std::ofstream &f, Read &r, read_t id);
-
-    /**
      * @brief
      *
      * @param posFile Here we store the number of unchanged bases before the
@@ -512,7 +495,6 @@ private:
      */
     void clearMainPath();
 
-    // void writeGraph(std::ofstream &f);
 };
 
 /******************************************************************************/
