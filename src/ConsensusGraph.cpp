@@ -282,7 +282,7 @@ bool ConsensusGraph::alignRead(const std::string &s, std::vector<Edit> &editScri
             }       
         }
         else if(r->rs == 0){
-            beginOffset = -r->qs;               
+            beginOffset = -r->qs;
         }
         else{
             throw std::runtime_error("Encountered invalid reference start");
@@ -494,11 +494,8 @@ void ConsensusGraph::updateGraph(const std::string &s,
         }
     };
 
-    //    std::cout << "Edits" << std::endl;
-
     // Now we deal with the edits one by one
     for (const Edit &e : editScript) {
-        //        std::cout << e;
         if (e.editType == SAME) {
             size_t num = e.editInfo.num;
             numUnchanged += num;
@@ -536,18 +533,13 @@ void ConsensusGraph::updateGraph(const std::string &s,
         }
     }
 
-    //    std::cout << "EndOffset" << std::endl;
-
     // Finally we deal with endOffset
     if (endOffset > 0) {
-        //        std::cout << endOffset << std::endl;
         auto end = s.end();
         for (auto it = end - endOffset; it < end; it++) {
-            //            std::cout << *it;
             insertNode(*it);
         }
     }
-
     assert(numUnchanged > 0);
     // Don't forget to add the read!
     readsInGraph.insert(std::make_pair(
@@ -571,9 +563,11 @@ Path &ConsensusGraph::calculateMainPathGreedy() {
             currentNode->onMainPath = true;
             stringPath.push_back(currentNode->base);
         }
-        read_t endingReadId = *edgesInPath.back()->reads.begin(); 
+        read_t endingReadId = *edgesInPath.back()->reads.begin();
+
         // TODO: why take the begin (i.e., first read through this last edge in path)?
         // Is this a relic of the constant read length code?
+        // Doesn't matter since typically only one read at the last edge
         Read &endingRead = readsInGraph.at(endingReadId);
         endPos = endingRead.pos + endingRead.len;
     }

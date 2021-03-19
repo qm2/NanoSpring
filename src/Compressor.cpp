@@ -76,7 +76,6 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
         consensus.rD = &rD;
         consensus.rF = &rF;
         consensus.rA = rA;
-        consensus.aligner = aligner;
         consensus.tempDir = tempDir;
         consensus.tempFileName = tempFileName;
         consensus.numThr = numThr;

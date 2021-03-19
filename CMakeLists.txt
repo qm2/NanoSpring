@@ -86,12 +86,8 @@ add_library(NanoporeCompressionLib
         src/bsc.cpp
         src/Compressor.cpp
         src/Consensus.cpp
-        #src/Contig.cpp
         src/Decompressor.cpp
         src/Edits.cpp
-        src/LocalMyers_impl.h
-        src/LocalMyersRollBack_impl.h
-        #src/LocalMyersRollBackOld.cpp
         src/ReadAligner.cpp
         src/ReadData.cpp
         src/ReadFilter.cpp
@@ -99,19 +95,13 @@ add_library(NanoporeCompressionLib
         src/OmpMutex.cpp
         src/DirectoryUtils.cpp
         src/dnaToBits.cpp
-        src/testNotOnMainPath.cpp
-        src/testDisconnected.cpp
         include/AlignerTester.h
         include/bsc_helper.h
         include/Compressor.h
         include/Consensus.h
-        #include/Contig.h
         include/Decompressor.h
         include/Edits.h
         include/StringAligner.h
-        include/LocalMyers.h
-        include/LocalMyersRollBack.h
-        #include/LocalMyersRollBackOld.h
         include/ReadAligner.h
         include/ReadData.h
         include/ReadFilter.h
@@ -141,6 +131,7 @@ target_compile_options(NanoporeCompressionLib
 target_compile_options(NanoporeCompressionLib 
     PRIVATE 
     $<$<CONFIG:Debug>:-g -O3 -fsanitize=address -fno-omit-frame-pointer>)
+
 if ( CHECKS )
     target_compile_options(NanoporeCompressionLib 
         PRIVATE 
@@ -176,32 +167,12 @@ endif()
 
 ###############################################
 
-add_executable(testAligner src/testAligner.cpp)
-target_link_libraries(testAligner PRIVATE NanoporeCompressionLib profiler)
-
-add_executable(testAlignAlgs src/testAlignAlgs.cpp)
-target_link_libraries(testAlignAlgs PRIVATE NanoporeCompressionLib profiler)
-
 add_executable(testCompressor src/testCompressor.cpp)
-target_link_libraries(testCompressor PRIVATE NanoporeCompressionLib profiler)
-
-# add_executable(testContig src/testContigGenerator.cpp)
-# target_link_libraries(testContig PRIVATE NanoporeCompressionLib profiler)
+target_link_libraries(testCompressor PRIVATE NanoporeCompressionLib)
 
 add_executable(testDecompressor src/testDecompressor.cpp)
-target_link_libraries(testDecompressor PRIVATE NanoporeCompressionLib profiler)
+target_link_libraries(testDecompressor PRIVATE NanoporeCompressionLib)
 
 add_executable(testMinHash src/testMinHash.cpp)
-target_link_libraries(testMinHash PRIVATE NanoporeCompressionLib profiler)
-
-add_executable(testMyers src/testMyers.cpp)
-target_link_libraries(testMyers PRIVATE NanoporeCompressionLib profiler)
-
-add_executable(testNotOnMainPath src/testNotOnMainPath.cpp)
-target_link_libraries(testNotOnMainPath PRIVATE NanoporeCompressionLib profiler)
-
-add_executable(testDisconnected src/testDisconnected.cpp)
-target_link_libraries(testDisconnected PRIVATE NanoporeCompressionLib profiler)
-
-
+target_link_libraries(testMinHash PRIVATE NanoporeCompressionLib)
 

@@ -13,8 +13,6 @@ public:
     size_t k, n, overlapSketchThreshold, m_k, m_w, hashBits;
     ReadData::Filetype filetype = ReadData::Filetype::READ;
     ReadAligner *rA;
-    /** Parameters for consensus **/
-    ConsensusGraph::StringAligner_t *aligner;
     /** The temp directories **/
     std::string tempDir = "tempRaw/";
     /** The output filenames to use in temp directories **/
