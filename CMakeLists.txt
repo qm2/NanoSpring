@@ -98,6 +98,7 @@ add_library(NanoporeCompressionLib
         src/ConsensusGraph.cpp
         src/OmpMutex.cpp
         src/DirectoryUtils.cpp
+        src/dnaToBits.cpp
         src/testNotOnMainPath.cpp
         src/testDisconnected.cpp
         include/AlignerTester.h
@@ -119,6 +120,7 @@ add_library(NanoporeCompressionLib
         include/OmpMutex.h
         include/DirectoryUtils.h
         include/Types.h
+        include/dnaToBits.h
         )
 
 target_include_directories(NanoporeCompressionLib 

@@ -43,7 +43,7 @@ void MergeSortReadAligner::stringToSortedKMers(
     if (maxI <= 0)
         return;
     v.resize(maxI);
-    MinHashReadFilter::kMer_t kmers[maxI];
+    std::vector<MinHashReadFilter::kMer_t> kmers(maxI);
     MinHashReadFilter::string2KMers(s, k, kmers);
     for (size_t i = 0; i < (size_t)maxI; ++i) {
         v[i] = (std::make_pair(kmers[i], i));

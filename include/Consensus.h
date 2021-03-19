@@ -97,8 +97,9 @@ private:
 
     /**
      * @brief Number of locks to use (read i protected by lock i%numLocks)
+     * Use large enough number of locks to avoid lock contention
      */
-    static const uint32_t numLocks = (1<<12); // 4096 locks
+    static const uint32_t numLocks = (1<<24); // 16777216 locks
 
     /**
      * @brief Protects inGraph

@@ -2,7 +2,7 @@
 #define C3C2DD2A_9114_4E1C_B89E_18F31D007DCB
 
 #include "Types.h"
-
+#include "dnaToBits.h"
 #include <memory>
 #include <string>
 #include <vector>
@@ -43,17 +43,17 @@ public:
     /**
      * @brief Returns the read with readId as a string
      *
-     * @param readId
-     * @return std::string
+     * @param readId, readStr
+     * @return none
      */
-    std::string &getRead(read_t readId);
+    void getRead(read_t readId, std::string &readStr);
 
     /// TODO: don't expose these three funcitons. change the interface to hide
     /// the raw data.
     std::vector<unsigned long> &getReadPos();
 
-    std::vector<std::unique_ptr<std::string>> &getReadData();
-
+    // std::vector<std::unique_ptr<std::string>> &getReadData();
+    std::vector<std::unique_ptr<DnaBitset>> &getReadData();
     /**
      * @brief Turns a base to its complement base
      *
@@ -84,7 +84,8 @@ public:
 
 private:
     read_t numReads;
-    std::vector<std::unique_ptr<std::string>> readData;
+    // std::vector<std::unique_ptr<std::string>> readData;
+    std::vector<std::unique_ptr<DnaBitset>> readData;
 
     // The following are for testing
     std::vector<unsigned long> readPos;
