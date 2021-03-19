@@ -91,7 +91,7 @@ public:
     //    void addEdge(Edge *e);
 
     // The edges with this node as source
-    std::vector<std::pair<Node *, Edge *>> edgesOut;
+    std::vector<Edge *> edgesOut;
 
     std::vector<Edge *> edgesIn;
 
