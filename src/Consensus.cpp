@@ -403,6 +403,7 @@ bool Consensus::getRead(read_t &read) {
                     readStatusLock[read%numLocks].unlock();
                     return true;
                 }
+                readStatusLock[read%numLocks].unlock();
             }
         } else {
             read++;
