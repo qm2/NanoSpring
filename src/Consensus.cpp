@@ -73,8 +73,8 @@ void Consensus::generateAndWriteConsensus() {
     				edgesTotal += *it;
                 edgesAverage = edgesTotal/numThr;
                 if (curPos + len > cG->endPos){  
-                	// std::cout << "total number of edges in all threads: " << edgesTotal << '\n';
-                	// std::cout << "average number of edges in all threads: " << edgesAverage << '\n';                	            	
+                    // std::cout << "total number of edges in all threads: " << edgesTotal << '\n';
+                    // std::cout << "average number of edges in all threads: " << edgesAverage << '\n';
                     break;
                 }else if (cG->getNumEdges()>=1200000){
                //else if (cG->getNumEdges()>=edgesAverage && edgesTotal>=numThr*600000){  
@@ -96,7 +96,7 @@ void Consensus::generateAndWriteConsensus() {
                 	// std::cout << "total number of edges in all threads: " << edgesTotal << '\n';
                 	// std::cout << "average number of edges in all threads: " << edgesAverage << '\n';
                     break;
-                }else if (cG->getNumEdges()>=1200000){  
+                } else if (cG->getNumEdges()>=1200000){  
                //else if (cG->getNumEdges()>=edgesAverage && edgesTotal>=numThr*600000){  
                     edgesTooMany = true;
                     break;
@@ -109,14 +109,21 @@ void Consensus::generateAndWriteConsensus() {
                 //update the edges vector
                 edgesInGraph[tid] = cG->getNumEdges();
             }
-            cG->writeMainPath(cgw);
-            cG->writeReads(cgw);
-            numReadsInContig[tid].push_back(cG->getNumReads());
-            if (cG->getNumReads() == 1)
-                loneReads[tid].push_back(cG->readsInGraph.begin()->first);
+            // if the graph has just one read, write to lone
+            if (cG->getNumReads() == 0) {
+                cG->writeReadLone(cgw);
+                loneReads[tid].push_back(cG->firstReadId);
+                numReadsInContig[tid].push_back(1);
+            } else {
+                cG->writeMainPath(cgw);
+                cG->writeReads(cgw);
+                numReadsInContig[tid].push_back(cG->getNumReads());
+            }
             delete cG;
             contigId++;
         }
+        // finally, write ids of lone reads to end of id file
+        cG->writeIdsLone(cgw, loneReads[tid]);
 #ifdef LOG
         logfile.close();
 #endif
@@ -290,6 +297,11 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
                 assert(!resultAfterEdit.compare(targetString));
             }
 #endif
+            // if the graph is not initialized, first initialize
+            if (cG->getNumReads() == 0) {
+                cG->initialize(cG->mainPath.path, cG->firstReadId, 0);
+                cG->calculateMainPathGreedy();
+            }
             cG->updateGraph(readStr, editScript, beginOffset, endOffset, r, pos,
                             reverseComplement);
 #ifdef CHECKS
@@ -359,10 +371,12 @@ ConsensusGraph *Consensus::createGraph(read_t &firstUnaddedRead) {
     if (!getRead(read))
         return nullptr;
     ConsensusGraph *cG = new ConsensusGraph;
-    std::string readStr;
-    rD->getRead(read, readStr);
-    cG->initialize(readStr, read, 0);
-    cG->calculateMainPathGreedy();
+    // we don't actually fully initialize the graph
+    // since that would be wasted effort if this turns out to be a lone graph
+    rD->getRead(read, cG->mainPath.path);
+    cG->startPos = 0;
+    cG->endPos = cG->mainPath.path.size();
+    cG->firstReadId = read;
     firstUnaddedRead = read + 1;
     return cG;
 }

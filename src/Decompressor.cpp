@@ -60,7 +60,8 @@ void Decompressor::decompress(const char *inputFileName,
                                       ".pos",
                                       ".type",
                                       ".base",
-                                      ".complement"};
+                                      ".complement",
+                                      ".lone"};
     std::cout << "BSC decompression ...";
     //loop through each thread
 #pragma omp parallel for
@@ -83,12 +84,13 @@ void Decompressor::decompress(const char *inputFileName,
         //open all the files for this thread
         std::ifstream genomeFile;
         genomeFile.open(currentFilename + ".genome");
-        std::ifstream idFile, posFile, editTypeFile, editBaseFile, complementFile;
+        std::ifstream idFile, posFile, editTypeFile, editBaseFile, complementFile, loneFile;
         idFile.open(currentFilename + ".id", std::ios::binary);
         posFile.open(currentFilename + ".pos", std::ios::binary);
         editTypeFile.open(currentFilename + ".type");
         editBaseFile.open(currentFilename + ".base");
         complementFile.open(currentFilename + ".complement");
+        loneFile.open(currentFilename + ".lone");
         // read each genome in seris
         std::string genome;
         std::string currentRead;
@@ -114,6 +116,15 @@ void Decompressor::decompress(const char *inputFileName,
                 reads[id] = new DnaBitset(currentRead.c_str(), currentRead.size());
             }
         }
+        // now do the lone reads
+        std::string loneRead;
+        read_t id = 0, idInc;
+        while(std::getline(loneFile, loneRead)) {
+            // the id for the current read
+            idFile.read((char*)&idInc, sizeof(read_t));
+            id = id + idInc;
+            reads[id] = new DnaBitset(loneRead.c_str(),loneRead.size());
+        }
         //close all files
         genomeFile.close();
         idFile.close();
@@ -121,6 +132,7 @@ void Decompressor::decompress(const char *inputFileName,
         editTypeFile.close();
         editBaseFile.close();
         complementFile.close();
+        loneFile.close();
     }
     std::cout << "Done!\n";
 

@@ -121,12 +121,14 @@ ConsensusGraphWriter::ConsensusGraphWriter(const std::string &filePrefix) {
     const std::string idFileName = filePrefix + ".id";
     const std::string complementFileName = filePrefix + ".complement";
     const std::string genomeFileName = filePrefix + ".genome";
+    const std::string loneFileName = filePrefix + ".lone";
     posFile.open(posFileName, std::ios::binary);
     editTypeFile.open(editTypeFileName);
     editBaseFile.open(editBaseFileName);
     idFile.open(idFileName, std::ios::binary);
     complementFile.open(complementFileName);
     genomeFile.open(genomeFileName);
+    loneFile.open(loneFileName);
 }
 
 void ConsensusGraph::initialize(const std::string &seed, read_t readId,
@@ -1005,6 +1007,19 @@ void ConsensusGraph::removeEdge(Edge *e,
                       << std::endl;
             printStatus();
 #endif
+        }
+
+        void ConsensusGraph::writeReadLone(ConsensusGraphWriter &cgw) {
+            cgw.loneFile << std::string(mainPath.path.begin(), mainPath.path.end()) << std::endl;
+        }
+
+        void ConsensusGraph::writeIdsLone(ConsensusGraphWriter &cgw, std::vector<read_t> &loneReads) {
+            read_t pasId = 0;
+            for (auto it : loneReads) {
+                read_t diffId = it - pasId;
+                cgw.idFile.write((char*)&diffId, std::ios::binary);
+                pasId = it;
+            }
         }
 
         read_t ConsensusGraph::getNumReads() { return readsInGraph.size(); }

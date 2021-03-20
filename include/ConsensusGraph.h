@@ -172,6 +172,7 @@ public:
     std::ofstream idFile;
     std::ofstream complementFile;
     std::ofstream genomeFile;
+    std::ofstream loneFile;
     ConsensusGraphWriter(const std::string &filePrefix);
 };
 
@@ -218,6 +219,9 @@ public:
          */
         Read(long pos, Node *start, size_t len, bool reverseComplement = false);
     };
+
+
+    read_t firstReadId; // first read in graph (useful for uninitialized graph with single read)
 
     /** Maps ID of read to (relative position of read in contig, beginning node
      of the read) **/
@@ -297,11 +301,26 @@ public:
                            uint32_t &pos);
 
     /**
-     * @brief Write the edit strings of the reads in a single file f
+     * @brief Write the streams for the reads 
      *
-     * @param f
+     * @param cgw
      */
     void writeReads(ConsensusGraphWriter &cgw);
+
+    /**
+     * @brief Write the streams for the read in lone contig
+     *
+     * @param cgw
+     */
+    void writeReadLone(ConsensusGraphWriter &cgw);
+
+    /**
+     * @brief Write the ids for the lone reads for the thread
+     *
+     * @param cgw
+     * @param 
+     */
+    void writeIdsLone(ConsensusGraphWriter &cgw, std::vector<read_t> &loneReads);
 
     /**
      * Prints the info of the ConsensusGraph. For debugging purposes
