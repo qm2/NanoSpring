@@ -198,7 +198,12 @@ bool ConsensusGraph::alignRead(const std::string &s, std::vector<Edit> &editScri
     //0 correpons to map-ont
     mm_set_opt(0, &iopt, &mopt);
     mopt.flag |= MM_F_CIGAR;
-    mopt.flag |= MM_F_FOR_ONLY; 
+    mopt.flag |= MM_F_FOR_ONLY;
+    mopt.max_chain_iter = 50; 
+    // mopt.max_chain_iter - we set this lower because it helps avoid super slow times
+    // when we encounter highly repetitive sequences (for whole genome human data).
+    // Note: setting it too small leads to worse compression for human datasets
+
     // only forward alignment, no reverse complement (which is handled elsewhere)
     //call the mm_idx_str to return the index for the reference read    
     // std::cout<<"k:"<<iopt.k<<"w:"<<iopt.w<<std::endl;
@@ -959,7 +964,7 @@ void ConsensusGraph::removeEdge(Edge *e,
         }
 
         void ConsensusGraph::printStatus() {
-            std::cout << readsInGraph.size() << " reads in graph " << this
+            std::cout << readsInGraph.size() << " reads in graph " << (uint64_t)this
                       << ", " << numNodes << " nodes, and " << numEdges
                       << " edges."
                       << "\n";
