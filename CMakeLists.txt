@@ -176,3 +176,7 @@ target_link_libraries(testDecompressor PRIVATE NanoporeCompressionLib)
 add_executable(testMinHash src/testMinHash.cpp)
 target_link_libraries(testMinHash PRIVATE NanoporeCompressionLib)
 
+add_executable(testLoneReads src/testLoneReads.cpp)
+target_include_directories(testLoneReads PRIVATE minimap2)
+target_link_libraries(testLoneReads PRIVATE NanoporeCompressionLib)
+
