@@ -1,9 +1,10 @@
 #include "Consensus.h"
 #include "DirectoryUtils.h"
 #include "bsc_helper.h"
-#include <algorithm>
+#include "minimap.h"
 #include <arpa/inet.h>
 #include <boost/filesystem.hpp>
+#include <algorithm>
 #include <csignal>
 #include <fstream>
 #include <iostream>
@@ -11,7 +12,10 @@
 #include <memory>
 #include <mutex>
 #include <set>
-#include "minimap.h"
+#include <ctime>
+#include <chrono> 
+
+
 
 void Consensus::generateAndWriteConsensus() {
     initialize();
@@ -36,7 +40,12 @@ void Consensus::generateAndWriteConsensus() {
         // guarantee that all reads < firstUnaddedRead have been picked
         while ((cG = createGraph(firstUnaddedRead))) {
 #ifdef LOG
-            logfile<< "Contig: " << contigId << ", First read number "<<cG->readsInGraph.begin()->first<<", read length: " << cG->endPos - cG->startPos << "\n";
+            logfile<< "Contig: " << contigId << ", First read number "<< cG->firstReadId <<", read length: " << cG->endPos - cG->startPos << "\n";
+            {
+            auto end = std::chrono::system_clock::now();
+            std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+            logfile <<"Time: "<<std::ctime(&end_time);
+            }
 #endif 
             //start to count the number of edges in this graph
             edgesInGraph[tid] = 0;
@@ -121,10 +130,22 @@ void Consensus::generateAndWriteConsensus() {
             }
             delete cG;
             contigId++;
+#ifdef LOG
+            {
+            auto end = std::chrono::system_clock::now();
+            std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+            logfile <<"Time: "<<std::ctime(&end_time);
+            }
+#endif 
         }
         // finally, write ids of lone reads to end of id file
         cG->writeIdsLone(cgw, loneReads[tid]);
 #ifdef LOG
+        {
+        auto end = std::chrono::system_clock::now();
+        std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+        logfile<<"Thread "<<tid<<" ends at time: "<<std::ctime(&end_time);
+        }
         logfile.close();
 #endif
     } // pragma omp parallel
@@ -177,9 +198,13 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
     bool all[] = {false, true};
     for (bool reverseComplement : all) {
         std::vector<read_t> results;
+
         rF->getFilteredReads(reverseComplement ? reverseComplementString
                                                : originalString,
                              results);
+#ifdef LOG
+            logfile<<"Contig: " << contigId << ", Found "<< results.size() << " MinHash results\n";
+#endif 
         cs.countMinHash += results.size();
         // std::cout << "Found " << results.size() << " reads\n";
         // for (read_t r : results)
@@ -404,6 +429,7 @@ bool Consensus::getRead(read_t &read) {
                     return true;
                 }
                 readStatusLock[read%numLocks].unlock();
+                read++;
             }
         } else {
             read++;
