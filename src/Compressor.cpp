@@ -82,7 +82,7 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
         //parameters for minimap2
         consensus.m_k = m_k;
         consensus.m_w = m_w;
-        consensus.hashBits = hashBits; 
+        consensus.max_chain_iter = max_chain_iter; 
 
         consensus.generateAndWriteConsensus();
     }

@@ -10,7 +10,7 @@
 class Compressor {
 public:
     /** Parameters for filtering **/
-    size_t k, n, overlapSketchThreshold, m_k, m_w, hashBits;
+    size_t k, n, overlapSketchThreshold, m_k, m_w, max_chain_iter;
     ReadData::Filetype filetype = ReadData::Filetype::READ;
     ReadAligner *rA;
     /** The temp directories **/

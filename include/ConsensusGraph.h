@@ -244,7 +244,7 @@ public:
      */
     __attribute__((warn_unused_result)) bool
     alignRead(const std::string &s, std::vector<Edit> &editScript, ssize_t &relPos,
-            ssize_t &beginOffset, ssize_t &endOffset, size_t m_k, size_t m_w, size_t hashBits);
+            ssize_t &beginOffset, ssize_t &endOffset, size_t m_k, size_t m_w, size_t max_chain_iter);
 
     /**
      * @brief Updates the graph with the new read s, and the alignment results

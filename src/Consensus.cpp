@@ -61,7 +61,7 @@ void Consensus::generateAndWriteConsensus() {
             //total number of edges in all threads
             ssize_t edgesTotal = 0;
             ssize_t edgesAverage = 0;
-            while (true) {
+            while (len >= 100) {
 #ifdef LOG
                 std::cout << "right\n";
 #endif
@@ -93,7 +93,7 @@ void Consensus::generateAndWriteConsensus() {
             }
 
             curPos = initialStartPos - offset;
-            while (!edgesTooMany) {
+            while ((len >= 100) && (!edgesTooMany)) {
 #ifdef LOG
                 std::cout << "left\n";
 #endif
@@ -252,7 +252,7 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
             ssize_t beginOffset, endOffset;
             ssize_t pos;
             bool alignStatus = cG->alignRead(readStr, editScript, pos, beginOffset,
-                                endOffset, m_k, m_w, hashBits);
+                                endOffset, m_k, m_w, max_chain_iter);
             
             if (!alignStatus) {
 #ifdef LOG

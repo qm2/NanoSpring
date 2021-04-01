@@ -22,19 +22,19 @@ int main(int argc, char **argv) {
        numThr = atoi(argv[2]); 
     {
         //modifed the input parameters for the minimap2 version
-        size_t k, n, overlapSketchThreshold, m_k, m_w, hashBits;
+        size_t k, n, overlapSketchThreshold, m_k, m_w, max_chain_iter;
         //original parameter for aligner
         double maxErrorRate;
         size_t editSlack;
-        std::cout << "k n overlapSketchThreshold\nminimap:k minimap:w minimap:hashBits"
+        std::cout << "k n overlapSketchThreshold\nminimap:k minimap:w minimap:max_chain_iter"
                   << std::endl;
         std::cin >> k >> n >> overlapSketchThreshold >>  m_k >>
-             m_w >> hashBits;
+             m_w >> max_chain_iter;
         if (k == 0)
             return 0;
-        std::cout << "k n overlapSketchThreshold minimap:k minimap:w minimap:hashBits\n"
+        std::cout << "k n overlapSketchThreshold minimap:k minimap:w minimap:max_chain_iter\n"
                   << k << " " << n << " " << overlapSketchThreshold << " "
-                  << m_k << " " << m_w << " " << hashBits << std::endl;
+                  << m_k << " " << m_w << " " << max_chain_iter << std::endl;
         MergeSortReadAligner rA(21, 10);
         Compressor compressor;
         compressor.k = k;
@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
         compressor.overlapSketchThreshold = overlapSketchThreshold;
         compressor.m_k = m_k;
         compressor.m_w = m_w;
-        compressor.hashBits = hashBits;        
+        compressor.max_chain_iter = max_chain_iter;        
         compressor.rA = &rA;
         const std::string filename(argv[1]);
         const std::string extension =

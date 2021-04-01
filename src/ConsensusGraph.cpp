@@ -158,7 +158,7 @@ void ConsensusGraph::initialize(const std::string &seed, read_t readId,
 }
 
 bool ConsensusGraph::alignRead(const std::string &s, std::vector<Edit> &editScript, ssize_t &relPos,
-            ssize_t &beginOffset, ssize_t &endOffset, size_t m_k, size_t m_w, size_t hashBits) {
+            ssize_t &beginOffset, ssize_t &endOffset, size_t m_k, size_t m_w, size_t max_chain_iter) {
     // General comments: 
     // 1. The whole idea behind startPos, endPos and Read.pos in ConsensusGraph
     //    is to provide a reference point for the main path when looking for the next 
@@ -199,7 +199,7 @@ bool ConsensusGraph::alignRead(const std::string &s, std::vector<Edit> &editScri
     mm_set_opt(0, &iopt, &mopt);
     mopt.flag |= MM_F_CIGAR;
     mopt.flag |= MM_F_FOR_ONLY;
-    mopt.max_chain_iter = 50; 
+    mopt.max_chain_iter = max_chain_iter; 
     // mopt.max_chain_iter - we set this lower because it helps avoid super slow times
     // when we encounter highly repetitive sequences (for whole genome human data).
     // Note: setting it too small leads to worse compression for human datasets
@@ -209,7 +209,7 @@ bool ConsensusGraph::alignRead(const std::string &s, std::vector<Edit> &editScri
     // std::cout<<"k:"<<iopt.k<<"w:"<<iopt.w<<std::endl;
     // std::cout<<"flag:"<<iopt.flag<<"bits:"<<iopt.bucket_bits<<hits<<std::endl;      
     //the defalut parameters are: 15 10 false 14
-    mm_idx_t * idx = mm_idx_str(m_w, m_k, false, hashBits, 1, &Abegin, NULL);
+    mm_idx_t * idx = mm_idx_str(m_w, m_k, false, 14, 1, &Abegin, NULL);
     mm_mapopt_update(&mopt, idx);
     //use the index to align with the current read
     //we only want forward matches: use rev in mm_reg1_t
