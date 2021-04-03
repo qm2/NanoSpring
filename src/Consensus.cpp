@@ -15,8 +15,6 @@
 #include <ctime>
 #include <chrono> 
 
-
-
 void Consensus::generateAndWriteConsensus() {
     initialize();
 
@@ -61,7 +59,7 @@ void Consensus::generateAndWriteConsensus() {
             //total number of edges in all threads
             ssize_t edgesTotal = 0;
             ssize_t edgesAverage = 0;
-            while (len >= 100) {
+            while (len >= 32) { // for len below 32, minhash is meaningless
 #ifdef LOG
                 std::cout << "right\n";
 #endif
@@ -93,7 +91,7 @@ void Consensus::generateAndWriteConsensus() {
             }
 
             curPos = initialStartPos - offset;
-            while ((len >= 100) && (!edgesTooMany)) {
+            while ((len >= 32) && (!edgesTooMany)) { // for len below 32, minhash is meaningless
 #ifdef LOG
                 std::cout << "left\n";
 #endif
@@ -118,6 +116,7 @@ void Consensus::generateAndWriteConsensus() {
                 //update the edges vector
                 edgesInGraph[tid] = cG->getNumEdges();
             }
+
             // if the graph has just one read, write to lone
             if (cG->getNumReads() == 0) {
                 cG->writeReadLone(cgw);
@@ -129,6 +128,8 @@ void Consensus::generateAndWriteConsensus() {
                 numReadsInContig[tid].push_back(cG->getNumReads());
             }
             delete cG;
+
+
             contigId++;
 #ifdef LOG
             {
@@ -189,7 +190,7 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
         (ssize_t)cG->mainPath.path.size() >= offsetInMainPath + (ssize_t)len
             ? stringBegin + len
             : cG->mainPath.path.end();
-    // std::cout << curPos << "\n";
+
     const std::string originalString(stringBegin, stringEnd);
     std::string reverseComplementString;
     ReadData::toReverseComplement(
@@ -206,14 +207,9 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
             logfile<<"Contig: " << contigId << ", Found "<< results.size() << " MinHash results\n";
 #endif 
         cs.countMinHash += results.size();
-        // std::cout << "Found " << results.size() << " reads\n";
-        // for (read_t r : results)
-        // std::cout << r << " ";
-        // std::cout << '\n';
 
         // Try to add them one by one
         for (const auto r : results) {
-            // std::cout << "Working on read " << r << '\n';
             if (inGraph[r])
                 continue;
 
@@ -221,6 +217,9 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
 
             std::string readStr, readStr1;
             rD->getRead(r,readStr1);
+            if (readStr1.size() < 32){ // for len below 32, minhash is meaningless
+                continue;
+            }
 #ifdef LOG
             logfile<<"Contig: " << contigId << ", Read passed MinHash "<<r<<", read length: " << readStr1.length()<< "\n";
 #endif 
@@ -324,7 +323,9 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
 #endif
             // if the graph is not initialized, first initialize
             if (cG->getNumReads() == 0) {
-                cG->initialize(cG->mainPath.path, cG->firstReadId, 0);
+                std::string mainPathString(cG->mainPath.path);
+                cG->mainPath.path.clear();
+                cG->initialize(mainPathString, cG->firstReadId, 0);
                 cG->calculateMainPathGreedy();
             }
             cG->updateGraph(readStr, editScript, beginOffset, endOffset, r, pos,

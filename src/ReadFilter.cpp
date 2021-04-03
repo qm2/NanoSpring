@@ -50,7 +50,12 @@ void MinHashReadFilter::initialize(ReadData &rD) {
 
     generateRandomNumbers(n);
 
-    size_t maxNumkMers = rD.maxReadLen - k + 1;
+    size_t maxNumkMers;
+    if (rD.maxReadLen < k-1)
+        maxNumkMers = 0;
+    else
+        maxNumkMers = rD.maxReadLen - k + 1;
+
 #pragma omp parallel 
     {
         // We define these vectors here rather than allocate inside string2Sketch
@@ -118,11 +123,15 @@ void MinHashReadFilter::getFilteredReads(kMer_t sketch[],
 void MinHashReadFilter::getFilteredReads(const std::string &s,
                                          std::vector<read_t> &results) {
     results.clear();
-    kMer_t sketch[n];
-    size_t numKmers = s.size() - k + 1;
+    std::vector<kMer_t> sketch(n);
+    size_t numKmers;
+    if (s.size() < k - 1)
+        numKmers = 0;
+    else
+        numKmers = s.size() - k + 1;
     std::vector<kMer_t> kMersVec(numKmers), hashesVec(n); // preallocation
-    string2Sketch(s, sketch, kMersVec, hashesVec);
-    getFilteredReads(sketch, results);
+    string2Sketch(s, sketch.data(), kMersVec, hashesVec);
+    getFilteredReads(sketch.data(), results);
 }
 
 MinHashReadFilter::MinHashReadFilter() {}
