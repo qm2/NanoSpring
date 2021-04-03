@@ -53,11 +53,15 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
     std::cout << "After rD.loadFromFile():\n";
     mem_usage(vm_usage, resident_set);
 
-    // (inputFileName, k, n);
+    // We clear the temp directories and create them if they do not
+    // exist
+    DirectoryUtils::clearDir(tempDir);
+    
     MinHashReadFilter rF;
     rF.k = k;
     rF.n = n;
     rF.overlapSketchThreshold = overlapSketchThreshold;
+    rF.tempDir = tempDir;
     {
         auto start = std::chrono::high_resolution_clock::now();
         rF.initialize(rD);
@@ -69,9 +73,8 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
     }
     std::cout << "After minhash computation:\n";
     mem_usage(vm_usage, resident_set);
-    // We clear the temp directories and create them if they do not
-    // exist
-    DirectoryUtils::clearDir(tempDir);
+    
+    malloc_trim(0); // clear memory
  
     Consensus consensus;
     {

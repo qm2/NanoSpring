@@ -2,21 +2,11 @@
 #define DE8B470D_E48E_48C7_809A_B4368CEC172C
 
 #include "ReadData.h"
+#include "Types.h"
+#include "BBHashMap.h"
 #include <map>
 #include <string>
 #include <vector>
-
-class FilterStats {
-public:
-    const unsigned int overlapBaseThreshold, overlapSketchThreshold;
-    unsigned int totalPositive, totalNegative, numOverlaps, numDisjoint,
-        falsePositives, falseNegatives;
-
-    FilterStats(unsigned int overlapBaseThreshold,
-                unsigned int overlapSketchThreshold);
-
-    friend std::ostream &operator<<(std::ostream &out, const FilterStats &o);
-};
 
 /**
  * @brief Filters reads that are likely to overlap
@@ -24,16 +14,6 @@ public:
  */
 class ReadFilter {
 public:
-    /**
-     * @brief Rechieves reads that are likely to overlap with readToFind and
-     * stores them in results
-     *
-     * @param readToFind id to the read we want to find overlapping reads with
-     * @param results Vector where we store the results
-     */
-    virtual void getFilteredReads(read_t readToFind,
-                                  std::vector<read_t> &results) = 0;
-
     /**
      * @brief Rechieves reads that are likely to overlap with string s and
      * stores them in results
@@ -46,24 +26,20 @@ public:
 
     virtual void initialize(ReadData &rD) = 0;
 
-    /** For testing **/
-    virtual FilterStats getFilterStats(size_t overlapBaseThreshold,
-                                       size_t overlapSketchThreshold) = 0;
-
     virtual ~ReadFilter();
 };
 
+
 class MinHashReadFilter : public ReadFilter {
 public:
-    /** We store all the k-mers as uint64s. This would work for all k<=32,
-     which is definitely sufficient **/
-    typedef uint64_t kMer_t;
 
     /** [k]-mer **/
     size_t k;
     /** size of sketch **/
     size_t n;
     size_t overlapSketchThreshold;
+
+    std::string tempDir;
 
     /**
      * @brief Builds the hash tables from the data in rD
@@ -100,28 +76,9 @@ public:
      */
     void hashKMer(const kMer_t kMer, std::vector<kMer_t> &hashes);
 
-    /**
-     * @brief Gets reads probably overlapping with readToFind and stores them in
-     * results
-     *
-     * @param readToFind
-     * @param results
-     */
-    void getFilteredReads(read_t readToFind,
-                          std::vector<read_t> &results) override;
-
     void getFilteredReads(const std::string &s,
                           std::vector<read_t> &results) override;
 
-    /**
-     * @brief Finds out how will the filter does with the given parameters
-     *
-     * @param overlapBaseThreshold
-     * @param overlapSketchThreshold
-     * @return FilterStats
-     */
-    FilterStats getFilterStats(size_t overlapBaseThreshold,
-                               size_t overlapSketchThreshold) override;
 
     MinHashReadFilter();
 
@@ -157,17 +114,18 @@ private:
     std::vector<size_t> *readPos;
     std::vector<std::pair<size_t, read_t>> readPosSorted;
     read_t numReads;
-    kMer_t *sketches = nullptr;
-    std::vector<std::map<kMer_t, std::vector<read_t>>> hashTables;
+    std::vector<BBHashMap> hashTables; // vector of size n to store the n hash maps
     kMer_t *randNumbers = nullptr;
 
     std::hash<kMer_t> hasher;
+
     /**
      * @brief Initializes the hash tables given the data calculated in
      * sketches
      *
+     * @param sketches
      */
-    void populateHashTables();
+    void populateHashTables(const std::vector<kMer_t> &sketches);
 
     /**
      * @brief Get the Filtered Reads likely to overlap with the read represented

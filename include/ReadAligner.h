@@ -41,7 +41,7 @@ public:
 private:
     void stringToSortedKMers(
         const std::string &s,
-        std::vector<std::pair<MinHashReadFilter::kMer_t, size_t>> &v);
+        std::vector<std::pair<kMer_t, size_t>> &v);
 };
 
 #endif // EXPERIMENTS_READALIGNER_CUH

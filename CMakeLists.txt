@@ -95,6 +95,7 @@ add_library(NanoporeCompressionLib
         src/OmpMutex.cpp
         src/DirectoryUtils.cpp
         src/dnaToBits.cpp
+        src/BBHashMap.cpp
         include/AlignerTester.h
         include/bsc_helper.h
         include/Compressor.h
@@ -111,6 +112,8 @@ add_library(NanoporeCompressionLib
         include/DirectoryUtils.h
         include/Types.h
         include/dnaToBits.h
+        include/BBHashMap.h
+        include/BooPHF.h
         )
 
 target_include_directories(NanoporeCompressionLib 
@@ -172,9 +175,6 @@ target_link_libraries(testCompressor PRIVATE NanoporeCompressionLib)
 
 add_executable(testDecompressor src/testDecompressor.cpp)
 target_link_libraries(testDecompressor PRIVATE NanoporeCompressionLib)
-
-add_executable(testMinHash src/testMinHash.cpp)
-target_link_libraries(testMinHash PRIVATE NanoporeCompressionLib)
 
 add_executable(testLoneReads src/testLoneReads.cpp)
 target_include_directories(testLoneReads PRIVATE minimap2)

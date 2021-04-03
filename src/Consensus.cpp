@@ -54,9 +54,6 @@ void Consensus::generateAndWriteConsensus() {
             ssize_t curPos = cG->startPos;
             // flag for too many edges in the graph
             bool edgesTooMany = false;
-            //total number of edges in all threads
-            ssize_t edgesTotal = 0;
-            ssize_t edgesAverage = 0;
             while (len >= 32) { // for len below 32, minhash is meaningless
 #ifdef LOG
                 std::cout << "right\n";
