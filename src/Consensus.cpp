@@ -13,7 +13,8 @@
 #include <mutex>
 #include <set>
 #include <ctime>
-#include <chrono> 
+#include <chrono>
+#include <malloc.h>
 
 void Consensus::generateAndWriteConsensus() {
     initialize();
@@ -22,7 +23,6 @@ void Consensus::generateAndWriteConsensus() {
     std::vector<std::vector<read_t>> loneReads(numThr);
     ConsensusGraph *cG = nullptr;
     std::vector<CountStats> count_stats(numThr);
-    std::vector<ssize_t> edgesInGraph(numThr);
 
 #pragma omp parallel private(cG)
     {
@@ -45,8 +45,6 @@ void Consensus::generateAndWriteConsensus() {
             logfile <<"Time: "<<std::ctime(&end_time);
             }
 #endif 
-            //start to count the number of edges in this graph
-            edgesInGraph[tid] = 0;
             ssize_t initialStartPos = cG->startPos; // simply 0
             ssize_t initialEndPos = cG->endPos; // 
             const ssize_t len = initialEndPos - initialStartPos;
@@ -67,24 +65,13 @@ void Consensus::generateAndWriteConsensus() {
 #ifdef LOG
                 cG->printStatus();
 #endif
-                //update the edges vector
-                edgesInGraph[tid] = cG->getNumEdges();
                 curPos += offset;
                 // std::cout << "curPos " << curPos << " len " << len << " endPos "
                 //          << cG->endPos << '\n';
 
-                // calculate the total number and average number of edges in all threads
-                // notice that this may not be accurate
-                edgesTotal = 0;
-                for(std::vector<ssize_t>::iterator it = edgesInGraph.begin(); it != edgesInGraph.end(); ++it)
-    				edgesTotal += *it;
-                edgesAverage = edgesTotal/numThr;
                 if (curPos + len > cG->endPos){  
-                    // std::cout << "total number of edges in all threads: " << edgesTotal << '\n';
-                    // std::cout << "average number of edges in all threads: " << edgesAverage << '\n';
                     break;
                 }else if (cG->getNumEdges()>=1200000){
-               //else if (cG->getNumEdges()>=edgesAverage && edgesTotal>=numThr*600000){  
                     edgesTooMany = true;
                     break;
                 }
@@ -95,16 +82,9 @@ void Consensus::generateAndWriteConsensus() {
 #ifdef LOG
                 std::cout << "left\n";
 #endif
-                edgesTotal = 0;
-                for(std::vector<ssize_t>::iterator it = edgesInGraph.begin(); it != edgesInGraph.end(); ++it)
-    				edgesTotal += *it;
-                edgesAverage = edgesTotal/numThr;
                 if (curPos < cG->startPos){
-                	// std::cout << "total number of edges in all threads: " << edgesTotal << '\n';
-                	// std::cout << "average number of edges in all threads: " << edgesAverage << '\n';
                     break;
                 } else if (cG->getNumEdges()>=1200000){  
-               //else if (cG->getNumEdges()>=edgesAverage && edgesTotal>=numThr*600000){  
                     edgesTooMany = true;
                     break;
                 }
@@ -113,8 +93,6 @@ void Consensus::generateAndWriteConsensus() {
 #endif
                 addRelatedReads(cG, curPos, len, count_stats[tid], logfile, contigId);
                 curPos -= offset;
-                //update the edges vector
-                edgesInGraph[tid] = cG->getNumEdges();
             }
 
             // if the graph has just one read, write to lone
@@ -127,8 +105,15 @@ void Consensus::generateAndWriteConsensus() {
                 cG->writeReads(cgw);
                 numReadsInContig[tid].push_back(cG->getNumReads());
             }
-            delete cG;
+            // if the graph is large, run malloc_trim so that memory released to system
+            // without this the memory keeps increasing to very high
+            bool run_malloc_trim = false;
+            if (cG->getNumEdges() > 1000000)
+                run_malloc_trim = true;
 
+            delete cG;
+            if (run_malloc_trim)
+                malloc_trim(0);
 
             contigId++;
 #ifdef LOG

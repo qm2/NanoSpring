@@ -12,6 +12,7 @@
 #include <ios>
 #include <unistd.h>
 #include <string>
+#include <malloc.h>
 
 void mem_usage(double& vm_usage, double& resident_set) {
    // from https://www.tutorialspoint.com/how-to-get-memory-usage-at-runtime-using-cplusplus
@@ -46,6 +47,7 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
 	std::cout << "Entering compress():\n";
     mem_usage(vm_usage, resident_set);
     omp_set_num_threads(numThr);
+    {
     ReadData rD;
     rD.loadFromFile(inputFileName, filetype);
     std::cout << "After rD.loadFromFile():\n";
@@ -86,7 +88,8 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
 
         consensus.generateAndWriteConsensus();
     }
-    
+    }
+    malloc_trim(0); // clear memory 
     {
 // We first compress all the files in the temp directory (we compress
 // only files with extensions)
