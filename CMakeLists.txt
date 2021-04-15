@@ -156,6 +156,8 @@ target_link_libraries(NanoporeCompressionLib
         libbsc
         ${CMAKE_CURRENT_SOURCE_DIR}/minimap2/libminimap2.a
         Boost::filesystem
+        Boost::iostreams
+        Boost::program_options
         -lz -ldl -lm -lpthread
     )
 
@@ -172,6 +174,9 @@ endif()
 
 add_executable(testCompressor src/testCompressor.cpp)
 target_link_libraries(testCompressor PRIVATE NanoporeCompressionLib)
+##target_link_libraries(testCompressor PUBLIC Boost::program_options)
+##target_link_libraries(testCompressor PUBLIC Boost::iostreams)
+##target_link_libraries(testCompressor PUBLIC Boost::filesystem)
 
 add_executable(testDecompressor src/testDecompressor.cpp)
 target_link_libraries(testDecompressor PRIVATE NanoporeCompressionLib)

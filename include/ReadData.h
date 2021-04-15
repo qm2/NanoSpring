@@ -18,7 +18,7 @@ public:
      * @brief The filetype to read
      *
      */
-    enum Filetype { FASTQ, READ };
+    enum Filetype { FASTQ, READ, GZIP};
 
     /** The average length of the reads **/
     size_t avgReadLen;
@@ -31,7 +31,7 @@ public:
      *
      * @param fileName
      */
-    void loadFromFile(const char *fileName, enum Filetype filetype = READ);
+    void loadFromFile(const char *fileName, enum Filetype filetype = FASTQ);
 
     /**
      * @brief Get the number of reads
@@ -112,9 +112,11 @@ private:
      *
      * For every four lines, the second line is the read. The rest we disgard
      *
+     * If the gzip_flag is set to True, then the input file is in gzip version 
+     *
      * @param fileName
      */
-    void loadFromFastqFile(const char *fileName);
+    void loadFromFastqFile(const char *fileName, bool gzip_flag);
 };
 
 /******************************************************************************/

@@ -5,6 +5,9 @@
 #include <iostream>
 #include <limits> // std::numeric_limits
 #include <stdexcept>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filtering_streambuf.hpp>
 
 void ReadData::loadFromFile(const char *fileName, enum Filetype filetype) {
     switch (filetype) {
@@ -12,7 +15,10 @@ void ReadData::loadFromFile(const char *fileName, enum Filetype filetype) {
         loadFromReadFile(fileName);
         break;
     case FASTQ:
-        loadFromFastqFile(fileName);
+        loadFromFastqFile(fileName, false);
+        break;
+    case GZIP:
+        loadFromFastqFile(fileName, true);
         break;
     default:
         assert(false);
@@ -71,20 +77,32 @@ void ReadData::loadFromReadFile(const char *fileName) {
 #endif
 }
 
-void ReadData::loadFromFastqFile(const char *fileName) {
+void ReadData::loadFromFastqFile(const char *fileName, bool gzip_flag) {
     numReads = 0;
     readData.clear();
     readPos.clear();
     editStrings.clear();
     reverse.clear();
-
-    std::ifstream infile(fileName);
+    
+    std::ifstream infile;
+    boost::iostreams::filtering_streambuf<boost::iostreams::input> *inbuf;
+    std::istream *fin = &infile;
+    if (gzip_flag) {
+      infile.open(fileName, std::ios_base::binary);
+      inbuf =
+          new boost::iostreams::filtering_streambuf<boost::iostreams::input>;
+      inbuf->push(boost::iostreams::gzip_decompressor());
+      inbuf->push(infile);
+      fin = new std::istream(inbuf);
+    } else {
+      infile.open(fileName);
+    }
     std::string line;
     size_t totalNumBases = 0;
     maxReadLen = 0;
     ssize_t readLen = 0;
-    while (std::getline(infile, line)) {
-        std::getline(infile, line);
+    while (std::getline(*fin, line)) {
+        std::getline(*fin, line);
         {
             readLen = line.size();
             //convert to c style string  
@@ -98,8 +116,8 @@ void ReadData::loadFromFastqFile(const char *fileName) {
             std::unique_ptr<std::string> ptr(new std::string());
             editStrings.push_back(std::move(ptr));
         }
-        std::getline(infile, line);
-        std::getline(infile, line);
+        std::getline(*fin, line);
+        std::getline(*fin, line);
         totalNumBases += readLen;
         if (readLen > maxReadLen)
             maxReadLen = readLen;
@@ -116,6 +134,12 @@ void ReadData::loadFromFastqFile(const char *fileName) {
     std::cout << "avgReadLen " << avgReadLen << std::endl;
     std::cout << "maxReadLen " << maxReadLen << std::endl;
 #endif
+    if (gzip_flag) {
+        delete fin;
+        delete inbuf;
+    }
+    // close files
+    infile.close();
 }
 
 read_t ReadData::getNumReads() { return numReads; }
