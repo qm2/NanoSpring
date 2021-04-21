@@ -192,7 +192,7 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
 
         // Try to add them one by one
         for (const auto r : results) {
-        	check if we exceed the edge limit in the graph
+        	// check if we exceed the edge limit in the graph
         	if (cG->getNumEdges()>=edge_threshold){
             	return;
         	}
