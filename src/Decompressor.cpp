@@ -159,12 +159,14 @@ void Decompressor::generateRead(const std::string &genome, std::string &read,
                                 bool reverseComplement) const {
     read.clear();
     uint32_t curPos;
-    posFile.read((char*)&curPos,sizeof(uint32_t));
 
+    // posFile.read((char*)&curPos,sizeof(uint32_t));
+    curPos = DirectoryUtils::read_var_uint32(posFile);
     while (true) {
         // First we handle the unchanged bases
-        size_t numUnchanged;
-        posFile.read((char*)&numUnchanged,sizeof(uint32_t));
+        uint32_t numUnchanged;
+        // posFile.read((char*)&numUnchanged,sizeof(uint32_t));
+        numUnchanged = DirectoryUtils::read_var_uint32(posFile);
         for (size_t i = 0; i < numUnchanged; ++i) {
             read.push_back(genome[curPos++]);
         }

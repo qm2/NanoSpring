@@ -7,6 +7,19 @@
 namespace DirectoryUtils {
 
 /**
+ * @brief write a uint32 to a file as a varint
+ * @param val
+ * @param fout
+ */ 
+void write_var_uint32(const uint32_t val, std::ofstream &fout);
+
+/**
+ * @brief read a uint32 from a file as a varint
+ * @param fin
+ */ 
+uint32_t read_var_uint32(std::ifstream &fin);
+
+/**
  * @brief Generate random string of length
  * @param length
  */    

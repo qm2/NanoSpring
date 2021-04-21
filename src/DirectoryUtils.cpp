@@ -3,6 +3,30 @@
 
 namespace DirectoryUtils {
 
+uint32_t read_var_uint32(std::ifstream &fin) {
+    uint32_t val = 0;
+    uint8_t byte;
+    uint8_t shift = 0;
+    do {
+        fin.read((char*)&byte, sizeof(uint8_t));
+        val |= ((byte & 0x7f) << shift);
+        shift += 7;
+    } while(byte & 0x80);
+    return val;
+}
+
+void write_var_uint32(const uint32_t val, std::ofstream &fout){
+    uint32_t uval = val;
+    uint8_t byte;
+    while (uval > 127) {
+        byte = (uint8_t)(uval & 0x7f) | 0x80;
+        fout.write((char*)&byte, sizeof(uint8_t));
+        uval >>= 7;
+    }
+    byte = (uint8_t)(uval & 0x7f);
+    fout.write((char*)&byte, sizeof(uint8_t));
+}
+
 std::string random_string(size_t length){
     auto randchar = []() -> char {
       const char charset[] =

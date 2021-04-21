@@ -1,5 +1,6 @@
 #include "ConsensusGraph.h"
 #include "bsc_helper.h"
+#include "DirectoryUtils.h"
 #include <algorithm>
 #include <cassert>
 #include <deque>
@@ -1106,7 +1107,8 @@ void ConsensusGraph::removeEdge(Edge *e,
             uint32_t offset;
             std::vector<Edit> editScript;
             size_t editDis = read2EditScript(r, id, editScript, offset);
-            posFile.write((char*)&offset,sizeof(uint32_t));
+            //posFile.write((char*)&offset,sizeof(uint32_t));
+            DirectoryUtils::write_var_uint32(offset, posFile);
 
             std::vector<Edit> newEditScript;
             editDis = Edit::optimizeEditScript(editScript, newEditScript);
@@ -1118,20 +1120,23 @@ void ConsensusGraph::removeEdge(Edge *e,
                     break;
                 }
                 case INSERT: {
-                    posFile.write((char*)&unchangedCount, sizeof(uint32_t));
+                    // posFile.write((char*)&unchangedCount, sizeof(uint32_t));
+            		DirectoryUtils::write_var_uint32(unchangedCount, posFile);
                     unchangedCount = 0;
                     editTypeFile << 'i';
                     editBaseFile << e.editInfo.ins;
                     break;
                 }
                 case DELETE: {
-                    posFile.write((char*)&unchangedCount, sizeof(uint32_t));
+                    // posFile.write((char*)&unchangedCount, sizeof(uint32_t));
+            		DirectoryUtils::write_var_uint32(unchangedCount, posFile);
                     unchangedCount = 0;
                     editTypeFile << 'd';
                     break;
                 }
                 case SUBSTITUTION: {
-                    posFile.write((char*)&unchangedCount, sizeof(uint32_t));
+                    // posFile.write((char*)&unchangedCount, sizeof(uint32_t));
+            		DirectoryUtils::write_var_uint32(unchangedCount, posFile);
                     unchangedCount = 0;
                     editTypeFile << 's';
                     editBaseFile << e.editInfo.sub;
@@ -1140,7 +1145,8 @@ void ConsensusGraph::removeEdge(Edge *e,
                 }
             }
 
-            posFile.write((char*)&unchangedCount, sizeof(uint32_t));
+            // posFile.write((char*)&unchangedCount, sizeof(uint32_t));
+            DirectoryUtils::write_var_uint32(unchangedCount, posFile);
 
             editTypeFile << '\n';
             return editDis;
