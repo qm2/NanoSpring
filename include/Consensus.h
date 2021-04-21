@@ -54,7 +54,7 @@ public:
     int numThr;
 
     //parameters for minimap2
-    size_t  m_k, m_w, max_chain_iter;
+    size_t  m_k, m_w, max_chain_iter, edge_threshold;
     /**
      * @brief Generates consensus, calls writeReads and writeMainPath on each 
      * of the consensus graphs, and combines their output

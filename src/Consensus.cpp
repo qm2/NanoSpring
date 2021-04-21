@@ -68,7 +68,7 @@ void Consensus::generateAndWriteConsensus() {
 
                 if (curPos + len > cG->endPos){  
                     break;
-                }else if (cG->getNumEdges()>=1200000){
+                }else if (cG->getNumEdges()>=edge_threshold){
                     edgesTooMany = true;
                     break;
                 }
@@ -81,7 +81,7 @@ void Consensus::generateAndWriteConsensus() {
 #endif
                 if (curPos < cG->startPos){
                     break;
-                } else if (cG->getNumEdges()>=1200000){  
+                } else if (cG->getNumEdges()>=edge_threshold){  
                     edgesTooMany = true;
                     break;
                 }
@@ -192,6 +192,10 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
 
         // Try to add them one by one
         for (const auto r : results) {
+        	check if we exceed the edge limit in the graph
+        	if (cG->getNumEdges()>=edge_threshold){
+            	return;
+        	}
             if (inGraph[r])
                 continue;
 

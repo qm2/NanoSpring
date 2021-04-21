@@ -9,7 +9,7 @@
 class Decompressor {
 public:
     // The temp directories. Must have trailing "/"
-    std::string tempDir = "tempRaw/";
+    std::string tempDir;
     // std::string tarFileName = "originalFile";
 
     // The output filenames to use in temp directories

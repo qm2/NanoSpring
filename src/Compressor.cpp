@@ -41,6 +41,10 @@ void mem_usage(double& vm_usage, double& resident_set) {
    cout << "resident_set: " << resident_set << " KB\n";
 }
 
+
+
+
+
 void Compressor::compress(const char *inputFileName, const int numThr) const {
 	std::cout<<"number of threads: "<<numThr<<std::endl;
 	double vm_usage, resident_set;
@@ -53,9 +57,11 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
     std::cout << "After rD.loadFromFile():\n";
     mem_usage(vm_usage, resident_set);
 
-    // We clear the temp directories and create them if they do not
-    // exist
-    DirectoryUtils::clearDir(tempDir);
+
+
+    // // We clear the temp directories and create them if they do not
+    // // exist
+    // DirectoryUtils::clearDir(tempDir);
     
     MinHashReadFilter rF;
     rF.k = k;
@@ -75,7 +81,8 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
     mem_usage(vm_usage, resident_set);
     
     malloc_trim(0); // clear memory
- 
+
+
     Consensus consensus;
     {
         consensus.rD = &rD;
@@ -88,7 +95,7 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
         consensus.m_k = m_k;
         consensus.m_w = m_w;
         consensus.max_chain_iter = max_chain_iter; 
-
+        consensus.edge_threshold = edge_threshold; 
         consensus.generateAndWriteConsensus();
     }
     }
@@ -141,3 +148,4 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
 
     boost::filesystem::remove_all(tempDir);
 }
+

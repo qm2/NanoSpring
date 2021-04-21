@@ -7,6 +7,12 @@
 namespace DirectoryUtils {
 
 /**
+ * @brief Generate random string of length
+ * @param length
+ */    
+std::string random_string(size_t length);
+
+/**
  * @brief Combines the files filestem[0-(numFiles-1)].fileExt into the
  * single file filepath.fileExt by inplacing a ".\n" in between files 
  * (if delim is true), and removes the old files
