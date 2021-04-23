@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
-    if (help_flag) {
+    if (help_flag || infile.empty()) {
         std::cout << desc << "\n";
         return 0;
     }
