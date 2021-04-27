@@ -1070,7 +1070,7 @@ void BSC_compress(const char *infile, const char *outfile,
     // from
     // https://stackoverflow.com/questions/39883433/create-argc-argv-in-the-code
     std::vector<std::string> arguments = {
-        "", "e", infile, outfile, "-b" + std::to_string(bsize), "-p", "-e1"};
+        "", "e", infile, outfile, "-b" + std::to_string(bsize), "-p", "-e2"};
     std::vector<char *> argv;
     for (const auto &arg : arguments)
         argv.push_back((char *)arg.data());

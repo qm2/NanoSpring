@@ -54,7 +54,7 @@ void Consensus::generateAndWriteConsensus() {
             ssize_t curPos = cG->startPos;
             // flag for too many edges in the graph
             bool edgesTooMany = false;
-            while (len >= 32) { // for len below 32, minhash is meaningless
+            while (len >= 32 && !isRepetitive[cG->firstReadId]) { // for len below 32, minhash is meaningless
 #ifdef LOG
                 std::cout << "right\n";
 #endif
@@ -75,7 +75,7 @@ void Consensus::generateAndWriteConsensus() {
             }
 
             curPos = initialStartPos - offset;
-            while ((len >= 32) && (!edgesTooMany)) { // for len below 32, minhash is meaningless
+            while ((len >= 32) && (!edgesTooMany) && !isRepetitive[cG->firstReadId]) { // for len below 32, minhash is meaningless
 #ifdef LOG
                 std::cout << "left\n";
 #endif
@@ -196,6 +196,10 @@ void Consensus::addRelatedReads(ConsensusGraph *cG, ssize_t curPos, int len, Cou
         	if (cG->getNumEdges()>=edge_threshold){
             	return;
         	}
+        	//check if the read is repetitive
+        	if (isRepetitive[r])
+        		continue;
+        	//check if it is already in graph
             if (inGraph[r])
                 continue;
 
@@ -393,10 +397,43 @@ ConsensusGraph *Consensus::createGraph(read_t &firstUnaddedRead) {
     return cG;
 }
 
+bool Consensus::checkRepetitive(read_t readID){
+    std::string readStr;   
+    rD->getRead(readID, readStr);
+    //check the hamming distance with different offsets
+    //I choose 6 here; it is tunable
+    size_t readLen = readStr.length();
+    for (size_t i = 1; i <= 6; i++){
+        size_t countSameBase = 0;
+        for(size_t j = 0; j < readLen; j++){
+            //check how many same bases the two string share
+            if(readStr[j] != readStr[(j+i)%readLen])
+                countSameBase++;
+        }
+        //the ratio 0.9 is tunable
+        if(countSameBase > 0.9 * (double)readLen)
+            return true;
+    }   
+    return false;
+
+}
+
 void Consensus::initialize() {
     numReads = rD->getNumReads();
     inGraph.resize(numReads, false);
     readStatusLock.resize(numLocks);
+    //check if any reads are repetitive
+    isRepetitive = new bool[numReads];
+    // size_t countRepeats = 0;
+#pragma omp parallel for
+    for (read_t i = 0; i < numReads; i++){
+        isRepetitive[i] = checkRepetitive(i);
+        // if(isRepetitive[i])
+        //     countRepeats++;
+        // std::cout<<"The read number "<<i<<" is "<<isRepetitive[i]<<std::endl;
+    }
+    // std::cout<<"The number of repetitive reads is "<<countRepeats<<std::endl;
+
 }
 
 bool Consensus::getRead(read_t &read) {
