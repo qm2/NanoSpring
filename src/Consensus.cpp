@@ -423,7 +423,7 @@ void Consensus::initialize() {
     inGraph.resize(numReads, false);
     readStatusLock.resize(numLocks);
     //check if any reads are repetitive
-    isRepetitive = new bool[numReads];
+    isRepetitive.resize(numReads, false); 
     // size_t countRepeats = 0;
 #pragma omp parallel for
     for (read_t i = 0; i < numReads; i++){
