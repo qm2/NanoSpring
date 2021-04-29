@@ -162,6 +162,15 @@ void Decompressor::generateRead(const std::string &genome, std::string &read,
 
     // posFile.read((char*)&curPos,sizeof(uint32_t));
     curPos = DirectoryUtils::read_var_uint32(posFile);
+    //handle the inserted bases in beginning
+    uint32_t numInsStart;
+    numInsStart = DirectoryUtils::read_var_uint32(posFile);
+    for (size_t i = 0; i < numInsStart; i++){
+        //write the inserted bases to read
+        char editBase;
+        editBaseFile.get(editBase);
+        read.push_back(editBase);
+    }
     while (true) {
         // First we handle the unchanged bases
         uint32_t numUnchanged;
@@ -174,8 +183,9 @@ void Decompressor::generateRead(const std::string &genome, std::string &read,
         // Now for the edit
         char editType;
         editTypeFile.get(editType);
-        if (editType == '\n')
+        if (editType == '\n'){
             break;
+        }
         if (editType == 'd')
             curPos++;
         else if (editType == 'i') {
@@ -188,6 +198,15 @@ void Decompressor::generateRead(const std::string &genome, std::string &read,
             editBaseFile.get(editBase);
             read.push_back(editBase);
         }
+    }
+    //handle the inserted bases in end
+    uint32_t numInsEnd;
+    numInsEnd = DirectoryUtils::read_var_uint32(posFile);
+    for (size_t i = 0; i < numInsEnd; i++){
+        //write the inserted bases to read
+        char editBase;
+        editBaseFile.get(editBase);
+        read.push_back(editBase);
     }
     if (reverseComplement) {
         std::string temp;

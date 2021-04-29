@@ -1112,11 +1112,34 @@ void ConsensusGraph::removeEdge(Edge *e,
 
             std::vector<Edit> newEditScript;
             editDis = Edit::optimizeEditScript(editScript, newEditScript);
+            //find the number of consecutive insertions at beginning
+            uint32_t numInsStart = 0;
+            uint32_t numInsEnd = 0;
+            for (size_t i = 0; i != newEditScript.size(); i++){
+            	if(newEditScript[i].editType != INSERT)
+            		break;
+            	numInsStart++;
+            	//write the inserted bases to .base
+            	editBaseFile << newEditScript[i].editInfo.ins;
+            }
+            //check if it is the case with all insertion
+            if(numInsStart != newEditScript.size()){
+            	//find the number of consecutive insertions at end
+	            for (int64_t i = newEditScript.size()-1; i >=0; i--){
+	            	if(newEditScript[i].editType != INSERT)
+	            		break;
+	            	numInsEnd++;
+	            }     
+	        }       
+            //Write numInsStart to .pos
+            DirectoryUtils::write_var_uint32(numInsStart, posFile);
+
             uint32_t unchangedCount = 0;
-            for (Edit e : newEditScript) {
-                switch (e.editType) {
+            //Go through editScript from numInsStart to lenEditScript-numInsEnd
+            for (size_t i = numInsStart; i < newEditScript.size()-numInsEnd; i++) {
+                switch (newEditScript[i].editType) {
                 case SAME: {
-                    unchangedCount += e.editInfo.num;
+                    unchangedCount += newEditScript[i].editInfo.num;
                     break;
                 }
                 case INSERT: {
@@ -1124,7 +1147,7 @@ void ConsensusGraph::removeEdge(Edge *e,
             		DirectoryUtils::write_var_uint32(unchangedCount, posFile);
                     unchangedCount = 0;
                     editTypeFile << 'i';
-                    editBaseFile << e.editInfo.ins;
+                    editBaseFile << newEditScript[i].editInfo.ins;
                     break;
                 }
                 case DELETE: {
@@ -1139,7 +1162,7 @@ void ConsensusGraph::removeEdge(Edge *e,
             		DirectoryUtils::write_var_uint32(unchangedCount, posFile);
                     unchangedCount = 0;
                     editTypeFile << 's';
-                    editBaseFile << e.editInfo.sub;
+                    editBaseFile << newEditScript[i].editInfo.sub;
                     break;
                 }
                 }
@@ -1147,7 +1170,13 @@ void ConsensusGraph::removeEdge(Edge *e,
 
             // posFile.write((char*)&unchangedCount, sizeof(uint32_t));
             DirectoryUtils::write_var_uint32(unchangedCount, posFile);
-
+            //Write numInsEnd to .pos file, and write the inserted bases to .base
+            DirectoryUtils::write_var_uint32(numInsEnd, posFile);
+            for (size_t i = newEditScript.size()-numInsEnd; i != newEditScript.size(); i++){
+            	//write the inserted bases to .base
+            	editBaseFile << newEditScript[i].editInfo.ins;
+            }
+            
             editTypeFile << '\n';
             return editDis;
         }
