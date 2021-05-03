@@ -5,7 +5,7 @@
 ### Download repository
 
 ```
-git --recursive clone https://github.com/fanzhuyifan/NanoSpring.git
+git --recursive clone https://github.com/qm2/NanoSpring.git
 ```
 
 ### Install
