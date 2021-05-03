@@ -1,24 +1,28 @@
+# TOOLNAME
+
 ## Install from source code
 
 ### Download repository
 
 ```
-git clone https://github.com/fanzhuyifan/Nanopore-Compression.git
+git clone https://github.com/fanzhuyifan/TOOLNAME.git
 ```
 
 ### Install
-The instructions below will create the executable in the build directory inside Nanopore-Compression.
+The instructions below will create the executable in the build directory inside TOOLNAME.
 
 On Linux with cmake installed and version at least 3.10 (check using cmake --version):
 ```
-cd Nanopore-Compression
+cd TOOLNAME
 mkdir build
 cd build
 cmake ..
 make
 ```
 ## Usage
-Run the Nanopore-Compression executable with the options below:
+### Compression - compresses FASTQ reads. 
+
+Run the TOOLNAME executable with the options below:
 ```
 Allowed options:
   -h [ --help ]                         produce help message
@@ -43,40 +47,52 @@ Allowed options:
   -w [ --working-dir ] arg (=.)         directory to create temporary files
                                         (default current directory)
 ```
-Note that the compressed files are tar archives consisting of the different compressed streams, although we recommend using the .nanopore-compression extension as in the examples shown below.
+Note that the compressed files are tar archives consisting of the different compressed streams, although we recommend using the .TOOLNAME extension as in the examples shown below.
+
+### Decompression -  decompresses reads. 
+
+Run the TOOLNAME executable with the options below:
+```
+Allowed options:
+  -h [ --help ]                         produce help message
+  -i [ --input-file ] arg               input file name
+  -o [ --output-file ] arg (=compressedFile)
+                                        output file name
+  -t [ --num-threads ] arg (=16)        number of threads (default 16)
+```
 
 ## Example Usage of Nanopore Compression
-This section contains several examples for compression and decompression with various modes and options. The compressed file uses the .nanopore-compression extension as a convention.
+This section contains several examples for compression and decompression with various modes and options. The compressed file uses the .TOOLNAME extension as a convention.
 
 For compressing file.fastq losslessly using default 16 threads (Lossless).
 ```
-./testCompressor -i file.fastq -o file.nanopore-compression
+./testCompressor -i file.fastq -o file.TOOLNAME
 ```
 Using 20 threads (Lossless).
 ```
-./testCompressor -i file.fastq -o file.nanopore-compression -t 20
+./testCompressor -i file.fastq -o file.TOOLNAME -t 20
 ```
 For compressing file.fastq.gz (gzipped fastq files) losslessly using default 16 threads (Lossless).
 ```
-./testCompressor -i file.fastq -o file.nanopore-compression -g 
+./testCompressor -i file.fastq -o file.TOOLNAME -g 
 ```
 Compressing with kmer size for minhash 23, number of hash functions for minhash 54, and the overlap sketch threhold for minhash 6.
 ```
-./testCompressor -i file.fastq -k 23 -n 54 --overlap-sketch-thr 6 -o file.nanopore-compression  
+./testCompressor -i file.fastq -k 23 -n 54 --overlap-sketch-thr 6 -o file.TOOLNAME 
 ```
 Compressing with kmer size of minimap2 25 and the window size for the minimap2 100.
 ```
-./testCompressor -i file.fastq --minimap-k 25 --minimap-w 100 -o file.nanopore-compression  
+./testCompressor -i file.fastq --minimap-k 25 --minimap-w 100 -o file.TOOLNAME
 ```
 Compressing with the max number of partial chains during chaining for minimap2 to be 800.
 ```
-./testCompressor -i file.fastq --max-chain-iter 800 -o file.nanopore-compression  
+./testCompressor -i file.fastq --max-chain-iter 800 -o file.TOOLNAME  
 ```
 Compressing with the max number of edges allowed in a consensus graph to be 4000000.
 ```
-./testCompressor -i file.fastq --edge-thr 4000000 -o file.nanopore-compression  
+./testCompressor -i file.fastq --edge-thr 4000000 -o file.TOOLNAME  
 ```
-Decompressing to file.reads.
+Decompressing with default 16 threads to file.reads.
 ```
-./testDecompressor file.nanopore-compression file.reads
+./testDecompressor -i file.TOOLNAME -o file.reads
 ```
