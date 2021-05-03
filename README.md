@@ -5,11 +5,11 @@
 ### Download repository
 
 ```
-git clone https://github.com/fanzhuyifan/TOOLNAME.git
+git --recursive clone https://github.com/fanzhuyifan/TOOLNAME.git
 ```
 
 ### Install
-The instructions below will create the executable in the build directory inside TOOLNAME.
+The instructions below will create the executables (both compressor and decompressor) in the build directory inside TOOLNAME.
 
 On Linux with cmake installed and version at least 3.10 (check using cmake --version):
 ```
@@ -22,7 +22,7 @@ make
 ## Usage
 ### Compression - compresses FASTQ reads. 
 
-Run the TOOLNAME executable with the options below:
+Run the TOOLNAME compressor executable with the options below:
 ```
 Allowed options:
   -h [ --help ]                         produce help message
@@ -51,7 +51,7 @@ Note that the compressed files are tar archives consisting of the different comp
 
 ### Decompression -  decompresses reads. 
 
-Run the TOOLNAME executable with the options below:
+Run the TOOLNAME decompressor executable with the options below:
 ```
 Allowed options:
   -h [ --help ]                         produce help message
