@@ -62,7 +62,7 @@ Note that the compressed files are tar archives consisting of the different comp
 
 
 ## Example Usage of Nanopore Compression
-This section contains several examples for compression and decompression with various modes and options. The compressed file uses the ```.NanoSpring``` extension as a convention.
+This section contains several examples for compression and decompression with various modes and options. The compressed file uses the ```.NanoSpring``` extension as a convention. The decompressed file uses the ```.reads``` extension as a convention.
 
 For compressing file.fastq losslessly using default 20 threads (Lossless).
 ```
