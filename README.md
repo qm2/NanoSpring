@@ -74,13 +74,13 @@ Using 10 threads (Lossless).
 ```
 For compressing file.fastq.gz (gzipped fastq files) losslessly using default 20 threads (Lossless).
 ```
-./NanoSpring -c -i file.fastq -o file.NanoSpring -g 
+./NanoSpring -c -i file.fastq.gz -o file.NanoSpring -g 
 ```
-Compressing with kmer size for minhash 23, number of hash functions for minhash 64, and the overlap sketch threhold for minhash 8.
+Compressing with kmer size for minhash to be 20, number of hash functions for minhash to be 64, and the overlap sketch threhold for minhash to be 8.
 ```
-./NanoSpring -c -i file.fastq -k 23 -n 64 --overlap-sketch-thr 8 -o file.NanoSpring 
+./NanoSpring -c -i file.fastq -k 20 -n 64 --overlap-sketch-thr 8 -o file.NanoSpring 
 ```
-Compressing with kmer size of minimap2 25 and the window size for the minimap2 100.
+Compressing with kmer size of minimap2 to be 25 and the window size for the minimap2 to be 100.
 ```
 ./NanoSpring -c -i file.fastq --minimap-k 25 --minimap-w 100 -o file.NanoSpring
 ```
