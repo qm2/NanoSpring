@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(NanoporeCompression 
+project(NanoSpring 
     VERSION 0.1
     LANGUAGES C CXX)
 
@@ -79,8 +79,8 @@ add_custom_target(
 
 
 #######################################################
-# the NanoporeCompressionLib library
-add_library(NanoporeCompressionLib 
+# the NanoSpringLib library
+add_library(NanoSpringLib 
     STATIC 
         src/AlignerTester.cpp
         src/bsc.cpp
@@ -116,42 +116,42 @@ add_library(NanoporeCompressionLib
         include/BooPHF.h
         )
 
-target_include_directories(NanoporeCompressionLib 
+target_include_directories(NanoSpringLib 
     PUBLIC include src
     PRIVATE libbsc
     PRIVATE minimap2)
 
-target_compile_options(NanoporeCompressionLib 
+target_compile_options(NanoSpringLib 
     PRIVATE 
     -W -Wall -Wextra)
 
-target_compile_options(NanoporeCompressionLib 
+target_compile_options(NanoSpringLib 
     PRIVATE 
     $<$<CONFIG:Release>:-O3 -DNDEBUG>)
-target_compile_options(NanoporeCompressionLib 
+target_compile_options(NanoSpringLib 
     PRIVATE 
     $<$<CONFIG:RelWithDebInfo>:-g -O3>)
-target_compile_options(NanoporeCompressionLib 
+target_compile_options(NanoSpringLib 
     PRIVATE 
     $<$<CONFIG:Debug>:-g -O3 -fsanitize=address -fno-omit-frame-pointer>)
 
 if ( CHECKS )
-    target_compile_options(NanoporeCompressionLib 
+    target_compile_options(NanoSpringLib 
         PRIVATE 
         -DCHECKS)
 endif()
 if ( LOG )
-    target_compile_options(NanoporeCompressionLib 
+    target_compile_options(NanoSpringLib 
         PRIVATE 
         -DLOG)
 endif()
 
-target_compile_definitions(NanoporeCompressionLib PUBLIC "$<$<CONFIG:Debug>:DEBUG>")
-target_compile_definitions(NanoporeCompressionLib PUBLIC "$<$<CONFIG:RelWithDebInfo>:DEBUG>")
+target_compile_definitions(NanoSpringLib PUBLIC "$<$<CONFIG:Debug>:DEBUG>")
+target_compile_definitions(NanoSpringLib PUBLIC "$<$<CONFIG:RelWithDebInfo>:DEBUG>")
 
-add_dependencies(NanoporeCompressionLib MINIMAP2)
+add_dependencies(NanoSpringLib MINIMAP2)
 
-target_link_libraries(NanoporeCompressionLib 
+target_link_libraries(NanoSpringLib 
     PRIVATE 
         libbsc
         ${CMAKE_CURRENT_SOURCE_DIR}/minimap2/libminimap2.a
@@ -161,27 +161,24 @@ target_link_libraries(NanoporeCompressionLib
         -lz -ldl -lm -lpthread
     )
 
-target_link_libraries(NanoporeCompressionLib 
+target_link_libraries(NanoSpringLib 
     PRIVATE 
     $<$<CONFIG:Debug>:-fsanitize=address -fno-omit-frame-pointer>)
 
 # OpenMp support
 if(OpenMP_CXX_FOUND)
-    target_link_libraries(NanoporeCompressionLib PUBLIC OpenMP::OpenMP_CXX)
+    target_link_libraries(NanoSpringLib PUBLIC OpenMP::OpenMP_CXX)
 endif()
 
 ###############################################
 
-add_executable(testCompressor src/testCompressor.cpp)
-target_link_libraries(testCompressor PRIVATE NanoporeCompressionLib)
-##target_link_libraries(testCompressor PUBLIC Boost::program_options)
-##target_link_libraries(testCompressor PUBLIC Boost::iostreams)
-##target_link_libraries(testCompressor PUBLIC Boost::filesystem)
-
-add_executable(testDecompressor src/testDecompressor.cpp)
-target_link_libraries(testDecompressor PRIVATE NanoporeCompressionLib)
+add_executable(NanoSpring src/main.cpp)
+target_link_libraries(NanoSpring PRIVATE NanoSpringLib)
+##target_link_libraries(NanoSpring PUBLIC Boost::program_options)
+##target_link_libraries(NanoSpring PUBLIC Boost::iostreams)
+##target_link_libraries(NanoSpring PUBLIC Boost::filesystem)
 
 add_executable(testLoneReads src/testLoneReads.cpp)
 target_include_directories(testLoneReads PRIVATE minimap2)
-target_link_libraries(testLoneReads PRIVATE NanoporeCompressionLib)
+target_link_libraries(testLoneReads PRIVATE NanoSpringLib)
 

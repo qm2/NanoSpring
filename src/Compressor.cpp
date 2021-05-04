@@ -146,6 +146,5 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
             throw std::runtime_error("Error occurred during ls command.");
     }
 
-    boost::filesystem::remove_all(tempDir);
 }
 

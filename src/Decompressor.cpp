@@ -17,6 +17,7 @@ void Decompressor::decompress(const char *inputFileName,
                               const char *outputFileName,
                               const int numThreads) {
     std::cout << "numDecodingThreads: " << numThreads << "\n";
+    omp_set_nested(1);
     omp_set_num_threads(numThreads);
 
     DirectoryUtils::clearDir(tempDir);
