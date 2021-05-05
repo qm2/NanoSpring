@@ -74,9 +74,19 @@ int main(int argc, char **argv) {
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
-    if (help_flag || infile.empty()) {
+    if (help_flag) {
         std::cout << desc << "\n";
         return 0;
+    }
+    if(infile.empty()){
+    	std::cout<<"No input file specified"<<"\n";
+    	std::cout << desc << "\n";
+    	return 0;
+    } 
+    if(outfile.empty()){
+    	std::cout<<"No output file specified"<<"\n";
+		std::cout << desc << "\n";
+		return 0;
     }
 
     if ((!compress_flag && !decompress_flag) ||
