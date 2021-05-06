@@ -10,3 +10,6 @@
 [submodule "build/minimap2"]
 	path = build/minimap2
 	url = https://github.com/lh3/minimap2
+[submodule "fast-lzma2"]
+	path = fast-lzma2
+	url = https://github.com/conor42/fast-lzma2/

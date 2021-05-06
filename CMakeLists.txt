@@ -79,6 +79,15 @@ add_custom_target(
 
 
 #######################################################
+#fast-lzma2
+
+add_custom_target(
+   FASTLZMA2
+   COMMAND make clean && make
+   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/fast-lzma2/
+)
+
+#######################################################
 # the NanoSpringLib library
 add_library(NanoSpringLib 
     STATIC 
@@ -96,6 +105,7 @@ add_library(NanoSpringLib
         src/DirectoryUtils.cpp
         src/dnaToBits.cpp
         src/BBHashMap.cpp
+        src/lzma2.cpp
         include/AlignerTester.h
         include/bsc_helper.h
         include/Compressor.h
@@ -114,12 +124,13 @@ add_library(NanoSpringLib
         include/dnaToBits.h
         include/BBHashMap.h
         include/BooPHF.h
+        include/lzma2_helper.h
         )
 
 target_include_directories(NanoSpringLib 
     PUBLIC include src
     PRIVATE libbsc
-    PRIVATE minimap2)
+    PRIVATE minimap2 fast-lzma2)
 
 target_compile_options(NanoSpringLib 
     PRIVATE 
@@ -150,11 +161,13 @@ target_compile_definitions(NanoSpringLib PUBLIC "$<$<CONFIG:Debug>:DEBUG>")
 target_compile_definitions(NanoSpringLib PUBLIC "$<$<CONFIG:RelWithDebInfo>:DEBUG>")
 
 add_dependencies(NanoSpringLib MINIMAP2)
+add_dependencies(NanoSpringLib FASTLZMA2)
 
 target_link_libraries(NanoSpringLib 
     PRIVATE 
         libbsc
         ${CMAKE_CURRENT_SOURCE_DIR}/minimap2/libminimap2.a
+        ${CMAKE_CURRENT_SOURCE_DIR}/fast-lzma2/libfast-lzma2.a
         Boost::filesystem
         Boost::iostreams
         Boost::program_options
@@ -174,9 +187,6 @@ endif()
 
 add_executable(NanoSpring src/main.cpp)
 target_link_libraries(NanoSpring PRIVATE NanoSpringLib)
-##target_link_libraries(NanoSpring PUBLIC Boost::program_options)
-##target_link_libraries(NanoSpring PUBLIC Boost::iostreams)
-##target_link_libraries(NanoSpring PUBLIC Boost::filesystem)
 
 add_executable(testLoneReads src/testLoneReads.cpp)
 target_include_directories(testLoneReads PRIVATE minimap2)

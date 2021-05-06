@@ -1,9 +1,8 @@
 #include "Decompressor.h"
-// #include "ConsensusGraph.h"
-// #include "Consensus.h"
 #include "DirectoryUtils.h"
 #include "ReadData.h"
 #include "bsc_helper.h"
+#include "lzma2_helper.h"
 #include "dnaToBits.h"
 #include "minimap.h"
 #include <cstdlib>
@@ -85,7 +84,11 @@ int main(int argc, char **argv) {
         for (auto &s : suffix) {
             std::string uncompressedFile = tempDir+"/"+tempFilename+".tid."+std::to_string(i)+s;
             std::string compressedFile = uncompressedFile + "Compressed";
-            bsc::BSC_decompress(compressedFile.c_str(), uncompressedFile.c_str());
+            // use lzma2 for .base to get better compression
+            if (s == std::string(".base"))
+                lzma2::lzma2_decompress(compressedFile.c_str(), uncompressedFile.c_str());
+            else
+                bsc::BSC_decompress(compressedFile.c_str(), uncompressedFile.c_str());
         }
     }
     std::cout << "BSC decompression done!\n";

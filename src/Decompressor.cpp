@@ -3,6 +3,7 @@
 #include "DirectoryUtils.h"
 #include "ReadData.h"
 #include "bsc_helper.h"
+#include "lzma2_helper.h"
 #include "dnaToBits.h"
 #include <boost/filesystem.hpp>
 #include <cassert>
@@ -70,10 +71,14 @@ void Decompressor::decompress(const char *inputFileName,
         for (auto &s : suffix) {
             std::string uncompressedFile = tempDir+"/"+tempFilename+".tid."+std::to_string(i)+s;
             std::string compressedFile = uncompressedFile + "Compressed";
-            bsc::BSC_decompress(compressedFile.c_str(), uncompressedFile.c_str());
+            // use lzma2 for .base to get better compression
+            if (s == std::string(".base"))
+                lzma2::lzma2_decompress(compressedFile.c_str(), uncompressedFile.c_str());
+            else
+                bsc::BSC_decompress(compressedFile.c_str(), uncompressedFile.c_str());
         }
     }
-    std::cout << "BSC decompression done!\n";
+    std::cout << "BSC/LZMA2 decompression done!\n";
     
     //create a DnaBits vector (to reduce memory consumption of decompressor)
     std::vector<DnaBitset*> reads(numReads);

@@ -5,6 +5,7 @@
 #include "ReadData.h"
 #include "ReadFilter.h"
 #include "bsc_helper.h"
+#include "lzma2_helper.h"
 #include <boost/filesystem.hpp>
 #include <chrono>
 #include <fstream>
@@ -104,7 +105,7 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
 // We first compress all the files in the temp directory (we compress
 // only files with extensions)
 #ifdef DEBUG
-        std::cout << "bsc compression starts" << std::endl;
+        std::cout << "bsc/lzma2 compression starts" << std::endl;
 #endif
         std::set<std::string> extensions;
         DirectoryUtils::getAllExtensions(tempDir, std::inserter(extensions, extensions.end()));
@@ -116,7 +117,11 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
             for (int i = 0; i < numThr; i++) {
                 std::string fullPath = tempDir + tempFileName + ".tid."+ std::to_string(i) + ext;
                 std::string outPath = fullPath + "Compressed";
-                bsc::BSC_compress(fullPath.c_str(), outPath.c_str());
+                // use lzma2 for .base to get better compression
+                if (ext == std::string(".base"))
+                    lzma2::lzma2_compress(fullPath.c_str(), outPath.c_str());
+                else
+                    bsc::BSC_compress(fullPath.c_str(), outPath.c_str());
                 uncompressedSizes[i] = boost::filesystem::file_size(fullPath);
                 compressedSizes[i] = boost::filesystem::file_size(outPath);
                 boost::filesystem::remove(fullPath);
