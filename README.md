@@ -9,7 +9,7 @@ git clone --recursive https://github.com/qm2/NanoSpring.git
 ```
 
 ### Install
-The instructions below will create the NanoSpring executable in the build directory inside NanoSpring.
+The instructions below will create the NanoSpring executable in the build directory inside NanoSpring. If you plan to build and run SPRING on separate architectures, then you might need to remove the flag ```-march=native``` from the ```target_compile_options``` in CMakeLists.txt (or use flags based on the target architecture).
 
 On Linux with cmake installed and version at least 3.12 (check using `cmake --version`):
 ```
@@ -54,7 +54,6 @@ Allowed options:
                                  chaining for minimap2 (default 400)
   --edge-thr arg (=4000000)      the max number of edges allowed in a consensus
                                  graph (default 4000000)
-  -g [ --gzipped-fastq ]         enable if compression input is gzipped fastq
   -w [ --working-dir ] arg (=.)  directory to create temporary files (default
                                  current directory)
 ```
@@ -74,7 +73,7 @@ Using 10 threads (Lossless).
 ```
 For compressing file.fastq.gz (gzipped fastq files) losslessly using default 20 threads (Lossless).
 ```
-./NanoSpring -c -i file.fastq.gz -o file.NanoSpring -g 
+./NanoSpring -c -i file.fastq.gz -o file.NanoSpring 
 ```
 Compressing with kmer size for minhash to be 20, number of hash functions for minhash to be 64, and the overlap sketch threhold for minhash to be 8.
 ```

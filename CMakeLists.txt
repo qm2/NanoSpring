@@ -6,6 +6,7 @@ project(NanoSpring
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+include(CheckIPOSupported)
 
 # Clear All Flags
 set(CMAKE_CXX_FLAGS "")
@@ -15,8 +16,15 @@ set(CMAKE_CXX_FLAGS_RELEASE "")
 
 
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE RelWithDebInfo)
+    set(CMAKE_BUILD_TYPE Release)
 endif()
+
+check_ipo_supported(RESULT result)
+if(result)
+    message(STATUS "Support for Interprocedural Optimization detected.")
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
+
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "CHECKS=${CHECKS} (Use -DCHECKS=True to enable all checks")
@@ -26,6 +34,7 @@ find_package(OpenMP)
 
 ###############################
 # boost
+set( Boost_NO_SYSTEM_PATHS ON ) # do not use system boost
 add_subdirectory(boost-cmake)
 
 #######################################################
@@ -47,10 +56,10 @@ add_library(libbsc
 )
 
 target_include_directories(libbsc 
-    PRIVATE libbsc)
+    PUBLIC libbsc)
 
 target_compile_options(libbsc 
-    PRIVATE 
+    PUBLIC 
     -g -Wall
     # Comment out CFLAGS line below for compatability mode for 32bit file sizes
     # (less than 2GB) and systems that have compilers that treat int as 64bit
@@ -129,31 +138,31 @@ add_library(NanoSpringLib
 
 target_include_directories(NanoSpringLib 
     PUBLIC include src
-    PRIVATE libbsc
-    PRIVATE minimap2 fast-lzma2)
+    PUBLIC libbsc
+    PUBLIC minimap2 fast-lzma2)
 
 target_compile_options(NanoSpringLib 
-    PRIVATE 
+    PUBLIC 
     -W -Wall -Wextra)
 
 target_compile_options(NanoSpringLib 
-    PRIVATE 
-    $<$<CONFIG:Release>:-O3 -DNDEBUG>)
+    PUBLIC 
+    $<$<CONFIG:Release>:-O3 -march=native>)
 target_compile_options(NanoSpringLib 
-    PRIVATE 
-    $<$<CONFIG:RelWithDebInfo>:-g -O3>)
+    PUBLIC 
+    $<$<CONFIG:RelWithDebInfo>:-g -O3 -march=native>)
 target_compile_options(NanoSpringLib 
-    PRIVATE 
-    $<$<CONFIG:Debug>:-g -O3 -fsanitize=address -fno-omit-frame-pointer>)
+    PUBLIC 
+    $<$<CONFIG:Debug>:-g -O3 -march=native -fsanitize=address -fno-omit-frame-pointer>)
 
 if ( CHECKS )
     target_compile_options(NanoSpringLib 
-        PRIVATE 
+        PUBLIC 
         -DCHECKS)
 endif()
 if ( LOG )
     target_compile_options(NanoSpringLib 
-        PRIVATE 
+        PUBLIC 
         -DLOG)
 endif()
 
@@ -164,7 +173,7 @@ add_dependencies(NanoSpringLib MINIMAP2)
 add_dependencies(NanoSpringLib FASTLZMA2)
 
 target_link_libraries(NanoSpringLib 
-    PRIVATE 
+    PUBLIC 
         libbsc
         ${CMAKE_CURRENT_SOURCE_DIR}/minimap2/libminimap2.a
         ${CMAKE_CURRENT_SOURCE_DIR}/fast-lzma2/libfast-lzma2.a
@@ -175,7 +184,7 @@ target_link_libraries(NanoSpringLib
     )
 
 target_link_libraries(NanoSpringLib 
-    PRIVATE 
+    PUBLIC 
     $<$<CONFIG:Debug>:-fsanitize=address -fno-omit-frame-pointer>)
 
 # OpenMp support
@@ -186,9 +195,9 @@ endif()
 ###############################################
 
 add_executable(NanoSpring src/main.cpp)
-target_link_libraries(NanoSpring PRIVATE NanoSpringLib)
+target_link_libraries(NanoSpring PUBLIC NanoSpringLib)
 
 add_executable(testLoneReads src/testLoneReads.cpp)
-target_include_directories(testLoneReads PRIVATE minimap2)
-target_link_libraries(testLoneReads PRIVATE NanoSpringLib)
+target_include_directories(testLoneReads PUBLIC minimap2)
+target_link_libraries(testLoneReads PUBLIC NanoSpringLib)
 

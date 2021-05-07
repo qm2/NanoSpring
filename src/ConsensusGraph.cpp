@@ -237,7 +237,7 @@ bool ConsensusGraph::alignRead(const std::string &s, std::vector<Edit> &editScri
     	//calculate the aligned length; notice that I use the aligned length for the query read here
     	alignedLen = r->qe - r->qs;
     	//first check if the read is at the beginnning or the end of reference sequence
-    	if((r->rs > 0) && (r->re < originalString.size())){
+        if((r->rs > 0) && (r->re < (ssize_t)originalString.size())){
     		//check editDis/alignedLen
     		// std::cout<<"editDis/alignedLen: "<< editDis/(double)alignedLen<<std::endl;
     		// std::cout<<"(double)alignedLen/s.length() "<< (double)alignedLen/s.length()<<std::endl;    		
@@ -342,14 +342,14 @@ bool ConsensusGraph::alignRead(const std::string &s, std::vector<Edit> &editScri
         }
 
         //update the endOffset by checking if r->re is positive or not
-        if(r->re < originalString.size()){
+        if(r->re < (ssize_t)originalString.size()){
             endOffset = (r->re-originalString.size());
             //add the soft clipped bases as insertions
-            for (i = r->qe; i < s.length(); ++i){
+            for (i = r->qe; i < (ssize_t)s.length(); ++i){
                 editScript.push_back(Edit(INSERT, s[i]));             
             }       
         }
-        else if(r->re == originalString.size()){
+        else if(r->re == (ssize_t)originalString.size()){
             endOffset = (s.length()-r->qe);             
         }
         else{
@@ -656,9 +656,9 @@ void ConsensusGraph::removeCycles() {
     auto edgeOnPathEnd = mainPath.edges.end();
     Node *nodeOnPath = edgeOnPath < edgeOnPathEnd ? (*edgeOnPath)->source
                                                   : edgeOnPath[-1]->sink;
-    std::stack<Edge *> walkAndPruneCallStack; 
+    std::stack<Edge *> walkAndPruneCallStack;
     // used for converting recursion to iteration.
-    // Define here to avoid overhead of repeated allocations
+    // Define here to avoid overhead of repeated allocations.
     while (true) {
         // Then we iterate over all edges pointing to side nodes that have
         // other edges in
@@ -947,10 +947,6 @@ void ConsensusGraph::removeEdge(Edge *e,
                     if (node->edgesOut.empty())
                         leafNodes.push(node);
                 });
-#ifdef DEBUG
-                // std::cerr << "Num of leaf Nodes " << leafNodes.size() <<
-                // std::endl;
-#endif
             while (!leafNodes.empty()) {
                 Node *curNode = leafNodes.top();
                 leafNodes.pop();

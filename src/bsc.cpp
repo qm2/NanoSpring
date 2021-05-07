@@ -188,8 +188,6 @@ class BSC_CLASS {
             exit(1);
         }
 
-        double startTime = BSC_CLOCK();
-
 #ifdef LIBBSC_OPENMP
 
         int numThreads = 1;
@@ -489,11 +487,6 @@ class BSC_CLASS {
 
             bsc_free(buffer);
         }
-        /*
-        fprintf(stdout, "\r%.55s compressed %.0f into %.0f in %.3f seconds.\n",
-                argv[2], (double)fileSize, (double)BSC_FTELL(fOutput),
-                BSC_CLOCK() - startTime);
-        */
         fclose(fInput);
         fclose(fOutput);
     }
@@ -545,8 +538,6 @@ class BSC_CLASS {
             fprintf(stderr, "This is not bsc archive!\n");
             exit(1);
         }
-
-        double startTime = BSC_CLOCK();
 
 #ifdef LIBBSC_OPENMP
 
@@ -777,12 +768,6 @@ class BSC_CLASS {
             exit(1);
         }
 
-        /*
-        fprintf(stdout,
-                "\r%.55s decompressed %.0f into %.0f in %.3f seconds.\n",
-                argv[2], (double)fileSize, (double)BSC_FTELL(fOutput),
-                BSC_CLOCK() - startTime);
-        */
         fclose(fInput);
         fclose(fOutput);
     }

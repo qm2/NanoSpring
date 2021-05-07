@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
     std::srand(unsigned(std::time(0)));
     //program options
     namespace po = boost::program_options;
-    bool help_flag = false, compress_flag = false, decompress_flag = false, gzip_flag = false;
+    bool help_flag = false, compress_flag = false, decompress_flag = false;
     std::string infile, outfile;
     int num_thr;
 	std::string working_dir;
@@ -67,8 +67,6 @@ int main(int argc, char **argv) {
         "the max number of partial chains during chaining for minimap2 (default 400)")(
         "edge-thr", po::value<size_t>(&edge_threshold)->default_value(4000000),
         "the max number of edges allowed in a consensus graph (default 4000000)")(
-        "gzipped-fastq,g", po::bool_switch(&gzip_flag),
-        "enable if compression input is gzipped fastq")(
         "working-dir,w", po::value<std::string>(&working_dir)->default_value("."),
         "directory to create temporary files (default current directory)");
     po::variables_map vm;
@@ -112,13 +110,8 @@ int main(int argc, char **argv) {
     temp_dir_flag_global = true;
     try{
         if (compress_flag){
-            // //original parameter for aligner
-            // double maxErrorRate;
-            // size_t editSlack;
-            // std::cout << "k n overlapSketchThreshold\nminimap:k minimap:w minimap:max_chain_iter edge_threshold"
-            //           << std::endl;
             if (k == 0)
-                return 0;
+                throw std::runtime_error("Invalid k");
             std::cout << "k n overlapSketchThreshold minimap:k minimap:w minimap:max_chain_iter edge_threshold\n"
                       << k << " " << n << " " << overlapSketchThreshold << " "
                       << m_k << " " << m_w << " " << max_chain_iter <<" " << edge_threshold<< std::endl;
@@ -137,7 +130,7 @@ int main(int argc, char **argv) {
             const std::string filename(infile);
             const std::string extension =
                 filename.substr(filename.find_last_of('.') + 1);
-            if (gzip_flag)
+            if (!extension.compare("gz"))
                 compressor.filetype = ReadData::Filetype::GZIP;
             else if (!extension.compare("fastq"))
                 compressor.filetype = ReadData::Filetype::FASTQ;

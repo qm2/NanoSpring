@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
     }
     //convert the string vector to c-style char**
     const char **genome_cstrings = new const char*[genome_vector.size()];
-    for (int i = 0; i < genome_vector.size(); ++i){
+    for (size_t i = 0; i < genome_vector.size(); ++i){
         genome_cstrings[i] = genome_vector[i].c_str();
     }
 

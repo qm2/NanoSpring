@@ -365,7 +365,7 @@ bool Consensus::checkRead(ConsensusGraph *cG, read_t read) {
 
 void Consensus::finishWriteConsensus(const std::vector<std::vector<read_t>>& numReadsInContig) {
     size_t size = 0;
-    for (size_t i = 0; i < numThr; i++)
+    for (int i = 0; i < numThr; i++)
         size += numReadsInContig[i].size();
     std::ofstream metaData;
     metaData.open(tempDir + "metaData");
@@ -373,7 +373,7 @@ void Consensus::finishWriteConsensus(const std::vector<std::vector<read_t>>& num
     metaData << "numContigs=" << size << '\n';
     metaData << "numThr=" << numThr << '\n';
     metaData << "numReadsInContig=";
-    for (size_t i = 0; i < numThr; ++i)
+    for (int i = 0; i < numThr; ++i)
         for (size_t j = 0; j < numReadsInContig[i].size(); ++j)
             metaData << numReadsInContig[i][j] << ":";
     metaData << '\n';

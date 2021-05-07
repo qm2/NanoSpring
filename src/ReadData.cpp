@@ -11,17 +11,17 @@
 
 void ReadData::loadFromFile(const char *fileName, enum Filetype filetype) {
     switch (filetype) {
-    case READ:
-        loadFromReadFile(fileName);
-        break;
-    case FASTQ:
-        loadFromFastqFile(fileName, false);
-        break;
-    case GZIP:
-        loadFromFastqFile(fileName, true);
-        break;
-    default:
-        assert(false);
+        case READ:
+            loadFromReadFile(fileName);
+            break;
+        case FASTQ:
+            loadFromFastqFile(fileName, false);
+            break;
+        case GZIP:
+            loadFromFastqFile(fileName, true);
+            break;
+        default:
+            assert(false);
     }
 }
 
@@ -43,7 +43,7 @@ void ReadData::loadFromReadFile(const char *fileName) {
         size_t last_index = index;
         index = line.find(':', last_index + 1);
         assert(index != std::string::npos);
-        ssize_t readLen = 0;
+        size_t readLen = 0;
         readPos.push_back(std::stol(line.substr(last_index + 1, index)));
         {
             std::unique_ptr<std::string> ptr(
@@ -70,11 +70,9 @@ void ReadData::loadFromReadFile(const char *fileName) {
     }
     assert(numReads != 0);
     avgReadLen = totalNumBases / numReads;
-#ifdef DEBUG
     std::cout << "numReads " << numReads << std::endl;
     std::cout << "avgReadLen " << avgReadLen << std::endl;
     std::cout << "maxReadLen " << maxReadLen << std::endl;
-#endif
 }
 
 void ReadData::loadFromFastqFile(const char *fileName, bool gzip_flag) {
@@ -100,7 +98,7 @@ void ReadData::loadFromFastqFile(const char *fileName, bool gzip_flag) {
     std::string line;
     size_t totalNumBases = 0;
     maxReadLen = 0;
-    ssize_t readLen = 0;
+    size_t readLen = 0;
     while (std::getline(*fin, line)) {
         std::getline(*fin, line);
         {
@@ -129,11 +127,9 @@ void ReadData::loadFromFastqFile(const char *fileName, bool gzip_flag) {
     }
     assert(numReads != 0);
     avgReadLen = totalNumBases / numReads;
-#ifdef DEBUG
     std::cout << "numReads " << numReads << std::endl;
     std::cout << "avgReadLen " << avgReadLen << std::endl;
     std::cout << "maxReadLen " << maxReadLen << std::endl;
-#endif
     if (gzip_flag) {
         delete fin;
         delete inbuf;

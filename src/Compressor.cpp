@@ -100,13 +100,12 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
         consensus.generateAndWriteConsensus();
     }
     }
-    malloc_trim(0); // clear memory 
+    malloc_trim(0); // clear memory
+    
     {
 // We first compress all the files in the temp directory (we compress
 // only files with extensions)
-#ifdef DEBUG
         std::cout << "bsc/lzma2 compression starts" << std::endl;
-#endif
         std::set<std::string> extensions;
         DirectoryUtils::getAllExtensions(tempDir, std::inserter(extensions, extensions.end()));
         for (const std::string &ext : extensions) {
