@@ -42,10 +42,6 @@ void mem_usage(double& vm_usage, double& resident_set) {
    cout << "resident_set: " << resident_set << " KB\n";
 }
 
-
-
-
-
 void Compressor::compress(const char *inputFileName, const int numThr) const {
 	std::cout<<"number of threads: "<<numThr<<std::endl;
 	double vm_usage, resident_set;
@@ -63,11 +59,7 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
               << " milliseconds" << std::endl;
     std::cout << "After rD.loadFromFile():\n";
     mem_usage(vm_usage, resident_set);
-
-    // // We clear the temp directories and create them if they do not
-    // // exist
-    // DirectoryUtils::clearDir(tempDir);
-    
+ 
     MinHashReadFilter rF;
     rF.k = k;
     rF.n = n;

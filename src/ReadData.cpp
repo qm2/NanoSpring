@@ -98,32 +98,38 @@ void ReadData::loadFromFastqFile(const char *fileName, bool gzip_flag) {
     std::string line;
     size_t totalNumBases = 0;
     maxReadLen = 0;
-    size_t readLen = 0;
-    while (std::getline(*fin, line)) {
-        std::getline(*fin, line);
-        {
-            readLen = line.size();
-            //convert to c style string  
-            const char *cstr = line.c_str();
-            std::unique_ptr<DnaBitset> ptr(new DnaBitset(cstr, readLen));
-            readData.push_back(std::move(ptr));
+    size_t numReadsPerBlock = 5000;
+    std::vector<std::string> lines(numReadsPerBlock);
+    size_t numReadsCurrBlock = 0;
+    size_t numReadsInserted = 0;
+    while (true) {
+        while (std::getline(*fin, line)) {
+            std::getline(*fin, lines[numReadsCurrBlock++]);
+            auto readLen = lines[numReadsCurrBlock-1].size();
+            totalNumBases += readLen;
+            if (readLen > maxReadLen)
+                maxReadLen = readLen;
+            numReads++;
+            if (numReads == std::numeric_limits<read_t>::max())
+                throw std::runtime_error(
+                        "Too many reads for read_t type to handle.");
             readPos.push_back(0);
-
+            std::getline(*fin, line);
+            std::getline(*fin, line);
+            if (numReadsCurrBlock == numReadsPerBlock)
+                break;
         }
-        {
-            std::unique_ptr<std::string> ptr(new std::string());
-            editStrings.push_back(std::move(ptr));
+        readData.resize(numReadsInserted + numReadsCurrBlock);
+#pragma omp parallel for
+        for (size_t i = 0; i < numReadsCurrBlock; i++) {
+            std::unique_ptr<DnaBitset> ptr(new DnaBitset(
+                        lines[i].c_str(), lines[i].size()));
+            readData[numReadsInserted+i] = std::move(ptr);
         }
-        std::getline(*fin, line);
-        std::getline(*fin, line);
-        totalNumBases += readLen;
-        if (readLen > maxReadLen)
-            maxReadLen = readLen;
-        numReads++;
-        if (numReads == std::numeric_limits<read_t>::max()) {
-            throw std::runtime_error(
-                "Too many reads for read_t type to handle.");
-        }
+        numReadsInserted += numReadsCurrBlock;
+        if (numReadsCurrBlock < numReadsPerBlock)
+            break;
+        numReadsCurrBlock = 0;
     }
     assert(numReads != 0);
     avgReadLen = totalNumBases / numReads;

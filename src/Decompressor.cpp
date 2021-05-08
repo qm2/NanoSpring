@@ -13,6 +13,7 @@
 #include <omp.h>
 #include <vector>
 #include <string>
+#include <chrono>
 
 void Decompressor::decompress(const char *inputFileName,
                               const char *outputFileName,
@@ -64,7 +65,8 @@ void Decompressor::decompress(const char *inputFileName,
                                       ".base",
                                       ".complement",
                                       ".lone"};
-    std::cout << "BSC decompression ...";
+    std::cout << "BSC/LZMA2 decompression ...";
+    auto bsc_start = std::chrono::high_resolution_clock::now();
     //loop through each thread
 #pragma omp parallel for
     for (size_t i = 0; i < numEncodingThreads; ++i){
@@ -78,11 +80,18 @@ void Decompressor::decompress(const char *inputFileName,
                 bsc::BSC_decompress(compressedFile.c_str(), uncompressedFile.c_str());
         }
     }
+    auto bsc_end = std::chrono::high_resolution_clock::now();
     std::cout << "BSC/LZMA2 decompression done!\n";
+    auto duration = 
+        std::chrono::duration_cast<std::chrono::milliseconds>(bsc_end - bsc_start);
+    std::cout << "Took " << duration.count()
+              << " milliseconds" << std::endl;
+
     
     //create a DnaBits vector (to reduce memory consumption of decompressor)
     std::vector<DnaBitset*> reads(numReads);
     std::cout << "Generating reads...";
+    auto gen_start = std::chrono::high_resolution_clock::now();
     //loop through each thread
 #pragma omp parallel for
     for (size_t i = 0; i < numEncodingThreads; ++i){
@@ -141,11 +150,17 @@ void Decompressor::decompress(const char *inputFileName,
         loneFile.close();
     }
     std::cout << "Done!\n";
+    auto gen_end = std::chrono::high_resolution_clock::now();
+    duration = 
+        std::chrono::duration_cast<std::chrono::milliseconds>(gen_end - gen_start);
+    std::cout << "Took " << duration.count()
+              << " milliseconds" << std::endl;
 
     //output the reads to a file
     std::ofstream outFile;
     outFile.open(outputFileName);
     std::cout << "Writing to file...";
+    auto write_start = std::chrono::high_resolution_clock::now();
     std::string currentRead;
     // TODO: can we parallelize the to_string part somehow
     for (size_t i = 0; i < numReads; i++) {
@@ -154,6 +169,11 @@ void Decompressor::decompress(const char *inputFileName,
         outFile << currentRead << '\n';
     }
     std::cout << "Done!\n";
+    auto write_end = std::chrono::high_resolution_clock::now();
+    duration = 
+        std::chrono::duration_cast<std::chrono::milliseconds>(write_end - write_start);
+    std::cout << "Writing took " << duration.count()
+              << " milliseconds" << std::endl;
 
     boost::filesystem::remove_all(tempDir);
 }
