@@ -54,11 +54,15 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
     omp_set_num_threads(numThr);
     {
     ReadData rD;
+    auto read_start = std::chrono::high_resolution_clock::now();
     rD.loadFromFile(inputFileName, filetype);
+    auto read_end = std::chrono::high_resolution_clock::now();
+    auto duration =
+        std::chrono::duration_cast<std::chrono::milliseconds>(read_end - read_start);
+    std::cout << "Reading file took " << duration.count()
+              << " milliseconds" << std::endl;
     std::cout << "After rD.loadFromFile():\n";
     mem_usage(vm_usage, resident_set);
-
-
 
     // // We clear the temp directories and create them if they do not
     // // exist

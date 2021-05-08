@@ -371,6 +371,7 @@ void Consensus::finishWriteConsensus(const std::vector<std::vector<read_t>>& num
     metaData.open(tempDir + "metaData");
     metaData << "numReads=" << rD->getNumReads() << '\n';
     metaData << "numContigs=" << size << '\n';
+    std::cout << "numContigs = " << size << '\n';
     metaData << "numThr=" << numThr << '\n';
     metaData << "numReadsInContig=";
     for (int i = 0; i < numThr; ++i)
