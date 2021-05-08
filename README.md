@@ -9,7 +9,7 @@ git clone --recursive https://github.com/qm2/NanoSpring.git
 ```
 
 ### Install
-The instructions below will create the NanoSpring executable in the build directory inside NanoSpring. If you plan to build and run SPRING on separate architectures, then you might need to remove the flag ```-march=native``` from the ```target_compile_options``` in CMakeLists.txt (or use flags based on the target architecture).
+The instructions below will create the NanoSpring executable in the build directory inside NanoSpring. If you plan to build and run NanoSpring on separate architectures, then you might need to remove the flag ```-march=native``` from the ```target_compile_options``` in CMakeLists.txt (or use flags based on the target architecture).
 
 On Linux with cmake installed and version at least 3.12 (check using `cmake --version`):
 ```
