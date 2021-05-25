@@ -101,6 +101,7 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
     {
 // We first compress all the files in the temp directory (we compress
 // only files with extensions)
+    	size_t total_compressed_size = 0;
         std::cout << "bsc/lzma2 compression starts" << std::endl;
         std::set<std::string> extensions;
         DirectoryUtils::getAllExtensions(tempDir, std::inserter(extensions, extensions.end()));
@@ -126,8 +127,10 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
                 totalUncompressed += uncompressedSizes[i];
                 totalCompressed += compressedSizes[i];
             }
+            total_compressed_size += totalCompressed;
             std::cout << "Extension " << ext << ": Compressed " << totalUncompressed << " bytes to " << totalCompressed << " bytes\n";
         }
+        std::cout << "Total compressed size of all streams is " << total_compressed_size << " bytes\n";
     }
 
     std::cout << "Creating tar archive ..." << std::endl;
@@ -140,7 +143,7 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
     std::cout << "Tar archive done!\n";
 
     {
-        std::string lsCommand = "ls -lh " + outputFileName;
+        std::string lsCommand = "ls -l " + outputFileName;
         int ls_status = std::system(lsCommand.c_str());
         if (ls_status)
             throw std::runtime_error("Error occurred during ls command.");
