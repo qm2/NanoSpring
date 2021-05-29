@@ -1,0 +1,206 @@
+Temporary directory: ./tmp.9GVImoHCdi/
+k n overlapSketchThreshold minimap:k minimap:w minimap:max_chain_iter edge_threshold
+23 60 6 20 50 400 4000000
+number of threads: 20
+Entering compress():
+resident_set: 2292 KB
+numReads 5185398
+avgReadLen 17886
+maxReadLen 390947
+Reading file took 494081 milliseconds
+After rD.loadFromFile():
+resident_set: 2.3606e+07 KB
+Starting to populate hash tables
+finished populating hash tables
+19649 milliseconds passed
+Calculating MinHashes took 450731 milliseconds
+After minhash computation:
+resident_set: 2.7753e+07 KB
+numContigs = 2442233
+LoneReads
+#LoneReads = 2332292
+MinHash passed 54720613 reads
+MinHash passed & not already in graph 11435998 reads
+Merge Sort passed 0 reads
+Aligner passed 2743165 reads
+bsc/lzma2 compression starts
+Extension .base: Compressed 11720192427 bytes to 2248082022 bytes
+Extension .complement: Compressed 2963047 bytes to 375970 bytes
+Extension .genome: Compressed 1879554499 bytes to 382413306 bytes
+Extension .id: Compressed 20741592 bytes to 7678950 bytes
+Extension .lone: Compressed 28969114196 bytes to 6369258366 bytes
+Extension .pos: Compressed 4517145010 bytes to 2476832206 bytes
+Extension .type: Compressed 4471245060 bytes to 814298314 bytes
+Total compressed size of all streams is 12298939134 bytes
+Creating tar archive ...
+Tar archive done!
+-rw-rw-r-- 1 qingxi qingxi 12303953920 May 25 10:06 /raid/qingxi/Nanopore-Compression-old/data/ERR5455028.fastq.NanoSpring
+Time taken by function: 11938 seconds
+	Command being timed: "./../../build/NanoSpring -c -i /raid/qingxi/Nanopore-Compression-old/data/ERR5455028.fastq -o /raid/qingxi/Nanopore-Compression-old/data/ERR5455028.fastq.NanoSpring"
+	User time (seconds): 224298.41
+	System time (seconds): 4699.38
+	Percent of CPU this job got: 1917%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 3:19:01
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 43707216
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 3
+	Minor (reclaiming a frame) page faults: 1929717964
+	Voluntary context switches: 5589514
+	Involuntary context switches: 1798483
+	Swaps: 0
+	File system inputs: 380503288
+	File system outputs: 158735896
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+Temporary directory: ./tmp.r4FknpSGJU/
+numDecodingThreads: 20
+Extracting tar archive ...Tar extraction done!
+NumReads:5185398
+NumContigs:2442233
+NumEncodingThreads:20
+BSC/LZMA2 decompression ...BSC/LZMA2 decompression done!
+Took 296922 milliseconds
+Generating reads...Done!
+Took 65972 milliseconds
+Writing to file...Done!
+Writing took 296905 milliseconds
+	Command being timed: "./../../build/NanoSpring -d -i /raid/qingxi/Nanopore-Compression-old/data/ERR5455028.fastq.NanoSpring -o /raid/qingxi/Nanopore-Compression-old/data/ERR5455028.fastq.NanoSpring.reads"
+	User time (seconds): 12003.16
+	System time (seconds): 475.12
+	Percent of CPU this job got: 1844%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 11:16.55
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 25536708
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 2
+	Minor (reclaiming a frame) page faults: 97341960
+	Voluntary context switches: 2351685
+	Involuntary context switches: 984967
+	Swaps: 0
+	File system inputs: 2625472
+	File system outputs: 305938280
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+Parameters - k: 7, l: 6, b: 32 
+Starting encoding in FAST MODE with 20 threads... 
+Starting adaptative encoding for 33 (32 + 1) blocks, and update every 4 blocks... 
+Starting parallelized fast encoding...
+Total encoded blocks: 18666 
+Stream <original size in bytes> -> <compressed size in bytes> (<compression ratio>)
+IDs   441315250 -> 141554150 (0.321)
+Bases 92749841432 -> 22372654510 (0.241)
+Quals 92749841432 -> 49750307852 (0.536)
+Total 185972110502 -> 72275384479 (0.389)
+Total compression time: 1107.22 s
+	Command being timed: "./../../../EnanoFASTQ/enano/enano -t 20 /raid/qingxi/Nanopore-Compression-old/data/ERR5455028.fastq /raid/qingxi/Nanopore-Compression-old/data/ERR5455028.fastq.enano"
+	User time (seconds): 7948.36
+	System time (seconds): 139.66
+	Percent of CPU this job got: 730%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 18:27.24
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 426540
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 2
+	Minor (reclaiming a frame) page faults: 2649389
+	Voluntary context switches: 285075
+	Involuntary context switches: 327733
+	Swaps: 0
+	File system inputs: 308378368
+	File system outputs: 141163080
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+Parameters - k: 7, l: 6, b: 32 
+Starting decoding with 20 threads... 
+Starting decoding with context model update... 
+Starting parallelized fast decoding... 
+Total decoded blocks: 18666
+Total decompression time: 1374.03 s
+	Command being timed: "./../../../EnanoFASTQ/enano/enano -d -t 20 /raid/qingxi/Nanopore-Compression-old/data/ERR5455028.fastq.enano enano_decompressed.fastq"
+	User time (seconds): 14218.86
+	System time (seconds): 202.98
+	Percent of CPU this job got: 1049%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 22:54.10
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 541532
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 6
+	Minor (reclaiming a frame) page faults: 7737952
+	Voluntary context switches: 130436
+	Involuntary context switches: 206155
+	Swaps: 0
+	File system inputs: 141163336
+	File system outputs: 364088872
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+	Command being timed: "pigz -p 20 /raid/qingxi/Nanopore-Compression-old/data/ERR5455028.fastq.NanoSpring.reads"
+	User time (seconds): 15078.56
+	System time (seconds): 104.99
+	Percent of CPU this job got: 1747%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 14:29.11
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 15244
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 1
+	Minor (reclaiming a frame) page faults: 60801
+	Voluntary context switches: 2280904
+	Involuntary context switches: 182668
+	Swaps: 0
+	File system inputs: 181169176
+	File system outputs: 51661096
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+-rw-rw-r-- 1 qingxi qingxi 26450360922 May 25 10:17 /raid/qingxi/Nanopore-Compression-old/data/ERR5455028.fastq.NanoSpring.reads.gz
+	Command being timed: "pigz -d -k -p 20 /raid/qingxi/Nanopore-Compression-old/data/ERR5455028.fastq.NanoSpring.reads.gz"
+	User time (seconds): 522.05
+	System time (seconds): 153.67
+	Percent of CPU this job got: 164%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 6:52.02
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 2532
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 805
+	Voluntary context switches: 6473751
+	Involuntary context switches: 918
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 181162168
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

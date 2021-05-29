@@ -1,0 +1,61 @@
+Temporary directory: ./tmp.PFgy0CjrEy/
+k n overlapSketchThreshold minimap:k minimap:w minimap:max_chain_iter edge_threshold
+23 60 6 20 50 400 4000000
+number of threads: 20
+Entering compress():
+resident_set: 2244 KB
+numReads 29468874
+avgReadLen 12589
+maxReadLen 1549630
+Reading file took 7035403 milliseconds
+After rD.loadFromFile():
+resident_set: 9.52958e+07 KB
+Starting to populate hash tables
+finished populating hash tables
+86890 milliseconds passed
+Calculating MinHashes took 4051515 milliseconds
+After minhash computation:
+resident_set: 1.08538e+08 KB
+numContigs = 19522318
+LoneReads
+#LoneReads = 19095379
+MinHash passed 24698404809 reads
+MinHash passed & not already in graph 1316361465 reads
+Merge Sort passed 0 reads
+Aligner passed 9946556 reads
+bsc/lzma2 compression starts
+Extension .base: Compressed 62040365249 bytes to 8515359745 bytes
+Extension .complement: Compressed 10800434 bytes to 1358942 bytes
+Extension .genome: Compressed 8646922156 bytes to 1838900738 bytes
+Extension .id: Compressed 117875496 bytes to 29890150 bytes
+Extension .lone: Compressed 31067360879 bytes to 5485928978 bytes
+Extension .pos: Compressed 14839434505 bytes to 7840829250 bytes
+Extension .type: Compressed 14310300754 bytes to 2256303588 bytes
+Total compressed size of all streams is 25968571391 bytes
+Creating tar archive ...
+Tar archive done!
+-rw-rw-r-- 1 qingxi qingxi 26007787520 May 28 05:50 /raid/qingxi/Nanopore-Compression-old/data/rel7.fastq.gz.NanoSpring
+Time taken by function: 94444 seconds
+	Command being timed: "./../../build/NanoSpring -c -i /raid/qingxi/Nanopore-Compression-old/data/rel7.fastq.gz -o /raid/qingxi/Nanopore-Compression-old/data/rel7.fastq.gz.NanoSpring"
+	User time (seconds): 1634995.19
+	System time (seconds): 26128.88
+	Percent of CPU this job got: 1758%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 26:14:10
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 148410536
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 11
+	Minor (reclaiming a frame) page faults: 9713709119
+	Voluntary context switches: 17066138
+	Involuntary context switches: 8334785
+	Swaps: 0
+	File system inputs: 353305448
+	File system outputs: 414536504
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

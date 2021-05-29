@@ -1,0 +1,207 @@
+Temporary directory: ./tmp.jvbY4UNvJH/
+k n overlapSketchThreshold minimap:k minimap:w minimap:max_chain_iter edge_threshold
+23 60 6 20 50 400 4000000
+number of threads: 20
+Entering compress():
+resident_set: 2316 KB
+numReads 1160526
+avgReadLen 3997
+maxReadLen 249289
+Reading file took 8396 milliseconds
+After rD.loadFromFile():
+resident_set: 1.6252e+06 KB
+Starting to populate hash tables
+finished populating hash tables
+3538 milliseconds passed
+Calculating MinHashes took 66029 milliseconds
+After minhash computation:
+resident_set: 2.49901e+06 KB
+numContigs = 356884
+LoneReads
+#LoneReads = 325703
+MinHash passed 11876977 reads
+MinHash passed & not already in graph 1079254 reads
+Merge Sort passed 0 reads
+Aligner passed 803642 reads
+bsc/lzma2 compression starts
+Extension .base: Compressed 729937389 bytes to 144825739 bytes
+Extension .complement: Compressed 866004 bytes to 117502 bytes
+Extension .genome: Compressed 115240311 bytes to 28385412 bytes
+Extension .id: Compressed 4642104 bytes to 1642062 bytes
+Extension .lone: Compressed 608150750 bytes to 149343394 bytes
+Extension .pos: Compressed 201351585 bytes to 122290156 bytes
+Extension .type: Compressed 193761764 bytes to 36806414 bytes
+Total compressed size of all streams is 483410679 bytes
+Creating tar archive ...
+Tar archive done!
+-rw-rw-r-- 1 qingxi qingxi 484239360 May 25 00:38 /raid/qingxi/Nanopore-Compression-old/data/Zymo-GridION-EVEN-3Peaks-R103-merged.fastq.NanoSpring
+Time taken by function: 742 seconds
+	Command being timed: "./../../build/NanoSpring -c -i /raid/qingxi/Nanopore-Compression-old/data/Zymo-GridION-EVEN-3Peaks-R103-merged.fastq -o /raid/qingxi/Nanopore-Compression-old/data/Zymo-GridION-EVEN-3Peaks-R103-merged.fastq.NanoSpring"
+	User time (seconds): 14031.66
+	System time (seconds): 316.00
+	Percent of CPU this job got: 1931%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 12:22.99
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 16485348
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 127530257
+	Voluntary context switches: 902772
+	Involuntary context switches: 51887
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 7698200
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+Temporary directory: ./tmp.UfEbsSWRJq/
+numDecodingThreads: 20
+Extracting tar archive ...Tar extraction done!
+NumReads:1160526
+NumContigs:356884
+NumEncodingThreads:20
+BSC/LZMA2 decompression ...BSC/LZMA2 decompression done!
+Took 9740 milliseconds
+Generating reads...Done!
+Took 4243 milliseconds
+Writing to file...Done!
+Writing took 9015 milliseconds
+	Command being timed: "./../../build/NanoSpring -d -i /raid/qingxi/Nanopore-Compression-old/data/Zymo-GridION-EVEN-3Peaks-R103-merged.fastq.NanoSpring -o /raid/qingxi/Nanopore-Compression-old/data/Zymo-GridION-EVEN-3Peaks-R103-merged.fastq.NanoSpring.reads"
+	User time (seconds): 408.88
+	System time (seconds): 17.50
+	Percent of CPU this job got: 1766%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:24.13
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 3004092
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 2527734
+	Voluntary context switches: 204472
+	Involuntary context switches: 28899
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 13630736
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+Parameters - k: 7, l: 6, b: 32 
+Starting encoding in FAST MODE with 20 threads... 
+Starting adaptative encoding for 33 (32 + 1) blocks, and update every 4 blocks... 
+Starting parallelized fast encoding...
+Total encoded blocks: 955 
+Stream <original size in bytes> -> <compressed size in bytes> (<compression ratio>)
+IDs   234989208 -> 39846195 (0.170)
+Bases 4639074816 -> 1135210422 (0.245)
+Quals 4639074816 -> 2782169794 (0.600)
+Total 9520101996 -> 3959034364 (0.416)
+Total compression time: 38.47 s
+	Command being timed: "./../../../EnanoFASTQ/enano/enano -t 20 /raid/qingxi/Nanopore-Compression-old/data/Zymo-GridION-EVEN-3Peaks-R103-merged.fastq /raid/qingxi/Nanopore-Compression-old/data/Zymo-GridION-EVEN-3Peaks-R103-merged.fastq.enano"
+	User time (seconds): 425.78
+	System time (seconds): 7.02
+	Percent of CPU this job got: 1124%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:38.47
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 434536
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 580710
+	Voluntary context switches: 2412
+	Involuntary context switches: 659
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 7732496
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+Parameters - k: 7, l: 6, b: 32 
+Starting decoding with 20 threads... 
+Starting decoding with context model update... 
+Starting parallelized fast decoding... 
+Total decoded blocks: 955
+Total decompression time: 58.90 s
+	Command being timed: "./../../../EnanoFASTQ/enano/enano -d -t 20 /raid/qingxi/Nanopore-Compression-old/data/Zymo-GridION-EVEN-3Peaks-R103-merged.fastq.enano enano_decompressed.fastq"
+	User time (seconds): 769.13
+	System time (seconds): 10.70
+	Percent of CPU this job got: 1322%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:58.94
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 551560
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 1308844
+	Voluntary context switches: 2641
+	Involuntary context switches: 1157
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 19052928
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+/raid/qingxi/Nanopore-Compression-old/data/Zymo-GridION-EVEN-3Peaks-R103-merged.fastq enano_decompressed.fastq differ: byte 704, line 3
+	Command being timed: "pigz -p 20 /raid/qingxi/Nanopore-Compression-old/data/Zymo-GridION-EVEN-3Peaks-R103-merged.fastq.NanoSpring.reads"
+	User time (seconds): 750.54
+	System time (seconds): 4.38
+	Percent of CPU this job got: 1961%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:38.48
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 15196
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 22095
+	Voluntary context switches: 94160
+	Involuntary context switches: 567
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 2628040
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+-rw-rw-r-- 1 qingxi qingxi 1345552061 May 25 00:38 /raid/qingxi/Nanopore-Compression-old/data/Zymo-GridION-EVEN-3Peaks-R103-merged.fastq.NanoSpring.reads.gz
+	Command being timed: "pigz -d -k -p 20 /raid/qingxi/Nanopore-Compression-old/data/Zymo-GridION-EVEN-3Peaks-R103-merged.fastq.NanoSpring.reads.gz"
+	User time (seconds): 24.50
+	System time (seconds): 6.28
+	Percent of CPU this job got: 189%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:16.26
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 2580
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 299
+	Voluntary context switches: 324328
+	Involuntary context switches: 37
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 9062960
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

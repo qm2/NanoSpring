@@ -1,0 +1,61 @@
+Temporary directory: ./tmp.kSUoejmAfc/
+k n overlapSketchThreshold minimap:k minimap:w minimap:max_chain_iter edge_threshold
+23 60 6 20 50 400 4000000
+number of threads: 20
+Entering compress():
+resident_set: 2392 KB
+numReads 17678441
+avgReadLen 12589
+maxReadLen 1549630
+Reading file took 2927111 milliseconds
+After rD.loadFromFile():
+resident_set: 5.80436e+07 KB
+Starting to populate hash tables
+finished populating hash tables
+56767 milliseconds passed
+Calculating MinHashes took 3587014 milliseconds
+After minhash computation:
+resident_set: 6.62707e+07 KB
+numContigs = 11890931
+LoneReads
+#LoneReads = 11626307
+MinHash passed 9123000305 reads
+MinHash passed & not already in graph 421901291 reads
+Merge Sort passed 0 reads
+Aligner passed 5787510 reads
+bsc/lzma2 compression starts
+Extension .base: Compressed 38949525913 bytes to 6089306299 bytes
+Extension .complement: Compressed 6316758 bytes to 804470 bytes
+Extension .genome: Compressed 6557469229 bytes to 1398260028 bytes
+Extension .id: Compressed 70713764 bytes to 17402924 bytes
+Extension .lone: Compressed 18477174802 bytes to 3254295184 bytes
+Extension .pos: Compressed 8908815581 bytes to 4680174458 bytes
+Extension .type: Compressed 8596387649 bytes to 1352134820 bytes
+Total compressed size of all streams is 16792378183 bytes
+Creating tar archive ...
+Tar archive done!
+-rw-rw-r-- 1 qingxi qingxi 16816312320 May 28 19:48 /raid/qingxi/Nanopore-Compression-old/data/rel7_sampled_75x.fastq.gz.NanoSpring
+Time taken by function: 49313 seconds
+	Command being timed: "./../../build/NanoSpring -c -i /raid/qingxi/Nanopore-Compression-old/data/rel7_sampled_75x.fastq.gz -o /raid/qingxi/Nanopore-Compression-old/data/rel7_sampled_75x.fastq.gz.NanoSpring"
+	User time (seconds): 845619.48
+	System time (seconds): 16725.58
+	Percent of CPU this job got: 1748%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 13:41:57
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 125897640
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 6
+	Minor (reclaiming a frame) page faults: 6442688877
+	Voluntary context switches: 10296460
+	Involuntary context switches: 2536289
+	Swaps: 0
+	File system inputs: 153023832
+	File system outputs: 259120576
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
