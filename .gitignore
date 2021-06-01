@@ -1,6 +1,8 @@
 *
 */
 !src/
+!util/
+!util/*
 !include/
 !include/*
 !libbsc/

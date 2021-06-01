@@ -13,7 +13,9 @@
 #include <ios>
 #include <unistd.h>
 #include <string>
-#include <malloc.h>
+#ifdef USE_MALLOC_TRIM
+    #include <malloc.h>
+#endif
 
 void mem_usage(double& vm_usage, double& resident_set) {
    // from https://www.tutorialspoint.com/how-to-get-memory-usage-at-runtime-using-cplusplus
@@ -76,9 +78,10 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
     }
     std::cout << "After minhash computation:\n";
     mem_usage(vm_usage, resident_set);
-    
-    malloc_trim(0); // clear memory
 
+#ifdef USE_MALLOC_TRIM    
+    malloc_trim(0); // clear memory
+#endif
 
     Consensus consensus;
     {
@@ -96,8 +99,11 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
         consensus.generateAndWriteConsensus();
     }
     }
+
+#ifdef USE_MALLOC_TRIM
     malloc_trim(0); // clear memory
-    
+#endif
+
     {
 // We first compress all the files in the temp directory (we compress
 // only files with extensions)

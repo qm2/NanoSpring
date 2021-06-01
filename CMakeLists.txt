@@ -7,6 +7,7 @@ project(NanoSpring
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 include(CheckIPOSupported)
+include(CheckCXXSourceCompiles)
 
 # Clear All Flags
 set(CMAKE_CXX_FLAGS "")
@@ -31,6 +32,22 @@ message(STATUS "CHECKS=${CHECKS} (Use -DCHECKS=True to enable all checks")
 message(STATUS "LOG=${LOG} (Use -LOG=True to output log files for analysis")
 message(STATUS "Directory: ${CMAKE_CURRENT_SOURCE_DIR}")
 find_package(OpenMP)
+
+##############################
+# malloc_trim
+check_cxx_source_compiles(
+    "#include <malloc.h>
+     int main() {
+         malloc_trim(0);
+         return 0;
+     }"
+     USE_MALLOC_TRIM)
+if(USE_MALLOC_TRIM)
+    message(STATUS "Support for malloc_trim detected.")
+else()
+    message(STATUS "Support for malloc_trim not detected.")
+endif()
+
 
 ###############################
 # boost
@@ -164,6 +181,11 @@ if ( LOG )
     target_compile_options(NanoSpringLib 
         PUBLIC 
         -DLOG)
+endif()
+if ( USE_MALLOC_TRIM )
+    target_compile_options(NanoSpringLib 
+        PUBLIC 
+        -DUSE_MALLOC_TRIM)
 endif()
 
 target_compile_definitions(NanoSpringLib PUBLIC "$<$<CONFIG:Debug>:DEBUG>")

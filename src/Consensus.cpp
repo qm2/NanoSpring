@@ -14,7 +14,9 @@
 #include <set>
 #include <ctime>
 #include <chrono>
-#include <malloc.h>
+#ifdef USE_MALLOC_TRIM
+    #include <malloc.h>
+#endif
 
 void Consensus::generateAndWriteConsensus() {
     initialize();
@@ -109,8 +111,10 @@ void Consensus::generateAndWriteConsensus() {
                 run_malloc_trim = true;
 
             delete cG;
+#ifdef USE_MALLOC_TRIM
             if (run_malloc_trim)
                 malloc_trim(0);
+#endif
 
             contigId++;
 #ifdef LOG

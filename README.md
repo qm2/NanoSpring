@@ -33,6 +33,12 @@ cd ..
 ./cmake-3.12.4/bin/cmake ..
 make -j
 ```
+
+Test installation by running the test script (from the `build` directory):
+```
+./../util/test_script.sh
+```
+
 ## Usage
 Run the NanoSpring compressor executable with the options below:
 ```
