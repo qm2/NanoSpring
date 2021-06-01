@@ -52,8 +52,8 @@ Allowed options:
   -o [ --output-file ] arg       output file name
   -t [ --num-threads ] arg (=20) number of threads (default 20)
   -k [ --kmer ] arg (=23)        kmer size for the minhash (default 23)
-  -n [ --num-hash ] arg (=54)    number of hash functions for minhash (default
-                                 54)
+  -n [ --num-hash ] arg (=60)    number of hash functions for minhash (default
+                                 60)
   --overlap-sketch-thr arg (=6)  the overlap sketch threhold for minhash
                                  (default 6)
   --minimap-k arg (=20)          kmer size for the minimap2 (default 20)
