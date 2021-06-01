@@ -71,17 +71,25 @@ Note that the compressed files are tar archives consisting of the different comp
 ## Example Usage of Nanopore Compression
 This section contains several examples for compression and decompression with various modes and options. The compressed file uses the ```.NanoSpring``` extension as a convention. The decompressed file uses the ```.reads``` extension as a convention.
 
-For compressing file.fastq losslessly using default 20 threads (Lossless).
+For compressing file.fastq using default 20 threads.
 ```
 ./NanoSpring -c -i file.fastq -o file.NanoSpring
 ```
-Using 10 threads (Lossless).
+Using 10 threads.
 ```
 ./NanoSpring -c -i file.fastq -o file.NanoSpring -t 10
 ```
-For compressing file.fastq.gz (gzipped fastq files) losslessly using default 20 threads (Lossless).
+For compressing file.fastq.gz (gzipped fastq files) using default 20 threads.
 ```
 ./NanoSpring -c -i file.fastq.gz -o file.NanoSpring 
+```
+Decompressing the file.NanoSpring with default 20 threads to file.reads.
+```
+./NanoSpring -d -i file.NanoSpring -o file.reads
+```
+Decompressing the file.NanoSpring with 10 threads to file.reads.
+```
+./NanoSpring -d -i file.NanoSpring -o file.reads -t 10
 ```
 Compressing with kmer size for minhash to be 20, number of hash functions for minhash to be 64, and the overlap sketch threhold for minhash to be 8.
 ```
@@ -98,12 +106,4 @@ Compressing with the max number of partial chains during chaining for minimap2 t
 Compressing with the max number of edges allowed in a consensus graph to be 8000000.
 ```
 ./NanoSpring -c -i file.fastq --edge-thr 8000000 -o file.NanoSpring  
-```
-Decompressing the file.NanoSpring with default 20 threads to file.reads.
-```
-./NanoSpring -d -i file.NanoSpring -o file.reads
-```
-Decompressing the file.NanoSpring with 10 threads to file.reads.
-```
-./NanoSpring -d -i file.NanoSpring -o file.reads -t 10
 ```
