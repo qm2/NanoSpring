@@ -9,17 +9,6 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - g++-4.9
-      env:
-        - CXX=g++-4.9
-        - CC=gcc-4.9       
-
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
             - g++-5
       env:
         - CXX=g++-5
@@ -92,12 +81,6 @@ matrix:
         - CC=gcc-10  
 
     - os: freebsd
-      addons:
-          pkg:
-            - gcc10
-          env:
-            - CC=gcc10
-            - CXX=g++10
 
 # Build and steps
 script:
