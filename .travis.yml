@@ -80,8 +80,6 @@ matrix:
         - CXX=g++-10
         - CC=gcc-10  
 
-    - os: freebsd
-
 # Build and steps
 script:
   - mkdir build
