@@ -90,9 +90,9 @@ script:
   - tar -xzf cmake-3.12.4.tar.gz
   - cd cmake-3.12.4
   - ./configure
-  - make -j
+  - make
   - cd ..
   - ./cmake-3.12.4/bin/cmake ..
-  - make -j
+  - make
   - export OMP_NUM_THREADS=4
   - ./../util/test_script.sh  
