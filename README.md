@@ -1,5 +1,7 @@
 # NanoSpring
 
+[![Build Status](https://travis-ci.com/qm2/NanoSpring.svg?branch=master)](https://travis-ci.com/qm2/NanoSpring)
+
 NanoSpring - Tool for compression of nanopore genomic reads in FASTQ format (gzipped input also supported). Compresses only the read sequences. Achieves over 3 times better compression ratios than Gzip (for recent basecaller versions) and fast decompression. The algorithm requires C++11 and g++ compiler and works on Linux (tested on Ubuntu 16.04, 18.04 and 20.04). 
 
 ## Install from source code
