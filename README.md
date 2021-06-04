@@ -56,7 +56,7 @@ Allowed options:
   -k [ --kmer ] arg (=23)        kmer size for the minhash (default 23)
   -n [ --num-hash ] arg (=60)    number of hash functions for minhash (default
                                  60)
-  --overlap-sketch-thr arg (=6)  the overlap sketch threhold for minhash
+  --overlap-sketch-thr arg (=6)  the overlap sketch threshold for minhash
                                  (default 6)
   --minimap-k arg (=20)          kmer size for the minimap2 (default 20)
   --minimap-w arg (=50)          window size for the minimap2 (default 50)
