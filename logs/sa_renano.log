@@ -1,0 +1,90 @@
+[M::mm_idx_gen::0.139*1.02] collected minimizers
+[M::mm_idx_gen::0.160*2.11] sorted minimizers
+[M::main::0.160*2.11] loaded/built the index for 1 target sequence(s)
+[M::mm_mapopt_update::0.176*2.01] mid_occ = 13
+[M::mm_idx_stat] kmer size: 15; skip: 10; is_hpc: 0; #seq: 1
+[M::mm_idx_stat::0.184*1.96] distinct minimizers: 516311 (96.89% are singletons); average occurrences: 1.052; average spacing: 5.343; total length: 2902076
+[M::worker_pipeline::7.592*13.54] mapped 11047 sequences
+[M::main] Version: 2.18-r1015
+[M::main] CMD: ./../../../minimap2-2.18/minimap2 -x map-ont --secondary=no --cs -t 20 /raid/qingxi/Nanopore-Compression-old/data/basecall_hac.fasta /raid/qingxi/Nanopore-Compression-old/data/basecall_hac.fastq
+[M::main] Real time: 7.620 sec; CPU: 102.824 sec; Peak RSS: 1.633 GB
+        Command being timed: "./../../../minimap2-2.18/minimap2 -x map-ont --secondary=no --cs /raid/qingxi/Nanopore-Compression-old/data/basecall_hac.fasta /raid/qingxi/Nanopore-Compression-old/data/basecall_hac.fastq -t 20"
+        User time (seconds): 101.15
+        System time (seconds): 1.70
+        Percent of CPU this job got: 1343%
+        Elapsed (wall clock) time (h:mm:ss or m:ss): 0:07.65
+        Average shared text size (kbytes): 0
+        Average unshared data size (kbytes): 0
+        Average stack size (kbytes): 0
+        Average total size (kbytes): 0
+        Maximum resident set size (kbytes): 1712516
+        Average resident set size (kbytes): 0
+        Major (requiring I/O) page faults: 0
+        Minor (reclaiming a frame) page faults: 677798
+        Voluntary context switches: 11633
+        Involuntary context switches: 148
+        Swaps: 0
+        File system inputs: 0
+        File system outputs: 85120
+        Socket messages sent: 0
+        Socket messages received: 0
+        Signals delivered: 0
+        Page size (bytes): 4096
+        Exit status: 0
+        
+Basecall alignment against stored reference.
+Parsing reference file...
+Finished in 0.01s
+Parameters - k: 7, l: 6, b: 32
+Storing reference...
+Total segments: 1
+ref_sz over max: 95.861% (must be less than 100%)
+Ref entropy: 1.917
+ref_len: 2902076
+ref_sz: 695490
+Finished in 0.15s
+Original ref sz: 2902076 -> Actually used: 2902076 (1.000)
+Starting adaptative encoding with 20 threads, for 33 (32 + 1) blocks, and update every 4 blocks...
+Starting parallelized fast encoding...
+Total encoded blocks: 49
+Total % of aligned base call strings: 98.2%, % of matches: 96.8%
+Stream   % of compressed base calls      Avg. symbol len. (bits)
+B        23.7%   1.826
+L        0.2%    3.794
+Q        0.0%    0.500
+S        0.1%    5.425
+E        0.2%    15.639
+S'       0.3%    22.127
+D        0.0%    1.016, reversed: 49.852
+N        14.0%   2.246
+K        15.0%   2.392
+M        40.4%   6.464
+Stream <original size in bytes> -> <compressed size in bytes> (<compression ratio>)
+IDs   1926273 -> 301154 (0.156)
+Bases 242888002 -> 11445316 (0.047) - without ref: (0.044) - ref: (6.077%)
+Quals 242888002 -> 121803819 (0.501)
+Total 487768559 -> 133553044 (0.274)
+Total time: 6.32 s
+        Command being timed: "renano -t 20 -s /raid/qingxi/Nanopore-Compression-old/data/basecall_hac.fasta /raid/qingxi/Nanopore-Compression-old/data/basecall_hac.paf /raid/qingxi/Nanopore-Compression-old/data/basecall_hac.fastq /raid/qingxi/Nanopore-Compression-old/data/basecall_hac.renano"
+        User time (seconds): 23.21
+        System time (seconds): 0.92
+        Percent of CPU this job got: 380%
+        Elapsed (wall clock) time (h:mm:ss or m:ss): 0:06.34
+        Average shared text size (kbytes): 0
+        Average unshared data size (kbytes): 0
+        Average stack size (kbytes): 0
+        Average total size (kbytes): 0
+        Maximum resident set size (kbytes): 404608
+        Average resident set size (kbytes): 0
+        Major (requiring I/O) page faults: 0
+        Minor (reclaiming a frame) page faults: 178284
+        Voluntary context switches: 581
+        Involuntary context switches: 52
+        Swaps: 0
+        File system inputs: 8
+        File system outputs: 260856
+        Socket messages sent: 0
+        Socket messages received: 0
+        Signals delivered: 0
+        Page size (bytes): 4096
+        Exit status: 0

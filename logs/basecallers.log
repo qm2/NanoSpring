@@ -1,0 +1,183 @@
+Temporary directory: ./tmp.DpRCFO7UJr/
+k n overlapSketchThreshold minimap:k minimap:w minimap:max_chain_iter edge_threshold
+23 60 6 20 50 400 4000000
+number of threads: 20
+Entering compress():
+resident_set: 2324 KB
+numReads 11047
+avgReadLen 21972
+maxReadLen 150127
+Reading file took 459 milliseconds
+After rD.loadFromFile():
+resident_set: 240152 KB
+Starting to populate hash tables
+finished populating hash tables
+41 milliseconds passed
+Calculating MinHashes took 1054 milliseconds
+After minhash computation:
+resident_set: 250732 KB
+numContigs = 758
+LoneReads
+#LoneReads = 638
+MinHash passed 56375 reads
+MinHash passed & not already in graph 10371 reads
+Merge Sort passed 0 reads
+Aligner passed 10289 reads
+bsc/lzma2 compression starts
+Extension .base: Compressed 37830769 bytes to 6399519 bytes
+Extension .complement: Compressed 10529 bytes to 2878 bytes
+Extension .genome: Compressed 5522608 bytes to 1323200 bytes
+Extension .id: Compressed 44188 bytes to 16460 bytes
+Extension .lone: Compressed 14350618 bytes to 3445990 bytes
+Extension .pos: Compressed 12967112 bytes to 7500920 bytes
+Extension .type: Compressed 12778122 bytes to 2362914 bytes
+Total compressed size of all streams is 21051881 bytes
+Creating tar archive ...
+Tar archive done!
+-rw-rw-r-- 1 qingxi qingxi 21166080 Jun  2 04:37 /raid/qingxi/Nanopore-Compression-old/data/basecall_fast.NanoSpring
+Time taken by function: 27 seconds
+	Command being timed: "/raid/qingxi/NanoSpring/build/NanoSpring -c -i /raid/qingxi/Nanopore-Compression-old/data/basecall_fast.fastq -o /raid/qingxi/Nanopore-Compression-old/data/basecall_fast.NanoSpring"
+	User time (seconds): 475.00
+	System time (seconds): 17.75
+	Percent of CPU this job got: 1794%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:27.45
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 5794332
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 7396970
+	Voluntary context switches: 197196
+	Involuntary context switches: 4557
+	Swaps: 0
+	File system inputs: 16
+	File system outputs: 268616
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+Temporary directory: ./tmp.t3TwIS0vd3/
+k n overlapSketchThreshold minimap:k minimap:w minimap:max_chain_iter edge_threshold
+23 60 6 20 50 400 4000000
+number of threads: 20
+Entering compress():
+resident_set: 2440 KB
+numReads 11047
+avgReadLen 21986
+maxReadLen 150455
+Reading file took 1113 milliseconds
+After rD.loadFromFile():
+resident_set: 235328 KB
+Starting to populate hash tables
+finished populating hash tables
+54 milliseconds passed
+Calculating MinHashes took 1649 milliseconds
+After minhash computation:
+resident_set: 246196 KB
+numContigs = 360
+LoneReads
+#LoneReads = 263
+MinHash passed 74469 reads
+MinHash passed & not already in graph 10971 reads
+Merge Sort passed 0 reads
+Aligner passed 10687 reads
+bsc/lzma2 compression starts
+Extension .base: Compressed 43565829 bytes to 5620707 bytes
+Extension .complement: Compressed 10881 bytes to 2906 bytes
+Extension .genome: Compressed 5120578 bytes to 1230266 bytes
+Extension .id: Compressed 44188 bytes to 16142 bytes
+Extension .lone: Compressed 6331728 bytes to 1517676 bytes
+Extension .pos: Compressed 8925182 bytes to 5255344 bytes
+Extension .type: Compressed 8517259 bytes to 1545102 bytes
+Total compressed size of all streams is 15188143 bytes
+Creating tar archive ...
+Tar archive done!
+-rw-rw-r-- 1 qingxi qingxi 15308800 Jun  2 04:38 /raid/qingxi/Nanopore-Compression-old/data/basecall_hac.NanoSpring
+Time taken by function: 29 seconds
+	Command being timed: "/raid/qingxi/NanoSpring/build/NanoSpring -c -i /raid/qingxi/Nanopore-Compression-old/data/basecall_hac.fastq -o /raid/qingxi/Nanopore-Compression-old/data/basecall_hac.NanoSpring"
+	User time (seconds): 480.27
+	System time (seconds): 21.54
+	Percent of CPU this job got: 1693%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:29.63
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 6175252
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 7884399
+	Voluntary context switches: 270794
+	Involuntary context switches: 9271
+	Swaps: 0
+	File system inputs: 951432
+	File system outputs: 224296
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+Temporary directory: ./tmp.7v9EbmW4Gq/
+k n overlapSketchThreshold minimap:k minimap:w minimap:max_chain_iter edge_threshold
+23 60 6 20 50 400 4000000
+number of threads: 20
+Entering compress():
+resident_set: 2272 KB
+numReads 11047
+avgReadLen 22000
+maxReadLen 150638
+Reading file took 918 milliseconds
+After rD.loadFromFile():
+resident_set: 239528 KB
+Starting to populate hash tables
+finished populating hash tables
+45 milliseconds passed
+Calculating MinHashes took 1507 milliseconds
+After minhash computation:
+resident_set: 250852 KB
+numContigs = 242
+LoneReads
+#LoneReads = 172
+MinHash passed 77058 reads
+MinHash passed & not already in graph 11054 reads
+Merge Sort passed 0 reads
+Aligner passed 10805 reads
+bsc/lzma2 compression starts
+Extension .base: Compressed 43205756 bytes to 4854245 bytes
+Extension .complement: Compressed 10945 bytes to 2888 bytes
+Extension .genome: Compressed 4469488 bytes to 1073362 bytes
+Extension .id: Compressed 44188 bytes to 15282 bytes
+Extension .lone: Compressed 4451625 bytes to 1065528 bytes
+Extension .pos: Compressed 7428133 bytes to 4263674 bytes
+Extension .type: Compressed 6935987 bytes to 1223954 bytes
+Total compressed size of all streams is 12498933 bytes
+Creating tar archive ...
+Tar archive done!
+-rw-rw-r-- 1 qingxi qingxi 12615680 Jun  2 04:38 /raid/qingxi/Nanopore-Compression-old/data/basecall_sup.NanoSpring
+Time taken by function: 29 seconds
+	Command being timed: "/raid/qingxi/NanoSpring/build/NanoSpring -c -i /raid/qingxi/Nanopore-Compression-old/data/basecall_sup.fastq -o /raid/qingxi/Nanopore-Compression-old/data/basecall_sup.NanoSpring"
+	User time (seconds): 471.75
+	System time (seconds): 22.69
+	Percent of CPU this job got: 1688%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:29.29
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 7169804
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 7881609
+	Voluntary context switches: 269736
+	Involuntary context switches: 7289
+	Swaps: 0
+	File system inputs: 500696
+	File system outputs: 201960
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
