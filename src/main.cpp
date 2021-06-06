@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
         "num-hash,n", po::value<size_t>(&n)->default_value(60),
         "number of hash functions for minhash (default 60)")(
         "overlap-sketch-thr", po::value<size_t>(&overlapSketchThreshold)->default_value(6),
-        "the overlap sketch threhold for minhash (default 6)")(
+        "the overlap sketch threshold for minhash (default 6)")(
         "minimap-k", po::value<size_t>(&m_k)->default_value(20),
         "kmer size for the minimap2 (default 20)")(
         "minimap-w, w", po::value<size_t>(&m_w)->default_value(50),
