@@ -91,6 +91,10 @@ Decompressing the file.NanoSpring with default 20 threads to file.reads.
 ```
 ./NanoSpring -d -i file.NanoSpring -o file.reads
 ```
+Compare decompressed file to reads in original file to verify compression was lossless.
+```
+cmp file.reads <(cat file.fastq | sed -n '2~4p')
+```
 Decompressing the file.NanoSpring with 10 threads to file.reads.
 ```
 ./NanoSpring -d -i file.NanoSpring -o file.reads -t 10
