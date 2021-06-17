@@ -72,7 +72,7 @@ Allowed options:
 Note that the compressed files are tar archives consisting of the different compressed streams, although we recommend using the ```.NanoSpring``` extension as in the examples shown below.
 
 
-## Example Usage of Nanopore Compression
+## Example Usage of NanoSpring
 This section contains several examples for compression and decompression with various modes and options. The compressed file uses the ```.NanoSpring``` extension as a convention. The decompressed file uses the ```.reads``` extension as a convention.
 
 For compressing file.fastq using default 20 threads.
