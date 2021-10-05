@@ -3,7 +3,6 @@ OBJ = $(SRC:.c=.o)
 DEP = $(OBJ:.o=.d)
 
 CFLAGS:=-Wall -O2 -pthread -fPIC
-CC:=gcc
 AR:=ar -rcs
 RM:=rm -rf
 

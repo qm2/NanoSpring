@@ -2,7 +2,6 @@ OBJ=file_test.o
 LIB:=-static -L../ -lfast-lzma2	
 
 CFLAGS:=-Wall -O1 -pthread
-CC:=gcc
 
 EXT:=
 ifeq ($(OS),Windows_NT)

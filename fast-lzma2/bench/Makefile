@@ -4,7 +4,6 @@ DEP = $(OBJ:.o=.d)
 
 # Use -fPIC for obj compatibility with shared lib build
 CFLAGS:=-Wall -O2 -pthread -fPIC
-CC:=gcc
 
 ASFLAGS:=
 
