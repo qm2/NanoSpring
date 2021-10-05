@@ -164,13 +164,13 @@ target_compile_options(NanoSpringLib
 
 target_compile_options(NanoSpringLib 
     PUBLIC 
-    $<$<CONFIG:Release>:-O3 -march=native>)
+    $<$<CONFIG:Release>:-O3 -msse4.1>)
 target_compile_options(NanoSpringLib 
     PUBLIC 
-    $<$<CONFIG:RelWithDebInfo>:-g -O3 -march=native>)
+    $<$<CONFIG:RelWithDebInfo>:-g -O3 -msse4.1>)
 target_compile_options(NanoSpringLib 
     PUBLIC 
-    $<$<CONFIG:Debug>:-g -O3 -march=native -fsanitize=address -fno-omit-frame-pointer>)
+    $<$<CONFIG:Debug>:-g -O3 -msse4.1 -fsanitize=address -fno-omit-frame-pointer>)
 
 if ( CHECKS )
     target_compile_options(NanoSpringLib 
