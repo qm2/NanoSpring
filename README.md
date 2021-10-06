@@ -6,6 +6,19 @@ NanoSpring - Tool for compression of nanopore genomic reads in FASTQ format (gzi
 
 #### BioRxiv: https://www.biorxiv.org/content/10.1101/2021.06.09.447198v1
 
+## Install using conda
+To install directly from source, follow the instructions in the next section.
+
+NanoSpring is available on conda via the bioconda channel. See [this](https://bioconda.github.io/user/install.html) page for installation instructions for conda. Once conda is installed, do the following to install NanoSpring.
+```bash
+conda config --add channels defaults
+conda config --add channels bioconda
+conda config --add channels conda-forge
+conda install nanospring
+```
+Note that if NanoSpring is installed this way, it should be invoked with the command `NanoSpring` rather than `./NanoSpring`. The bioconda [help page](https://bioconda.github.io/user/install.html) shows the commands if you wish to install NanoSpring in an environment.
+
+
 ## Install from source code
 
 ### Download repository
@@ -73,7 +86,7 @@ Note that the compressed files are tar archives consisting of the different comp
 
 
 ## Example Usage of NanoSpring
-This section contains several examples for compression and decompression with various modes and options. The compressed file uses the ```.NanoSpring``` extension as a convention. The decompressed file uses the ```.reads``` extension as a convention.
+This section contains several examples for compression and decompression with various modes and options. The compressed file uses the ```.NanoSpring``` extension as a convention. The decompressed file uses the ```.reads``` extension as a convention. If installed using conda, use the command `NanoSpring` instead of `./NanoSpring`.
 
 For compressing file.fastq using default 20 threads.
 ```
