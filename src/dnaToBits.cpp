@@ -11,7 +11,7 @@ DnaBitset::DnaBitset(const char* dna_str, const size_t dna_len) {
 	m_len = dna_len;
 
 	/* number of bytes necessary to store dna_str as a bitset */
-	size_t dna_bytes = (dna_len / 4) + (dna_len % 4 != 0);
+	dna_bytes = (dna_len / 4) + (dna_len % 4 != 0);
 
 	m_data = new uint8_t[dna_bytes];
 
@@ -35,6 +35,14 @@ DnaBitset::DnaBitset(const char* dna_str, const size_t dna_len) {
     }
 }
 
+DnaBitset::DnaBitset(std::ifstream &fin, const size_t dna_len) {
+    m_len = dna_len;
+	/* number of bytes necessary to store dna_str as a bitset */
+	dna_bytes = (dna_len / 4) + (dna_len % 4 != 0);
+    m_data = new uint8_t[dna_bytes];
+    fin.read((char*)m_data, dna_bytes);
+}
+
 DnaBitset::~DnaBitset() {
     delete[] m_data;
 }
@@ -56,4 +64,9 @@ void DnaBitset::to_string(std::string &readStr) {
             readStr[pos++] = int2dna[(masks[j] & m_data[i])>>(6-2*j)];
         }
     }
+}
+
+size_t DnaBitset::to_file(std::ofstream &fout) {
+    fout.write((char*)m_data, dna_bytes);
+    return dna_bytes;
 }

@@ -16,7 +16,7 @@ public:
     std::string tempFilename = "Stream";
 
     void decompress(const char *inputFileName, const char *outputFileName,
-                    const int numThreads);
+                    const int numThreads, const int decompression_memory_gb);
 
 private:
     // Number of contigs, number of reads and number of encoding threads; initialized by bscDecompress

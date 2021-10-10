@@ -17,7 +17,8 @@
 
 void Decompressor::decompress(const char *inputFileName,
                               const char *outputFileName,
-                              const int numThreads) {
+                              const int numThreads,
+                              const int decompression_memory_gb) {
     std::cout << "numDecodingThreads: " << numThreads << "\n";
     omp_set_nested(1);
     omp_set_num_threads(numThreads);
@@ -65,7 +66,7 @@ void Decompressor::decompress(const char *inputFileName,
                                       ".base",
                                       ".complement",
                                       ".lone"};
-    std::cout << "BSC/LZMA2 decompression ...";
+    std::cout << "BSC/LZMA2 decompression ...\n";
     auto bsc_start = std::chrono::high_resolution_clock::now();
     //loop through each thread
 #pragma omp parallel for
@@ -88,13 +89,18 @@ void Decompressor::decompress(const char *inputFileName,
               << " milliseconds" << std::endl;
 
     
-    //create a DnaBits vector (to reduce memory consumption of decompressor)
-    std::vector<DnaBitset*> reads(numReads);
-    std::cout << "Generating reads...";
+    // during decompression, we first write the reads (as bitsets) to disk
+    // and then we write the reads in order to output file in multiple passes
+    // to limit memory consumption.
+    std::vector<uint32_t> read_lengths(numReads);
+    std::vector<std::vector<uint32_t>> read_ids(numEncodingThreads);
+    std::vector<std::vector<uint32_t>> read_bitset_len(numEncodingThreads);
+
+    std::cout << "Generating reads...\n";
     auto gen_start = std::chrono::high_resolution_clock::now();
     //loop through each thread
 #pragma omp parallel for
-    for (size_t i = 0; i < numEncodingThreads; ++i){
+    for (size_t i = 0; i < numEncodingThreads; ++i) {
         std::string currentFilename = tempDir + tempFilename + ".tid." + std::to_string(i);
         //open all the files for this thread
         std::ifstream genomeFile;
@@ -106,6 +112,10 @@ void Decompressor::decompress(const char *inputFileName,
         editBaseFile.open(currentFilename + ".base");
         complementFile.open(currentFilename + ".complement");
         loneFile.open(currentFilename + ".lone");
+
+        // temporary file to write bitset
+        std::ofstream tmpFile(currentFilename, std::ios::binary);
+
         // read each genome in seris
         std::string genome;
         std::string currentRead;
@@ -128,7 +138,11 @@ void Decompressor::decompress(const char *inputFileName,
                 id = id + idInc;
                 generateRead(genome, currentRead, posFile, editTypeFile, editBaseFile,
                              reverseComplement);
-                reads[id] = new DnaBitset(currentRead.c_str(), currentRead.size());
+                read_lengths[id] = currentRead.size();
+                auto read_bitset = new DnaBitset(currentRead.c_str(), currentRead.size());
+                read_bitset_len[i].push_back(read_bitset->to_file(tmpFile));
+                read_ids[i].push_back(id);
+                delete read_bitset;
             }
         }
         // now do the lone reads
@@ -138,7 +152,11 @@ void Decompressor::decompress(const char *inputFileName,
             // the id for the current read
             idFile.read((char*)&idInc, sizeof(read_t));
             id = id + idInc;
-            reads[id] = new DnaBitset(loneRead.c_str(),loneRead.size());
+            read_lengths[id] = loneRead.size();
+            auto read_bitset = new DnaBitset(loneRead.c_str(), loneRead.size());
+            read_bitset_len[i].push_back(read_bitset->to_file(tmpFile));
+            read_ids[i].push_back(id);
+            delete read_bitset;
         }
         //close all files
         genomeFile.close();
@@ -148,6 +166,7 @@ void Decompressor::decompress(const char *inputFileName,
         editBaseFile.close();
         complementFile.close();
         loneFile.close();
+        tmpFile.close();
     }
     std::cout << "Done!\n";
     auto gen_end = std::chrono::high_resolution_clock::now();
@@ -159,15 +178,62 @@ void Decompressor::decompress(const char *inputFileName,
     //output the reads to a file
     std::ofstream outFile;
     outFile.open(outputFileName);
-    std::cout << "Writing to file...";
+    std::cout << "Sorting and writing to file...\n";
     auto write_start = std::chrono::high_resolution_clock::now();
-    std::string currentRead;
-    // TODO: can we parallelize the to_string part somehow
-    for (size_t i = 0; i < numReads; i++) {
-        reads[i]->to_string(currentRead);
-        delete reads[i];
-        outFile << currentRead << '\n';
+
+    // we first calculate the start and end points for the sort passes
+    size_t num_bases_per_pass = (size_t)decompression_memory_gb*4*1000000000;
+    std::vector<uint32_t> start_read, end_read;
+    uint32_t cur_start = 0, cur_end = 0;
+    while (true) {
+        uint32_t cumul_bases = 0;
+        for (; cur_end < numReads; cur_end++) {
+            cumul_bases += read_lengths[cur_end];
+            if (cumul_bases > num_bases_per_pass)
+                break;
+        }
+        start_read.push_back(cur_start);
+        end_read.push_back(cur_end);
+        if (cur_end == numReads)
+            break;
+        cur_start = cur_end;
+        cur_end = cur_start;
     }
+
+    // now we write the reads to outfile in correct order
+    // by picking in small passes over the temporary files
+    // TODO: can we parallelize the to_string part somehow
+    std::string currentReadToWrite;
+    std::vector<DnaBitset*> reads_in_pass; 
+    for (uint32_t i = 0; i < start_read.size(); i++) {
+        // first pick the reads in this pass and put in reads_in_pass
+        // we loop over the temporary file for each thread and all reads within
+        // that file, picking anything withing start and end.
+        std::cout << "start: " << start_read[i] << "\n";
+        std::cout << "end: " << end_read[i] << "\n";
+        reads_in_pass.resize(end_read[i]-start_read[i]);
+        for (size_t j = 0; j < numEncodingThreads; j++) {
+            std::string currentFilename = tempDir + tempFilename + ".tid." + std::to_string(j);
+            std::ifstream fin(currentFilename, std::ios::binary);
+            size_t cur_pos = 0;
+            for (uint32_t k = 0; k < read_ids[j].size(); k++) {
+                auto id = read_ids[j][k];
+                if (id < end_read[i] && id >= start_read[i]) {
+                    fin.seekg(cur_pos);
+                    reads_in_pass[id-start_read[i]] = new DnaBitset(fin, read_lengths[id]);
+                }
+                cur_pos += read_bitset_len[j][k];
+            }
+        }
+
+        // now we write these to disk
+        for (uint32_t k = 0; k < end_read[i]-start_read[i]; k++) {
+            reads_in_pass[k]->to_string(currentReadToWrite);
+            delete reads_in_pass[k];
+            outFile << currentReadToWrite << '\n';
+        }
+    }
+
     std::cout << "Done!\n";
     auto write_end = std::chrono::high_resolution_clock::now();
     duration = 
