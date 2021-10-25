@@ -3,7 +3,7 @@
 
 namespace bsc {
 
-const int BSC_BLOCK_SIZE = 256; // 256 MB
+const int BSC_BLOCK_SIZE = 48; // 48 MB
 
 void BSC_compress(const char *infile, const char *outfile,
                   const int bsize = BSC_BLOCK_SIZE);

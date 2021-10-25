@@ -8,7 +8,7 @@
 This file is a part of bsc and/or libbsc, a program and a library for
 lossless, block-sorting data compression.
 
-   Copyright (c) 2009-2012 Ilya Grebnov <ilya.grebnov@gmail.com>
+   Copyright (c) 2009-2021 Ilya Grebnov <ilya.grebnov@gmail.com>
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -27,21 +27,6 @@ for full list of contributors.
 
 See also the bsc and libbsc web site:
   http://libbsc.com/ for more information.
-
---*/
-
-/*--
-
-Sort Transform is patented by Michael Schindler under US patent 6,199,064.
-However for research purposes this algorithm is included in this software.
-So if you are of the type who should worry about this (making money) worry away.
-The author shall have no liability with respect to the infringement of
-copyrights, trade secrets or any patents by this software. In no event will
-the author be liable for any lost revenue or profits or other special,
-indirect and consequential damages.
-
-Sort Transform is disabled by default and can be enabled by defining the
-preprocessor macro LIBBSC_SORT_TRANSFORM_SUPPORT at compile time.
 
 --*/
 
@@ -123,6 +108,7 @@ int bsc_compress_inplace(unsigned char * data, int n, int lzpHashSize, int lzpMi
     {
         case LIBBSC_CODER_QLFC_STATIC   : mode += (LIBBSC_CODER_QLFC_STATIC   << 5); break;
         case LIBBSC_CODER_QLFC_ADAPTIVE : mode += (LIBBSC_CODER_QLFC_ADAPTIVE << 5); break;
+        case LIBBSC_CODER_QLFC_FAST     : mode += (LIBBSC_CODER_QLFC_FAST     << 5); break;
 
         default : return LIBBSC_BAD_PARAMETER;
     }
@@ -134,7 +120,7 @@ int bsc_compress_inplace(unsigned char * data, int n, int lzpHashSize, int lzpMi
         mode += (lzpMinLen << 8);
         mode += (lzpHashSize << 16);
     }
-    if (n < 0 || n > 1073741824) return LIBBSC_BAD_PARAMETER;
+    if (n < 0 || n > 2146435072) return LIBBSC_BAD_PARAMETER;
     if (n <= LIBBSC_HEADER_SIZE)
     {
         return bsc_store(data, data, n, features);
@@ -257,6 +243,7 @@ int bsc_compress(const unsigned char * input, unsigned char * output, int n, int
     {
         case LIBBSC_CODER_QLFC_STATIC   : mode += (LIBBSC_CODER_QLFC_STATIC   << 5); break;
         case LIBBSC_CODER_QLFC_ADAPTIVE : mode += (LIBBSC_CODER_QLFC_ADAPTIVE << 5); break;
+        case LIBBSC_CODER_QLFC_FAST     : mode += (LIBBSC_CODER_QLFC_FAST     << 5); break;
 
         default : return LIBBSC_BAD_PARAMETER;
     }
@@ -395,6 +382,7 @@ int bsc_block_info(const unsigned char * blockHeader, int headerSize, int * pBlo
     {
         case LIBBSC_CODER_QLFC_STATIC   : test_mode += (LIBBSC_CODER_QLFC_STATIC   << 5); break;
         case LIBBSC_CODER_QLFC_ADAPTIVE : test_mode += (LIBBSC_CODER_QLFC_ADAPTIVE << 5); break;
+        case LIBBSC_CODER_QLFC_FAST     : test_mode += (LIBBSC_CODER_QLFC_FAST     << 5); break;
 
         default : if (coder > 0) return LIBBSC_DATA_CORRUPT;
     }

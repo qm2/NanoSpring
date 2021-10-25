@@ -28,7 +28,9 @@ git clone --recursive https://github.com/qm2/NanoSpring.git
 ```
 
 ### Install
-The instructions below will create the NanoSpring executable in the build directory inside NanoSpring. If you plan to build and run NanoSpring on an older architectures, then you might need to remove the flag ```-msse4.1``` from the ```target_compile_options``` in CMakeLists.txt (or use flags based on the target architecture).
+The instructions below will create the NanoSpring executable in the build directory inside NanoSpring. 
+
+> If you plan to build and run NanoSpring on an older architectures, then you might need to remove the flag ```-msse4.1``` from the ```target_compile_options``` in CMakeLists.txt (or use flags based on the target architecture). Other places that might need to be changed include the `-mavx2` flag used for libbsc compilation (in the same CMakeLists.txt file). Finally you might need to change the COMMAND for MINIMAP2 target in the CMakeLists.txt file to `make sse2only=1 && make clean` for compiling minimap2 without the SSE4 optimized code.
 
 On Linux with cmake installed and version at least 3.12 (check using `cmake --version`):
 ```
