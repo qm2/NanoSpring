@@ -412,7 +412,7 @@ bool Consensus::checkRepetitive(read_t readID){
         size_t countSameBase = 0;
         for(size_t j = 0; j < readLen; j++){
             //check how many same bases the two string share
-            if(readStr[j] != readStr[(j+i)%readLen])
+            if(readStr[j] == readStr[(j+i)%readLen])
                 countSameBase++;
         }
         //the ratio 0.9 is tunable
