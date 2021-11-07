@@ -58,18 +58,18 @@ add_subdirectory(boost-cmake)
 # libbsc
 add_library(libbsc
     STATIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/libbsc/adler32/adler32.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/libbsc/bwt/libsais/libsais.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/libbsc/bwt/bwt.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/libbsc/coder/coder.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/libbsc/coder/qlfc/qlfc.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/libbsc/coder/qlfc/qlfc_model.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/libbsc/filters/detectors.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/libbsc/filters/preprocessing.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/libbsc/libbsc/libbsc.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/libbsc/lzp/lzp.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/libbsc/platform/platform.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/libbsc/st/st.cpp
+        libbsc/adler31/adler32.cpp
+        libbsc/bwt/libsais/libsais.c
+        libbsc/bwt/bwt.cpp
+        libbsc/coder/coder.cpp
+        libbsc/coder/qlfc/qlfc.cpp
+        libbsc/coder/qlfc/qlfc_model.cpp
+        libbsc/filters/detectors.cpp
+        libbsc/filters/preprocessing.cpp
+        libbsc/libbsc/libbsc.cpp
+        libbsc/lzp/lzp.cpp
+        libbsc/platform/platform.cpp
+        libbsc/st/st.cpp
 )
 
 target_include_directories(libbsc 
