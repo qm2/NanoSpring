@@ -70,7 +70,11 @@ int main(int argc, char **argv) {
         "working-dir,w", po::value<std::string>(&working_dir)->default_value("."),
         "directory to create temporary files (default current directory)")(
         "decompression-memory", po::value<int>(&decompression_memory_gb)->default_value(5),
-        "TBD");
+        "attempt to set peak memory usage for decompression in GB (default 5 GB) by "
+        "using disk-based sort for writing reads in the correct order. This is only "
+        "approximate and might have no effect at very low settings or with large "
+        "number of threads when another decompressor stage is the biggest memory "
+        "contributor. Very low values might lead to slight reduction in speed.");
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
@@ -145,6 +149,9 @@ int main(int argc, char **argv) {
         else{
             Decompressor dc;
             dc.tempDir = temp_dir;
+            if (decompression_memory_gb < 1) {
+                throw std::runtime_error("Invalid decompression-memory parameter: must be >= 1.");
+            }
             dc.decompress(infile.c_str(), outfile.c_str(), num_thr, decompression_memory_gb);
         }
     }

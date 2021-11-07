@@ -91,7 +91,8 @@ target_compile_options(libbsc
     -mavx2
 
     # Comment out CFLAGS line below to disable OpenMP optimizations
-    -fopenmp -DLIBBSC_OPENMP_SUPPORT
+    # We disable this here and parallelize at the top level
+    # -fopenmp -DLIBBSC_OPENMP_SUPPORT
 
     # Comment out CFLAGS line below to enable debug output
     -DNDEBUG

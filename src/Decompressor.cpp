@@ -19,7 +19,10 @@ void Decompressor::decompress(const char *inputFileName,
                               const char *outputFileName,
                               const int numThreads,
                               const int decompression_memory_gb) {
+    std::cout << "Decompression ...\n";
+    auto overall_start = std::chrono::high_resolution_clock::now();
     std::cout << "numDecodingThreads: " << numThreads << "\n";
+    std::cout << "Aiming to use close to or less than " << decompression_memory_gb << " GB peak memory.\n";
     omp_set_nested(1);
     omp_set_num_threads(numThreads);
 
@@ -182,11 +185,11 @@ void Decompressor::decompress(const char *inputFileName,
     auto write_start = std::chrono::high_resolution_clock::now();
 
     // we first calculate the start and end points for the sort passes
-    size_t num_bases_per_pass = (size_t)decompression_memory_gb*4*1000000000;
+    size_t num_bases_per_pass = (size_t)decompression_memory_gb*4*1000*1000*1000;
     std::vector<uint32_t> start_read, end_read;
     uint32_t cur_start = 0, cur_end = 0;
     while (true) {
-        uint32_t cumul_bases = 0;
+        size_t cumul_bases = 0;
         for (; cur_end < numReads; cur_end++) {
             cumul_bases += read_lengths[cur_end];
             if (cumul_bases > num_bases_per_pass)
@@ -209,8 +212,6 @@ void Decompressor::decompress(const char *inputFileName,
         // first pick the reads in this pass and put in reads_in_pass
         // we loop over the temporary file for each thread and all reads within
         // that file, picking anything withing start and end.
-        std::cout << "start: " << start_read[i] << "\n";
-        std::cout << "end: " << end_read[i] << "\n";
         reads_in_pass.resize(end_read[i]-start_read[i]);
         for (size_t j = 0; j < numEncodingThreads; j++) {
             std::string currentFilename = tempDir + tempFilename + ".tid." + std::to_string(j);
@@ -238,10 +239,15 @@ void Decompressor::decompress(const char *inputFileName,
     auto write_end = std::chrono::high_resolution_clock::now();
     duration = 
         std::chrono::duration_cast<std::chrono::milliseconds>(write_end - write_start);
-    std::cout << "Writing took " << duration.count()
+    std::cout << "Sorting and writing to file took " << duration.count()
               << " milliseconds" << std::endl;
 
     boost::filesystem::remove_all(tempDir);
+    auto overall_end = std::chrono::high_resolution_clock::now();
+    duration = 
+        std::chrono::duration_cast<std::chrono::milliseconds>(overall_end - overall_start);
+    std::cout << "Total time for decompressioin " << duration.count()
+              << " milliseconds" << std::endl;
 }
 
 void Decompressor::generateRead(const std::string &genome, std::string &read,
