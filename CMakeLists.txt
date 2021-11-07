@@ -58,7 +58,7 @@ add_subdirectory(boost-cmake)
 # libbsc
 add_library(libbsc
     STATIC
-        libbsc/adler31/adler32.cpp
+        libbsc/adler32/adler32.cpp
         libbsc/bwt/libsais/libsais.c
         libbsc/bwt/bwt.cpp
         libbsc/coder/coder.cpp
