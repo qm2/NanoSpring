@@ -2,13 +2,13 @@
 
 [![Build status](https://github.com/qm2/NanoSpring/actions/workflows/cmake.yml/badge.svg)](https://github.com/qm2/NanoSpring/actions/workflows/cmake.yml)
 
-**Updates (not yet incorporated into conda and biorxiv preprint):** 
-- Reduced peak memory usage for decompression and introduced `--decompression-memory` argument. Now the peak memory usage for the largest files should be around 5-6 GB when running with default parameters.
-- Updated BSC version with better performance.
-
 NanoSpring - Tool for compression of nanopore genomic reads in FASTQ format (gzipped input also supported). Compresses only the read sequences (i.e., ignores quality values and read identifiers). Achieves over 3 times better compression ratios than Gzip (for recent basecaller versions) and fast decompression. The algorithm requires C++11 and g++ compiler and works on Linux (tested on Ubuntu 16.04, 18.04 and 20.04). 
 
 #### BioRxiv: https://www.biorxiv.org/content/10.1101/2021.06.09.447198v1
+
+**Updates (not yet incorporated into conda and biorxiv preprint):** 
+- Reduced peak memory usage for decompression and introduced `--decompression-memory` argument. Now the peak memory usage for the largest files should be around 5-6 GB when running with default parameters.
+- Updated BSC version with better performance.
 
 ## Install using conda
 To install directly from source, follow the instructions in the next section.
