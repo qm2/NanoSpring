@@ -8,7 +8,7 @@
 This file is a part of bsc and/or libbsc, a program and a library for
 lossless, block-sorting data compression.
 
-   Copyright (c) 2009-2012 Ilya Grebnov <ilya.grebnov@gmail.com>
+   Copyright (c) 2009-2021 Ilya Grebnov <ilya.grebnov@gmail.com>
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -55,9 +55,9 @@ preprocessor macro LIBBSC_SORT_TRANSFORM_SUPPORT at compile time.
 #include <sys/time.h>
 #include <vector>
 
-#include "libbsc/filters.h"
-#include "libbsc/libbsc.h"
-#include "libbsc/platform/platform.h"
+#include "filters.h"
+#include "libbsc.h"
+#include "platform/platform.h"
 
 #pragma pack(push, 1)
 
@@ -86,7 +86,7 @@ class BSC_CLASS {
     int paramEnableSegmentation = 0;
     int paramEnableReordering = 0;
     int paramEnableLZP = 1;
-    int paramLZPHashSize = 16;
+    int paramLZPHashSize = 15;
     int paramLZPMinLen = 128;
     int paramnumthr = 1;
 
@@ -635,8 +635,9 @@ class BSC_CLASS {
                             if (dataSize > bufferSize)
                                 bufferSize = dataSize;
 
-                            if (buffer != NULL)
+                            if (buffer != NULL) {
                                 bsc_free(buffer);
+                            }
                             buffer = (unsigned char *)bsc_malloc(bufferSize);
                         }
 
@@ -772,15 +773,22 @@ class BSC_CLASS {
         fclose(fOutput);
     }
 
-    void ShowUsage(void) {
+    void ShowUsage(void)
+    {
+#if !defined(BSC_DECOMPRESSION_ONLY)
         fprintf(stdout, "Usage: bsc <e|d> inputfile outputfile <options>\n\n");
+#elif defined(LIBBSC_CUDA_SUPPORT) || defined(_WIN32) || defined(LIBBSC_OPENMP)
+        fprintf(stdout, "Usage: bsc d inputfile outputfile <options>\n\n");
+#else
+        fprintf(stdout, "Usage: bsc d inputfile outputfile\n\n");
+#endif
 
+#if !defined(BSC_DECOMPRESSION_ONLY)
         fprintf(stdout, "Block sorting options:\n");
         fprintf(stdout, "  -b<size> Block size in megabytes, default: -b25\n");
-        fprintf(stdout, "             minimum: -b1, maximum: -b1024\n");
+        fprintf(stdout, "             minimum: -b1, maximum: -b2047\n");
         fprintf(stdout, "  -m<algo> Block sorting algorithm, default: -m0\n");
-        fprintf(stdout,
-                "             -m0 Burrows Wheeler Transform (default)\n");
+        fprintf(stdout, "             -m0 Burrows Wheeler Transform (default)\n");
 #ifdef LIBBSC_SORT_TRANSFORM_SUPPORT
         fprintf(stdout, "             -m3..8 Sort Transform of order n\n");
 #endif
@@ -788,53 +796,44 @@ class BSC_CLASS {
         fprintf(stdout, "             -cf Following contexts (default)\n");
         fprintf(stdout, "             -cp Preceding contexts\n");
         fprintf(stdout, "             -ca Autodetect (experimental)\n");
-        fprintf(stdout,
-                "  -e<algo> Entropy encoding algorithm, default: -e1\n");
-        fprintf(stdout, "             -e1 Static Quantized Local Frequency "
-                        "Coding (default)\n");
-        fprintf(stdout, "             -e2 Adaptive Quantized Local Frequency "
-                        "Coding (best compression)\n");
-
+        fprintf(stdout, "  -e<algo> Entropy encoding algorithm, default: -e1\n");
+        fprintf(stdout, "             -e0 Fast Quantized Local Frequency Coding\n");
+        fprintf(stdout, "             -e1 Static Quantized Local Frequency Coding (default)\n");
+        fprintf(stdout, "             -e2 Adaptive Quantized Local Frequency Coding (best compression)\n");
+       
         fprintf(stdout, "\nPreprocessing options:\n");
         fprintf(stdout, "  -p       Disable all preprocessing techniques\n");
-        fprintf(stdout, "  -s       Enable segmentation (adaptive block size), "
-                        "default: disable\n");
-        fprintf(
-            stdout,
-            "  -r       Enable structured data reordering, default: disable\n");
-        fprintf(
-            stdout,
-            "  -l       Enable Lempel-Ziv preprocessing, default: enable\n");
-        fprintf(stdout,
-                "  -H<size> LZP dictionary size in bits, default: -H16\n");
+        fprintf(stdout, "  -s       Enable segmentation (adaptive block size), default: disable\n");
+        fprintf(stdout, "  -r       Enable structured data reordering, default: disable\n");
+        fprintf(stdout, "  -l       Enable Lempel-Ziv preprocessing, default: enable\n");
+        fprintf(stdout, "  -H<size> LZP dictionary size in bits, default: -H15\n");
         fprintf(stdout, "             minimum: -H10, maximum: -H28\n");
-        fprintf(stdout,
-                "  -M<size> LZP minimum match length, default: -M128\n");
-        fprintf(stdout, "             minimum: -M4, maximum: -M255\n");
+        fprintf(stdout, "  -M<size> LZP minimum match length, default: -M128\n");
+        fprintf(stdout, "             minimum: -M4, maximum: -M255\n\n");
+#endif
 
-        fprintf(stdout, "\nPlatform specific options:\n");
+#if defined(LIBBSC_CUDA_SUPPORT) || defined(_WIN32) || defined(LIBBSC_OPENMP)
+        fprintf(stdout, "Platform specific options:\n");
 #ifdef LIBBSC_CUDA_SUPPORT
-        fprintf(stdout,
-                "  -G       Enable Sort Transform acceleration on NVIDIA "
-                "GPU, default: disable\n");
+        fprintf(stdout, "  -G       Enable Sort Transform acceleration on NVIDIA GPU, default: disable\n");
 #endif
 #ifdef _WIN32
-        fprintf(stdout,
-                "  -P       Enable large 2MB RAM pages, default: disable\n");
+        fprintf(stdout, "  -P       Enable large 2MB RAM pages, default: disable\n");
 #endif
 #ifdef LIBBSC_OPENMP
-        fprintf(
-            stdout,
-            "  -t<num_thr>  Number of threads: default 1\n");
-        fprintf(
-            stdout,
-            "  -T       Disable multi-core systems support, default: enable\n");
+        fprintf(stdout, "  -t       Disable parallel blocks processing, default: enable\n");
+        fprintf(stdout, "  -T       Disable multi-core systems support, default: enable\n");
+#endif
+        fprintf(stdout, "\n");
 #endif
 
-        fprintf(stdout,
-                "\nOptions may be combined into one, like -b128p -m5e1\n");
+#if !defined(BSC_DECOMPRESSION_ONLY) || defined(LIBBSC_CUDA_SUPPORT) || defined(_WIN32) || defined(LIBBSC_OPENMP)
+        fprintf(stdout,"Options may be combined into one, like -b128p -m5e1\n");
+#endif
+
         exit(0);
     }
+
 
     void ProcessSwitch(char *s) {
         char *strthr;
@@ -849,9 +848,7 @@ class BSC_CLASS {
                 while ((*s >= '0') && (*s <= '9'))
                     s++;
                 paramBlockSize = atoi(strNum) * 1024 * 1024;
-                if ((paramBlockSize < 1024 * 1024) ||
-                    (paramBlockSize > 1024 * 1024 * 1024))
-                    ShowUsage();
+                if ((paramBlockSize < 1024 * 1024) || (paramBlockSize > 2047 * 1024 * 1024)) ShowUsage();
                 break;
             }
 
@@ -912,6 +909,9 @@ class BSC_CLASS {
 
             case 'e': {
                 switch (*s++) {
+                case '0': 
+                    paramCoder = LIBBSC_CODER_QLFC_FAST;     
+                    break;
                 case '1':
                     paramCoder = LIBBSC_CODER_QLFC_STATIC;
                     break;
@@ -1007,11 +1007,8 @@ class BSC_CLASS {
 
 public:
     int bsc_main(int argc, char *argv[]) {
-        // fprintf(stdout, "This is bsc, Block Sorting Compressor.
-        // Version 3.1.0. "
-        //                 "8 July 2012.\n");
-        // fprintf(stdout, "Copyright (c) 2009-2012 Ilya Grebnov "
-        //                 "<Ilya.Grebnov@gmail.com>.\n\n");
+        // fprintf(stdout, "This is bsc, Block Sorting Compressor. Version 3.2.3. 30 September 2021.\n");
+        // fprintf(stdout, "Copyright (c) 2009-2021 Ilya Grebnov <Ilya.Grebnov@gmail.com>.\n\n");
 
 #if defined(_OPENMP) && defined(__INTEL_COMPILER)
 
@@ -1028,16 +1025,12 @@ public:
         }
 
         switch (*argv[1]) {
-        case 'e':
-        case 'E':
-            Compression(argv);
-            break;
-        case 'd':
-        case 'D':
-            Decompression(argv);
-            break;
-        default:
-            ShowUsage();
+#if !defined(BSC_DECOMPRESSION_ONLY)
+            case 'e' : case 'E' : Compression(argv); break;
+#endif
+            case 'd' : case 'D' : Decompression(argv); break;
+            default  : ShowUsage();
+
         }
 
         return 0;

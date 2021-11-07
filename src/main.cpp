@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
     namespace po = boost::program_options;
     bool help_flag = false, compress_flag = false, decompress_flag = false;
     std::string infile, outfile;
-    int num_thr;
+    int num_thr, decompression_memory_gb;
 	std::string working_dir;
     //modifed the input parameters for the minimap2 version
     size_t k, n, overlapSketchThreshold, m_k, m_w, max_chain_iter, edge_threshold;
@@ -68,7 +68,13 @@ int main(int argc, char **argv) {
         "edge-thr", po::value<size_t>(&edge_threshold)->default_value(4000000),
         "the max number of edges allowed in a consensus graph (default 4000000)")(
         "working-dir,w", po::value<std::string>(&working_dir)->default_value("."),
-        "directory to create temporary files (default current directory)");
+        "directory to create temporary files (default current directory)")(
+        "decompression-memory", po::value<int>(&decompression_memory_gb)->default_value(5),
+        "attempt to set peak memory usage for decompression in GB (default 5 GB) by "
+        "using disk-based sort for writing reads in the correct order. This is only "
+        "approximate and might have no effect at very low settings or with large "
+        "number of threads when another decompressor stage is the biggest memory "
+        "contributor. Very low values might lead to slight reduction in speed.");
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
@@ -143,7 +149,10 @@ int main(int argc, char **argv) {
         else{
             Decompressor dc;
             dc.tempDir = temp_dir;
-            dc.decompress(infile.c_str(), outfile.c_str(), num_thr);
+            if (decompression_memory_gb < 1) {
+                throw std::runtime_error("Invalid decompression-memory parameter: must be >= 1.");
+            }
+            dc.decompress(infile.c_str(), outfile.c_str(), num_thr, decompression_memory_gb);
         }
     }
     // Error handling

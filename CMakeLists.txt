@@ -58,36 +58,47 @@ add_subdirectory(boost-cmake)
 # libbsc
 add_library(libbsc
     STATIC
-        libbsc/libbsc/adler32/adler32.cpp
-        libbsc/libbsc/bwt/divsufsort/divsufsort.c
-        libbsc/libbsc/bwt/bwt.cpp
-        libbsc/libbsc/coder/coder.cpp
-        libbsc/libbsc/coder/qlfc/qlfc.cpp
-        libbsc/libbsc/coder/qlfc/qlfc_model.cpp
-        libbsc/libbsc/filters/detectors.cpp
-        libbsc/libbsc/filters/preprocessing.cpp
-        libbsc/libbsc/libbsc/libbsc.cpp
-        libbsc/libbsc/lzp/lzp.cpp
-        libbsc/libbsc/platform/platform.cpp
-        libbsc/libbsc/st/st.cpp
+        libbsc/adler32/adler32.cpp
+        libbsc/bwt/libsais/libsais.c
+        libbsc/bwt/bwt.cpp
+        libbsc/coder/coder.cpp
+        libbsc/coder/qlfc/qlfc.cpp
+        libbsc/coder/qlfc/qlfc_model.cpp
+        libbsc/filters/detectors.cpp
+        libbsc/filters/preprocessing.cpp
+        libbsc/libbsc/libbsc.cpp
+        libbsc/lzp/lzp.cpp
+        libbsc/platform/platform.cpp
+        libbsc/st/st.cpp
 )
 
 target_include_directories(libbsc 
     PUBLIC libbsc)
 
 target_compile_options(libbsc 
-    PUBLIC 
+    PUBLIC
     -g -Wall
+
     # Comment out CFLAGS line below for compatability mode for 32bit file sizes
     # (less than 2GB) and systems that have compilers that treat int as 64bit
     # natively (ie: modern AIX)
     -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
+
     # Comment out CFLAGS line below to disable optimizations
     -O3 -fomit-frame-pointer -fstrict-aliasing -ffast-math
+
+    # Comment out CFLAGS line below to disable AVX2 instruction set (performance will suffer)
+    -mavx2
+
     # Comment out CFLAGS line below to disable OpenMP optimizations
-    -fopenmp -DLIBBSC_OPENMP_SUPPORT
+    # We disable this here and parallelize at the top level
+    # -fopenmp -DLIBBSC_OPENMP_SUPPORT
+
     # Comment out CFLAGS line below to enable debug output
     -DNDEBUG
+
+    # Comment out CFLAGS line below to disable unaligned memory access
+    -DLIBBSC_ALLOW_UNALIGNED_ACCESS
     )
 
 if(OpenMP_CXX_FOUND)

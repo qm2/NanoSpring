@@ -6,6 +6,10 @@ NanoSpring - Tool for compression of nanopore genomic reads in FASTQ format (gzi
 
 #### BioRxiv: https://www.biorxiv.org/content/10.1101/2021.06.09.447198v1
 
+**Updates (not yet incorporated into conda and biorxiv preprint):** 
+- Reduced peak memory usage for decompression and introduced `--decompression-memory` argument. Now the peak memory usage for the largest files should be around 5-6 GB when running with default parameters.
+- Updated BSC version with better performance.
+
 ## Install using conda
 To install directly from source, follow the instructions in the next section.
 
@@ -28,7 +32,9 @@ git clone --recursive https://github.com/qm2/NanoSpring.git
 ```
 
 ### Install
-The instructions below will create the NanoSpring executable in the build directory inside NanoSpring. If you plan to build and run NanoSpring on an older architectures, then you might need to remove the flag ```-msse4.1``` from the ```target_compile_options``` in CMakeLists.txt (or use flags based on the target architecture).
+The instructions below will create the NanoSpring executable in the build directory inside NanoSpring. 
+
+> If you plan to build and run NanoSpring on an older architectures, then you might need to remove the flag ```-msse4.1``` from the ```target_compile_options``` in CMakeLists.txt (or use flags based on the target architecture). Other places that might need to be changed include the `-mavx2` flag used for libbsc compilation (in the same CMakeLists.txt file). Finally you might need to change the COMMAND for MINIMAP2 target in the CMakeLists.txt file to `make sse2only=1 && make clean` for compiling minimap2 without the SSE4 optimized code.
 
 On Linux with cmake installed and version at least 3.12 (check using `cmake --version`):
 ```
@@ -81,6 +87,15 @@ Allowed options:
                                  graph (default 4000000)
   -w [ --working-dir ] arg (=.)  directory to create temporary files (default
                                  current directory)
+  --decompression-memory arg (=5) attempt to set peak memory usage for 
+                                  decompression in GB (default 5 GB) by using 
+                                  disk-based sort for writing reads in the 
+                                  correct order. This is only approximate and 
+                                  might have no effect at very low settings or 
+                                  with large number of threads when another 
+                                  decompressor stage is the biggest memory 
+                                  contributor. Very low values might lead to 
+                                  slight reduction in speed.
 ```
 Note that the compressed files are tar archives consisting of the different compressed streams, although we recommend using the ```.NanoSpring``` extension as in the examples shown below.
 
