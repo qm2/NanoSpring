@@ -48,12 +48,16 @@ void Compressor::compress(const char *inputFileName, const int numThr) const {
 	std::cout<<"number of threads: "<<numThr<<std::endl;
 	double vm_usage, resident_set;
 	std::cout << "Entering compress():\n";
+    if (low_mem) {
+        std::cout << "Using low memory compression mode.\n";
+    }
     mem_usage(vm_usage, resident_set);
     omp_set_num_threads(numThr);
     {
     ReadData rD;
+    rD.tempDir = tempDir;
     auto read_start = std::chrono::high_resolution_clock::now();
-    rD.loadFromFile(inputFileName, filetype);
+    rD.loadFromFile(inputFileName, filetype, low_mem);
     auto read_end = std::chrono::high_resolution_clock::now();
     auto duration =
         std::chrono::duration_cast<std::chrono::milliseconds>(read_end - read_start);

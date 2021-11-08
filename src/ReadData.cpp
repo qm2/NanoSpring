@@ -9,16 +9,16 @@
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 
-void ReadData::loadFromFile(const char *fileName, enum Filetype filetype) {
+void ReadData::loadFromFile(const char *fileName, enum Filetype filetype, bool low_mem) {
     switch (filetype) {
         case READ:
             loadFromReadFile(fileName);
             break;
         case FASTQ:
-            loadFromFastqFile(fileName, false);
+            loadFromFastqFile(fileName, false, low_mem);
             break;
         case GZIP:
-            loadFromFastqFile(fileName, true);
+            loadFromFastqFile(fileName, true, low_mem);
             break;
         default:
             assert(false);
@@ -75,7 +75,16 @@ void ReadData::loadFromReadFile(const char *fileName) {
     std::cout << "maxReadLen " << maxReadLen << std::endl;
 }
 
-void ReadData::loadFromFastqFile(const char *fileName, bool gzip_flag) {
+void ReadData::loadFromFastqFile(const char *fileName, bool gzip_flag, bool low_mem) {
+    if (low_mem) {
+        loadFromFastqFile_lowmem(fileName, gzip_flag);
+    } else {
+        loadFromFastqFile_highmem(fileName, gzip_flag);
+    }
+}
+
+void ReadData::loadFromFastqFile_highmem(const char *fileName, bool gzip_flag) {
+    reads_in_memory = true;
     numReads = 0;
     readData.clear();
     readPos.clear();
@@ -144,10 +153,84 @@ void ReadData::loadFromFastqFile(const char *fileName, bool gzip_flag) {
     infile.close();
 }
 
+void ReadData::loadFromFastqFile_lowmem(const char *fileName, bool gzip_flag) {
+    reads_in_memory = false;
+    numReads = 0;
+    readData.clear();
+    readPos.clear();
+    editStrings.clear();
+    reverse.clear();
+    
+    std::ifstream infile;
+    boost::iostreams::filtering_streambuf<boost::iostreams::input> *inbuf;
+    std::istream *fin = &infile;
+    if (gzip_flag) {
+      infile.open(fileName, std::ios_base::binary);
+      inbuf =
+          new boost::iostreams::filtering_streambuf<boost::iostreams::input>;
+      inbuf->push(boost::iostreams::gzip_decompressor());
+      inbuf->push(infile);
+      fin = new std::istream(inbuf);
+    } else {
+      infile.open(fileName);
+    }
+    std::string line;
+    size_t totalNumBases = 0;
+    maxReadLen = 0;
+    size_t cur_pos_in_bitset_file = 0;
+    std::string bitsetFileNameFull = tempDir + "/" + bitsetFileName;
+    std::ofstream bitset_fout(bitsetFileNameFull, std::ios::binary);
+    while (std::getline(*fin, line)) {
+        std::getline(*fin, line);
+        auto readLen = line.size();
+        totalNumBases += readLen;
+        read_lengths.push_back(readLen);
+        if (readLen > maxReadLen)
+            maxReadLen = readLen;
+        numReads++;
+        if (numReads == std::numeric_limits<read_t>::max())
+            throw std::runtime_error(
+                    "Too many reads for read_t type to handle.");
+        readPos.push_back(0);
+        auto read_bitset = new DnaBitset(line.c_str(), readLen);
+        // write to bitset file
+        size_t bitset_len = read_bitset->to_file(bitset_fout);
+        delete read_bitset;
+        read_pos_in_file.push_back(cur_pos_in_bitset_file);
+        cur_pos_in_bitset_file += bitset_len;
+        std::getline(*fin, line);
+        std::getline(*fin, line);
+    }
+    assert(numReads != 0);
+    avgReadLen = totalNumBases / numReads;
+    std::cout << "numReads " << numReads << std::endl;
+    std::cout << "avgReadLen " << avgReadLen << std::endl;
+    std::cout << "maxReadLen " << maxReadLen << std::endl;
+    if (gzip_flag) {
+        delete fin;
+        delete inbuf;
+    }
+    // close files
+    infile.close();
+    bitset_fout.close();
+
+    // open bitset file
+    fin_bitset = std::unique_ptr<std::ifstream>(new std::ifstream(bitsetFileNameFull, std::ios::binary));
+}
+
 read_t ReadData::getNumReads() { return numReads; }
 
 void ReadData::getRead(read_t readId, std::string &readStr){
-	readData[readId]->to_string(readStr);
+    if (!reads_in_memory) {
+        fin_bitset_mtx.lock();
+        fin_bitset->seekg(read_pos_in_file[readId]);
+        auto bitset = new DnaBitset(*fin_bitset.get(), read_lengths[readId]);
+        bitset->to_string(readStr);
+        delete bitset;
+        fin_bitset_mtx.unlock();
+    } else {
+    	readData[readId]->to_string(readStr);
+    }
 }
 
 std::vector<unsigned long> &ReadData::getReadPos() { return readPos; }
@@ -172,5 +255,13 @@ char ReadData::toComplement(char base) {
         return 'C';
     default:
         return base;
+    }
+}
+
+ReadData::~ReadData() {
+    if (!reads_in_memory) {
+        fin_bitset->close();
+        std::string fileName = tempDir + "/" + bitsetFileName;
+        remove(fileName.c_str());
     }
 }

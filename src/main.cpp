@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
     std::srand(unsigned(std::time(0)));
     //program options
     namespace po = boost::program_options;
-    bool help_flag = false, compress_flag = false, decompress_flag = false;
+    bool help_flag = false, compress_flag = false, decompress_flag = false, low_mem = false;
     std::string infile, outfile;
     int num_thr, decompression_memory_gb;
 	std::string working_dir;
@@ -74,7 +74,9 @@ int main(int argc, char **argv) {
         "using disk-based sort for writing reads in the correct order. This is only "
         "approximate and might have no effect at very low settings or with large "
         "number of threads when another decompressor stage is the biggest memory "
-        "contributor. Very low values might lead to slight reduction in speed.");
+        "contributor. Very low values might lead to slight reduction in speed.")(
+        "low-memory-compression", po::bool_switch(&low_mem), 
+        "use low memory compression mode");
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
@@ -133,6 +135,7 @@ int main(int argc, char **argv) {
             compressor.rA = &rA;
             compressor.tempDir = temp_dir;
             compressor.outputFileName = outfile;
+            compressor.low_mem = low_mem;
             const std::string filename(infile);
             const std::string extension =
                 filename.substr(filename.find_last_of('.') + 1);
