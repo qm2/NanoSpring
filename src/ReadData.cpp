@@ -180,6 +180,9 @@ void ReadData::loadFromFastqFile_lowmem(const char *fileName, bool gzip_flag) {
     size_t cur_pos_in_bitset_file = 0;
     std::string bitsetFileNameFull = tempDir + "/" + bitsetFileName;
     std::ofstream bitset_fout(bitsetFileNameFull, std::ios::binary);
+
+    // temporary dna bitset to hold data
+    DnaBitset read_bitset;
     while (std::getline(*fin, line)) {
         std::getline(*fin, line);
         auto readLen = line.size();
@@ -192,10 +195,9 @@ void ReadData::loadFromFastqFile_lowmem(const char *fileName, bool gzip_flag) {
             throw std::runtime_error(
                     "Too many reads for read_t type to handle.");
         readPos.push_back(0);
-        auto read_bitset = new DnaBitset(line.c_str(), readLen);
+        read_bitset.load_from_string(line.c_str(), readLen);
         // write to bitset file
-        size_t bitset_len = read_bitset->to_file(bitset_fout);
-        delete read_bitset;
+        size_t bitset_len = read_bitset.to_file(bitset_fout);
         read_pos_in_file.push_back(cur_pos_in_bitset_file);
         cur_pos_in_bitset_file += bitset_len;
         std::getline(*fin, line);
@@ -220,13 +222,12 @@ void ReadData::loadFromFastqFile_lowmem(const char *fileName, bool gzip_flag) {
 
 read_t ReadData::getNumReads() { return numReads; }
 
-void ReadData::getRead(read_t readId, std::string &readStr){
+void ReadData::getRead(read_t readId, std::string &readStr) {
     if (!reads_in_memory) {
         fin_bitset_mtx.lock();
         fin_bitset->seekg(read_pos_in_file[readId]);
-        auto bitset = new DnaBitset(*fin_bitset.get(), read_lengths[readId]);
-        bitset->to_string(readStr);
-        delete bitset;
+        read_bitset.load_from_file(*fin_bitset.get(), read_lengths[readId]);
+        read_bitset.to_string(readStr);
         fin_bitset_mtx.unlock();
     } else {
     	readData[readId]->to_string(readStr);

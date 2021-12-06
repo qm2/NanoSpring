@@ -108,10 +108,13 @@ private:
     /* whether reads are in memory or in temporary file on disk */
     bool reads_in_memory;
     
+    /* if reads_in_memory false, bitset used for loading data from temporary file */
+    DnaBitset read_bitset;
+    
     /* if reads_in_memory false, store the file pointer to the temporary file */
     std::unique_ptr<std::ifstream> fin_bitset;
 
-    /* if reads_in_memory false, mutex to enable exclusive access to fin */
+    /* if reads_in_memory false, mutex to enable exclusive access to fin and read_bitset */
     std::mutex fin_bitset_mtx;
 
     /* if reads_in_memory false, store the position in temporary file for each read */

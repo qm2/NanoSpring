@@ -118,7 +118,8 @@ void Decompressor::decompress(const char *inputFileName,
 
         // temporary file to write bitset
         std::ofstream tmpFile(currentFilename, std::ios::binary);
-
+        // temporary bitset to hold reads
+        DnaBitset read_bitset;
         // read each genome in seris
         std::string genome;
         std::string currentRead;
@@ -142,10 +143,9 @@ void Decompressor::decompress(const char *inputFileName,
                 generateRead(genome, currentRead, posFile, editTypeFile, editBaseFile,
                              reverseComplement);
                 read_lengths[id] = currentRead.size();
-                auto read_bitset = new DnaBitset(currentRead.c_str(), currentRead.size());
-                read_bitset_len[i].push_back(read_bitset->to_file(tmpFile));
+                read_bitset.load_from_string(currentRead.c_str(), currentRead.size());
+                read_bitset_len[i].push_back(read_bitset.to_file(tmpFile));
                 read_ids[i].push_back(id);
-                delete read_bitset;
             }
         }
         // now do the lone reads
@@ -156,10 +156,9 @@ void Decompressor::decompress(const char *inputFileName,
             idFile.read((char*)&idInc, sizeof(read_t));
             id = id + idInc;
             read_lengths[id] = loneRead.size();
-            auto read_bitset = new DnaBitset(loneRead.c_str(), loneRead.size());
-            read_bitset_len[i].push_back(read_bitset->to_file(tmpFile));
+            read_bitset.load_from_string(loneRead.c_str(), loneRead.size());
+            read_bitset_len[i].push_back(read_bitset.to_file(tmpFile));
             read_ids[i].push_back(id);
-            delete read_bitset;
         }
         //close all files
         genomeFile.close();
@@ -246,7 +245,7 @@ void Decompressor::decompress(const char *inputFileName,
     auto overall_end = std::chrono::high_resolution_clock::now();
     duration = 
         std::chrono::duration_cast<std::chrono::milliseconds>(overall_end - overall_start);
-    std::cout << "Total time for decompressioin " << duration.count()
+    std::cout << "Total time for decompression " << duration.count()
               << " milliseconds" << std::endl;
 }
 
