@@ -21,6 +21,7 @@ public:
 
     std::string outputFileName = "compressedFile";
 
+    bool low_mem;
     // std::string tarFileName = "originalFile";
 
     /**

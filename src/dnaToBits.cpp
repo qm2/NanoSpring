@@ -1,3 +1,4 @@
+#include <algorithm> /* std::fill */
 #include <cstring> /* std::memset */
 #include <stdexcept> /* std::invalid_argument */
 #include "dnaToBits.h"
@@ -13,9 +14,8 @@ DnaBitset::DnaBitset(const char* dna_str, const size_t dna_len) {
 	/* number of bytes necessary to store dna_str as a bitset */
 	dna_bytes = (dna_len / 4) + (dna_len % 4 != 0);
 
-	m_data = new uint8_t[dna_bytes];
-
-	std::memset(m_data, 0, dna_bytes);
+	m_data.resize(dna_bytes);
+    std::fill(m_data.begin(), m_data.end(), 0);
 
 	/* for each base of the DNA sequence */
 	for (size_t i = 0; i < m_len / 4; i++) {
@@ -39,12 +39,43 @@ DnaBitset::DnaBitset(std::ifstream &fin, const size_t dna_len) {
     m_len = dna_len;
 	/* number of bytes necessary to store dna_str as a bitset */
 	dna_bytes = (dna_len / 4) + (dna_len % 4 != 0);
-    m_data = new uint8_t[dna_bytes];
-    fin.read((char*)m_data, dna_bytes);
+    m_data.resize(dna_bytes);
+    fin.read((char*)m_data.data(), dna_bytes);
 }
 
-DnaBitset::~DnaBitset() {
-    delete[] m_data;
+void DnaBitset::load_from_string(const char* dna_str, const size_t dna_len) {
+	m_len = dna_len;
+
+	/* number of bytes necessary to store dna_str as a bitset */
+	dna_bytes = (dna_len / 4) + (dna_len % 4 != 0);
+
+	m_data.resize(dna_bytes);
+    std::fill(m_data.begin(), m_data.end(), 0);
+
+	/* for each base of the DNA sequence */
+	for (size_t i = 0; i < m_len / 4; i++) {
+        for (uint8_t j = 0; j < 4; j++) {
+            m_data[i] <<= 2;
+            m_data[i] |= baseToInt(dna_str[4*i+j]);
+        }
+    }
+    if (m_len % 4 != 0) {
+        int i = m_len / 4;
+        for (uint8_t j = 0; j < m_len % 4; j++) {
+            m_data[i] <<= 2;
+            m_data[i] |= baseToInt(dna_str[4*i+j]);
+        }
+        for (uint8_t j = m_len % 4; j < 4; j++)
+            m_data[i] <<= 2;
+    }
+}
+
+void DnaBitset::load_from_file(std::ifstream &fin, const size_t dna_len) {
+    m_len = dna_len;
+	/* number of bytes necessary to store dna_str as a bitset */
+	dna_bytes = (dna_len / 4) + (dna_len % 4 != 0);
+    m_data.resize(dna_bytes);
+    fin.read((char*)m_data.data(), dna_bytes);
 }
 
 void DnaBitset::to_string(std::string &readStr) {
@@ -67,6 +98,6 @@ void DnaBitset::to_string(std::string &readStr) {
 }
 
 size_t DnaBitset::to_file(std::ofstream &fout) {
-    fout.write((char*)m_data, dna_bytes);
+    fout.write((char*)m_data.data(), dna_bytes);
     return dna_bytes;
 }

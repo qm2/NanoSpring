@@ -37,6 +37,7 @@ int main(int argc, char **argv) {
     //program options
     namespace po = boost::program_options;
     bool help_flag = false, compress_flag = false, decompress_flag = false;
+    bool low_mem = true; // fix to low mem mode that uses temporary file to store read bitsets
     std::string infile, outfile;
     int num_thr, decompression_memory_gb;
 	std::string working_dir;
@@ -133,6 +134,7 @@ int main(int argc, char **argv) {
             compressor.rA = &rA;
             compressor.tempDir = temp_dir;
             compressor.outputFileName = outfile;
+            compressor.low_mem = low_mem;
             const std::string filename(infile);
             const std::string extension =
                 filename.substr(filename.find_last_of('.') + 1);

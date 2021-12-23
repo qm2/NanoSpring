@@ -6,6 +6,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <fstream>
+#include <mutex>
 
 /**
  * @brief This class is responsible for reading the reads from a file, storing
@@ -25,13 +27,18 @@ public:
 
     /** The length of the longest read **/
     size_t maxReadLen;
+    
+    std::string tempDir;
+
+
 
     /**
      * @brief Loads the read data from a file (.reads format)
      *
+     * low_mem decides whether we use low memory mode where reads are kept in a temporary file
      * @param fileName
      */
-    void loadFromFile(const char *fileName, enum Filetype filetype = FASTQ);
+    void loadFromFile(const char *fileName, enum Filetype filetype = FASTQ, bool low_mem = false);
 
     /**
      * @brief Get the number of reads
@@ -82,9 +89,13 @@ public:
                                     Iterator originalEnd,
                                     Inserter reverseComplement);
 
+    /* Destructor to delete bitset file when applicable */
+    ~ReadData();
+
 private:
     read_t numReads;
     // std::vector<std::unique_ptr<std::string>> readData;
+    /* read data (when reads_in_memory is true) */
     std::vector<std::unique_ptr<DnaBitset>> readData;
 
     // The following are for testing
@@ -94,6 +105,26 @@ private:
     std::vector<bool> reverse;
     // End testing
 
+    /* whether reads are in memory or in temporary file on disk */
+    bool reads_in_memory;
+    
+    /* if reads_in_memory false, bitset used for loading data from temporary file */
+    DnaBitset read_bitset;
+    
+    /* if reads_in_memory false, store the file pointer to the temporary file */
+    std::unique_ptr<std::ifstream> fin_bitset;
+
+    /* if reads_in_memory false, mutex to enable exclusive access to fin and read_bitset */
+    std::mutex fin_bitset_mtx;
+
+    /* if reads_in_memory false, store the position in temporary file for each read */
+    std::vector<size_t> read_pos_in_file;
+
+    /* if reads_in_memory false, store the read length for each read */
+    std::vector<size_t> read_lengths;
+
+    /* if reads_in_memory false, file where we put temporary bitsets */
+    std::string bitsetFileName = "readBitset";
     /**
      * @brief Loads the read data from a file (.reads format)
      *
@@ -114,9 +145,15 @@ private:
      *
      * If the gzip_flag is set to True, then the input file is in gzip version 
      *
+     * low_mem flag sets whether we want to store reads in RAM or in temporary file
+     * and is used to call either loadFromFastqFile_highmem or loadFromFastqFile_lowmem
+     *
      * @param fileName
      */
-    void loadFromFastqFile(const char *fileName, bool gzip_flag);
+    void loadFromFastqFile(const char *fileName, bool gzip_flag, bool low_mem);
+    
+    void loadFromFastqFile_lowmem(const char *fileName, bool gzip_flag);
+    void loadFromFastqFile_highmem(const char *fileName, bool gzip_flag);
 };
 
 /******************************************************************************/
