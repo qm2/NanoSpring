@@ -1,0 +1,94 @@
+	Command being timed: "pigz -p 20 /raid/qingxi/Nanopore-data/hs4.fastq.NanoSpring.reads"
+	User time (seconds): 19100.19
+	System time (seconds): 140.77
+	Percent of CPU this job got: 1753%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 18:17.28
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 15272
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 1
+	Minor (reclaiming a frame) page faults: 61479
+	Voluntary context switches: 2329266
+	Involuntary context switches: 486917
+	Swaps: 0
+	File system inputs: 191180512
+	File system outputs: 62430056
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+-rw-rw-r-- 1 qingxi qingxi 31964023099 Jun 15 14:16 /raid/qingxi/Nanopore-data/hs4.fastq.NanoSpring.reads.gz
+	Command being timed: "pigz -d -k -p 20 /raid/qingxi/Nanopore-data/hs4.fastq.NanoSpring.reads.gz"
+	User time (seconds): 687.24
+	System time (seconds): 200.29
+	Percent of CPU this job got: 108%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 13:38.97
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 2472
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 1
+	Minor (reclaiming a frame) page faults: 1996
+	Voluntary context switches: 8202860
+	Involuntary context switches: 8323
+	Swaps: 0
+	File system inputs: 46805664
+	File system outputs: 229632056
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+	Command being timed: "pigz -p 20 /raid/qingxi/Nanopore-data/zymo.fastq.NanoSpring.reads"
+	User time (seconds): 3075.86
+	System time (seconds): 16.24
+	Percent of CPU this job got: 1940%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:39.33
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 15164
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 31764
+	Voluntary context switches: 306163
+	Involuntary context switches: 3197
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 10194848
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+-rw-rw-r-- 1 qingxi qingxi 5219742765 Jun 15 14:52 /raid/qingxi/Nanopore-data/zymo.fastq.NanoSpring.reads.gz
+	Command being timed: "pigz -d -k -p 20 /raid/qingxi/Nanopore-data/zymo.fastq.NanoSpring.reads.gz"
+	User time (seconds): 104.08
+	System time (seconds): 29.49
+	Percent of CPU this job got: 152%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:27.81
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 2516
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 849
+	Voluntary context switches: 1255965
+	Involuntary context switches: 110
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 35070088
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

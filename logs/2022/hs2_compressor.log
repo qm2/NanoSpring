@@ -1,0 +1,158 @@
+k n overlapSketchThreshold minimap:k minimap:w minimap:max_chain_iter edge_threshold
+23 60 6 20 50 400 4000000
+number of threads: 20
+Entering compress():
+Using low memory compression mode.
+resident_set: 2344 KB
+bsc/lzma2 compression starts
+Extension .base: Compressed 13204065753 bytes to 2350725668 bytes
+Extension .complement: Compressed 2880083 bytes to 384088 bytes
+Extension .genome: Compressed 4182042879 bytes to 889991062 bytes
+Extension .id: Compressed 13746112 bytes to 6507540 bytes
+Extension .lone: Compressed 5644563918 bytes to 1144768422 bytes
+Extension .pos: Compressed 3586325933 bytes to 2037034520 bytes
+Extension .type: Compressed 3488766384 bytes to 600889544 bytes
+Total compressed size of all streams is 7030300844 bytes
+Time taken by function: 517 seconds
+	Command being timed: "/raid/qingxi/NanoSpring/build/NanoSpring -c -i file.fastq -o /raid/qingxi/Nanopore-data/hs2_bsc_lzma.fastq.NanoSpring"
+	User time (seconds): 7398.09
+	System time (seconds): 128.50
+	Percent of CPU this job got: 1452%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 8:38.02
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 5456324
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 41242315
+	Voluntary context switches: 14143
+	Involuntary context switches: 10722
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 72567808
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+ 
+k n overlapSketchThreshold minimap:k minimap:w minimap:max_chain_iter edge_threshold
+23 60 6 20 50 400 4000000
+number of threads: 20
+Entering compress():
+Using low memory compression mode.
+resident_set: 2324 KB
+bsc compression starts
+Extension .base: Compressed 13204065753 bytes to 2646651080 bytes
+Extension .complement: Compressed 2880083 bytes to 384088 bytes
+Extension .genome: Compressed 4182042879 bytes to 889991062 bytes
+Extension .id: Compressed 13746112 bytes to 6507540 bytes
+Extension .lone: Compressed 5644563918 bytes to 1144768422 bytes
+Extension .pos: Compressed 3586325933 bytes to 2037034520 bytes
+Extension .type: Compressed 3488766384 bytes to 600889544 bytes
+Total compressed size of all streams is 7326226256 bytes
+Time taken by function: 450 seconds
+	Command being timed: "/raid/qingxi/NanoSpring/build/NanoSpring -c -i file.fastq -o /raid/qingxi/Nanopore-data/hs2_bsc.fastq.NanoSpring"
+	User time (seconds): 5565.97
+	System time (seconds): 190.92
+	Percent of CPU this job got: 1276%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 7:30.85
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 5474600
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 68050530
+	Voluntary context switches: 493891
+	Involuntary context switches: 12329
+	Swaps: 0
+	File system inputs: 544
+	File system outputs: 73145776
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+
+k n overlapSketchThreshold minimap:k minimap:w minimap:max_chain_iter edge_threshold
+23 60 6 20 50 400 4000000
+number of threads: 20
+Entering compress():
+Using low memory compression mode.
+resident_set: 2288 KB
+lzma2 compression starts
+Extension .base: Compressed 13204065753 bytes to 2350725668 bytes
+Extension .complement: Compressed 2880083 bytes to 441842 bytes
+Extension .genome: Compressed 4182042879 bytes to 951753274 bytes
+Extension .id: Compressed 13746112 bytes to 6344167 bytes
+Extension .lone: Compressed 5644563918 bytes to 1219565023 bytes
+Extension .pos: Compressed 3586325933 bytes to 2033877219 bytes
+Extension .type: Compressed 3488766384 bytes to 687101625 bytes
+Total compressed size of all streams is 7249808818 bytes
+Time taken by function: 1081 seconds
+	Command being timed: "/raid/qingxi/NanoSpring/build/NanoSpring -c -i file.fastq -o /raid/qingxi/Nanopore-data/hs2_lzma2.fastq.NanoSpring"
+	User time (seconds): 10818.14
+	System time (seconds): 90.54
+	Percent of CPU this job got: 1008%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 18:01.93
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1688808
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 6
+	Minor (reclaiming a frame) page faults: 16213780
+	Voluntary context switches: 32439
+	Involuntary context switches: 216803
+	Swaps: 0
+	File system inputs: 58837448
+	File system outputs: 72996640
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+k n overlapSketchThreshold minimap:k minimap:w minimap:max_chain_iter edge_threshold
+23 60 6 20 50 400 4000000
+number of threads: 20
+Entering compress():
+Using low memory compression mode.
+resident_set: 2232 KB
+gzip compression starts
+Extension .base: Compressed 13204065753 bytes to 3630002702 bytes
+Extension .complement: Compressed 2880083 bytes to 495314 bytes
+Extension .genome: Compressed 4182042879 bytes to 1118560521 bytes
+Extension .id: Compressed 13746112 bytes to 8214070 bytes
+Extension .lone: Compressed 5644563918 bytes to 1415814199 bytes
+Extension .pos: Compressed 3586325933 bytes to 2304178121 bytes
+Extension .type: Compressed 3488766384 bytes to 763277705 bytes
+Total compressed size of all streams is 9240542632 bytes
+Time taken by function: 280 seconds
+	Command being timed: "/raid/qingxi/NanoSpring/build/NanoSpring -c -i file.fastq -o /raid/qingxi/Nanopore-data/hs2_lzma2.fastq.NanoSpring"
+	User time (seconds): 4443.45
+	System time (seconds): 22.44
+	Percent of CPU this job got: 1590%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 4:40.83
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 5144
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 1
+	Minor (reclaiming a frame) page faults: 40877
+	Voluntary context switches: 1987
+	Involuntary context switches: 44276
+	Swaps: 0
+	File system inputs: 1997488
+	File system outputs: 18048480
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

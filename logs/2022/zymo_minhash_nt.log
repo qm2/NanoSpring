@@ -1,0 +1,310 @@
+Temporary directory: ./tmp.Vw1XUCEDlk/
+k n overlapSketchThreshold minimap:k minimap:w minimap:max_chain_iter edge_threshold
+23 50 4 20 50 400 4000000
+number of threads: 20
+Entering compress():
+Using low memory compression mode.
+resident_set: 2372 KB
+numReads 5436512
+avgReadLen 3301
+maxReadLen 290120
+Reading file took 61680 milliseconds
+After rD.loadFromFile():
+resident_set: 132688 KB
+Starting to populate hash tables
+finished populating hash tables
+15741 milliseconds passed
+Calculating MinHashes took 136634 milliseconds
+After minhash computation:
+resident_set: 2.39636e+06 KB
+numContigs = 306008
+LoneReads
+#LoneReads = 265689
+MinHash passed 54899300 reads
+MinHash passed & not already in graph 5337647 reads
+Merge Sort passed 0 reads
+Aligner passed 5130504 reads
+bsc/lzma2 compression starts
+Extension .base: Compressed 4757838213 bytes to 893406225 bytes
+Extension .complement: Compressed 5211142 bytes to 666386 bytes
+Extension .genome: Compressed 110986444 bytes to 27500042 bytes
+Extension .id: Compressed 21746048 bytes to 9099508 bytes
+Extension .lone: Compressed 562821238 bytes to 138106296 bytes
+Extension .pos: Compressed 372992374 bytes to 227381366 bytes
+Extension .type: Compressed 320234623 bytes to 59716258 bytes
+Total compressed size of all streams is 1355876081 bytes
+Creating tar archive ...
+Tar archive done!
+-rw-rw-r-- 1 qingxi qingxi 1356615680 May 31 14:05 /raid/qingxi/Nanopore-data/zymo.fastqnt50_4.NanoSpring
+Time taken by function: 6204 seconds
+	Command being timed: "./../../build/NanoSpring -c -i /raid/qingxi/Nanopore-data/zymo.fastq -o /raid/qingxi/Nanopore-data/zymo.fastqnt50_4.NanoSpring -n 50 --overlap-sketch-thr 4"
+	User time (seconds): 119711.77
+	System time (seconds): 2026.18
+	Percent of CPU this job got: 1961%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:43:25
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 18550812
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 887802650
+	Voluntary context switches: 8707337
+	Involuntary context switches: 224931
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 34655688
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+Temporary directory: ./tmp.ZBG00qpfCk/
+k n overlapSketchThreshold minimap:k minimap:w minimap:max_chain_iter edge_threshold
+23 50 5 20 50 400 4000000
+number of threads: 20
+Entering compress():
+Using low memory compression mode.
+resident_set: 2344 KB
+numReads 5436512
+avgReadLen 3301
+maxReadLen 290120
+Reading file took 58119 milliseconds
+After rD.loadFromFile():
+resident_set: 132636 KB
+Starting to populate hash tables
+finished populating hash tables
+15229 milliseconds passed
+Calculating MinHashes took 134243 milliseconds
+After minhash computation:
+resident_set: 2.37423e+06 KB
+numContigs = 353531
+LoneReads
+#LoneReads = 302290
+MinHash passed 51894034 reads
+MinHash passed & not already in graph 5253977 reads
+Merge Sort passed 0 reads
+Aligner passed 5082981 reads
+bsc/lzma2 compression starts
+Extension .base: Compressed 4472530266 bytes to 854811844 bytes
+Extension .complement: Compressed 5185463 bytes to 669262 bytes
+Extension .genome: Compressed 122274762 bytes to 30271138 bytes
+Extension .id: Compressed 21746048 bytes to 9166030 bytes
+Extension .lone: Compressed 684486138 bytes to 167863326 bytes
+Extension .pos: Compressed 364604237 bytes to 224485134 bytes
+Extension .type: Compressed 311386841 bytes to 58498210 bytes
+Total compressed size of all streams is 1345764944 bytes
+Creating tar archive ...
+Tar archive done!
+-rw-rw-r-- 1 qingxi qingxi 1346600960 May 31 15:28 /raid/qingxi/Nanopore-data/zymo.fastqnt50_5.NanoSpring
+Time taken by function: 4983 seconds
+	Command being timed: "./../../build/NanoSpring -c -i /raid/qingxi/Nanopore-data/zymo.fastq -o /raid/qingxi/Nanopore-data/zymo.fastqnt50_5.NanoSpring -n 50 --overlap-sketch-thr 5"
+	User time (seconds): 95570.97
+	System time (seconds): 1822.21
+	Percent of CPU this job got: 1954%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:23:03
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 18345256
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 764595334
+	Voluntary context switches: 8574492
+	Involuntary context switches: 183585
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 34282280
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+Temporary directory: ./tmp.Z6EwX8QbuX/
+k n overlapSketchThreshold minimap:k minimap:w minimap:max_chain_iter edge_threshold
+23 60 6 20 50 400 4000000
+number of threads: 20
+Entering compress():
+Using low memory compression mode.
+resident_set: 2208 KB
+numReads 5436512
+avgReadLen 3301
+maxReadLen 290120
+Reading file took 60940 milliseconds
+After rD.loadFromFile():
+resident_set: 132592 KB
+Starting to populate hash tables
+finished populating hash tables
+19098 milliseconds passed
+Calculating MinHashes took 159419 milliseconds
+After minhash computation:
+resident_set: 2.75626e+06 KB
+numContigs = 360658
+LoneReads
+#LoneReads = 308352
+MinHash passed 51885471 reads
+MinHash passed & not already in graph 5237840 reads
+Merge Sort passed 0 reads
+Aligner passed 5075854 reads
+bsc/lzma2 compression starts
+Extension .base: Compressed 4411014749 bytes to 850868889 bytes
+Extension .complement: Compressed 5180466 bytes to 669084 bytes
+Extension .genome: Compressed 122547269 bytes to 30340018 bytes
+Extension .id: Compressed 21746048 bytes to 9146672 bytes
+Extension .lone: Compressed 711190932 bytes to 174389746 bytes
+Extension .pos: Compressed 362819737 bytes to 224028568 bytes
+Extension .type: Compressed 309446718 bytes to 58270406 bytes
+Total compressed size of all streams is 1347713383 bytes
+Creating tar archive ...
+Tar archive done!
+-rw-rw-r-- 1 qingxi qingxi 1348556800 May 31 16:51 /raid/qingxi/Nanopore-data/zymo.fastqnt60_6.NanoSpring
+Time taken by function: 4976 seconds
+	Command being timed: "./../../build/NanoSpring -c -i /raid/qingxi/Nanopore-data/zymo.fastq -o /raid/qingxi/Nanopore-data/zymo.fastqnt60_6.NanoSpring -n 60 --overlap-sketch-thr 6"
+	User time (seconds): 95499.67
+	System time (seconds): 1818.12
+	Percent of CPU this job got: 1955%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:22:57
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 18557072
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 760705224
+	Voluntary context switches: 8068372
+	Involuntary context switches: 181573
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 35911472
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+Temporary directory: ./tmp.1i7ibLJ6Il/
+k n overlapSketchThreshold minimap:k minimap:w minimap:max_chain_iter edge_threshold
+23 70 7 20 50 400 4000000
+number of threads: 20
+Entering compress():
+Using low memory compression mode.
+resident_set: 2364 KB
+numReads 5436512
+avgReadLen 3301
+maxReadLen 290120
+Reading file took 61618 milliseconds
+After rD.loadFromFile():
+resident_set: 132772 KB
+Starting to populate hash tables
+finished populating hash tables
+25826 milliseconds passed
+Calculating MinHashes took 181922 milliseconds
+After minhash computation:
+resident_set: 3.19097e+06 KB
+numContigs = 366429
+LoneReads
+#LoneReads = 313240
+MinHash passed 53503863 reads
+MinHash passed & not already in graph 5224189 reads
+Merge Sort passed 0 reads
+Aligner passed 5070083 reads
+bsc/lzma2 compression starts
+Extension .base: Compressed 4387793925 bytes to 846823399 bytes
+Extension .complement: Compressed 5176461 bytes to 669334 bytes
+Extension .genome: Compressed 122945103 bytes to 30437062 bytes
+Extension .id: Compressed 21746048 bytes to 9154808 bytes
+Extension .lone: Compressed 725572933 bytes to 177882224 bytes
+Extension .pos: Compressed 360994740 bytes to 223395766 bytes
+Extension .type: Compressed 307560975 bytes to 58033104 bytes
+Total compressed size of all streams is 1346395697 bytes
+Creating tar archive ...
+Tar archive done!
+-rw-rw-r-- 1 qingxi qingxi 1347256320 May 31 18:14 /raid/qingxi/Nanopore-data/zymo.fastqnt70_7.NanoSpring
+Time taken by function: 4989 seconds
+	Command being timed: "./../../build/NanoSpring -c -i /raid/qingxi/Nanopore-data/zymo.fastq -o /raid/qingxi/Nanopore-data/zymo.fastqnt70_7.NanoSpring -n 70 --overlap-sketch-thr 7"
+	User time (seconds): 95563.74
+	System time (seconds): 1874.35
+	Percent of CPU this job got: 1952%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:23:10
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 19569236
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 751222802
+	Voluntary context switches: 7772540
+	Involuntary context switches: 186295
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 37579824
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+Temporary directory: ./tmp.X0VVCZQvm7/
+k n overlapSketchThreshold minimap:k minimap:w minimap:max_chain_iter edge_threshold
+23 50 6 20 50 400 4000000
+number of threads: 20
+Entering compress():
+Using low memory compression mode.
+resident_set: 4752 KB
+numReads 5436512
+avgReadLen 3301
+maxReadLen 290120
+Reading file took 60529 milliseconds
+After rD.loadFromFile():
+resident_set: 132728 KB
+Starting to populate hash tables
+finished populating hash tables
+16114 milliseconds passed
+Calculating MinHashes took 139733 milliseconds
+After minhash computation:
+resident_set: 2.37241e+06 KB
+numContigs = 400974
+LoneReads
+#LoneReads = 339753
+MinHash passed 49238512 reads
+MinHash passed & not already in graph 5167286 reads
+Merge Sort passed 0 reads
+Aligner passed 5035538 reads
+bsc/lzma2 compression starts
+Extension .base: Compressed 4218813743 bytes to 823854885 bytes
+Extension .complement: Compressed 5157980 bytes to 668762 bytes
+Extension .genome: Compressed 133020955 bytes to 32913114 bytes
+Extension .id: Compressed 21746048 bytes to 9198558 bytes
+Extension .lone: Compressed 808754766 bytes to 198163924 bytes
+Extension .pos: Compressed 356576375 bytes to 221450442 bytes
+Extension .type: Compressed 302892505 bytes to 57267644 bytes
+Total compressed size of all streams is 1343517329 bytes
+Creating tar archive ...
+Tar archive done!
+-rw-rw-r-- 1 qingxi qingxi 1344450560 May 31 19:33 /raid/qingxi/Nanopore-data/zymo.fastqnt50_6.NanoSpring
+Time taken by function: 4736 seconds
+	Command being timed: "./../../build/NanoSpring -c -i /raid/qingxi/Nanopore-data/zymo.fastq -o /raid/qingxi/Nanopore-data/zymo.fastqnt50_6.NanoSpring -n 50 --overlap-sketch-thr 6"
+	User time (seconds): 90594.11
+	System time (seconds): 1762.36
+	Percent of CPU this job got: 1949%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:18:56
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 19309164
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 720739280
+	Voluntary context switches: 8538331
+	Involuntary context switches: 178647
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 33998616
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

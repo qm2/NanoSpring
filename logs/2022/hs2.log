@@ -1,0 +1,273 @@
+Temporary directory: ./tmp.Sg2bZvFnuu/
+k n overlapSketchThreshold minimap:k minimap:w minimap:max_chain_iter edge_threshold
+23 60 6 20 50 400 4000000
+number of threads: 20
+Entering compress():
+Using low memory compression mode.
+resident_set: 2348 KB
+numReads 3436528
+avgReadLen 24492
+maxReadLen 330829
+Reading file took 590011 milliseconds
+After rD.loadFromFile():
+resident_set: 86112 KB
+Starting to populate hash tables
+finished populating hash tables
+13376 milliseconds passed
+Calculating MinHashes took 611033 milliseconds
+After minhash computation:
+resident_set: 2.87891e+06 KB
+numContigs = 812077
+LoneReads
+#LoneReads = 684261
+MinHash passed 28005812 reads
+MinHash passed & not already in graph 2845417 reads
+Merge Sort passed 0 reads
+Aligner passed 2624451 reads
+bsc/lzma2 compression starts
+Extension .base: Compressed 13204065753 bytes to 2350725668 bytes
+Extension .complement: Compressed 2880083 bytes to 384088 bytes
+Extension .genome: Compressed 4182042879 bytes to 889991062 bytes
+Extension .id: Compressed 13746112 bytes to 6507540 bytes
+Extension .lone: Compressed 5644563918 bytes to 1144768422 bytes
+Extension .pos: Compressed 3586325933 bytes to 2037034520 bytes
+Extension .type: Compressed 3488766384 bytes to 600889544 bytes
+Total compressed size of all streams is 7030300844 bytes
+Creating tar archive ...
+Tar archive done!
+-rw-rw-r-- 1 qingxi qingxi 7032064000 May 28 11:39 /raid/qingxi/Nanopore-data/hs2.fastq.NanoSpring
+Time taken by function: 11756 seconds
+	Command being timed: "./../../build/NanoSpring -c -i /raid/qingxi/Nanopore-data/hs2.fastq -o /raid/qingxi/Nanopore-data/hs2.fastq.NanoSpring"
+	User time (seconds): 214163.99
+	System time (seconds): 5556.10
+	Percent of CPU this job got: 1868%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 3:15:58
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 18078812
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 4
+	Minor (reclaiming a frame) page faults: 2448630782
+	Voluntary context switches: 3931627
+	Involuntary context switches: 1463188
+	Swaps: 0
+	File system inputs: 333669200
+	File system outputs: 134097024
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+Temporary directory: ./tmp.tqxev5KaG1/
+Decompression ...
+numDecodingThreads: 20
+Aiming to use close to or less than 5 GB peak memory.
+Extracting tar archive ...Tar extraction done!
+NumReads:3436528
+NumContigs:812077
+NumEncodingThreads:20
+BSC/LZMA2 decompression ...
+BSC/LZMA2 decompression done!
+Took 152019 milliseconds
+Generating reads...
+Done!
+Took 79748 milliseconds
+Sorting and writing to file...
+Done!
+Sorting and writing to file took 458552 milliseconds
+Total time for decompression 704783 milliseconds
+	Command being timed: "./../../build/NanoSpring -d -i /raid/qingxi/Nanopore-data/hs2.fastq.NanoSpring -o /raid/qingxi/Nanopore-data/hs2.fastq.NanoSpring.reads"
+	User time (seconds): 4057.78
+	System time (seconds): 216.67
+	Percent of CPU this job got: 606%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 11:45.03
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 5580080
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 2
+	Minor (reclaiming a frame) page faults: 37219422
+	Voluntary context switches: 12282
+	Involuntary context switches: 15836
+	Swaps: 0
+	File system inputs: 16
+	File system outputs: 278069688
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+Counting k-mers.
+Stage 1: 0%Stage 1: 1%Stage 1: 2%Stage 1: 3%Stage 1: 4%Stage 1: 5%Stage 1: 6%Stage 1: 7%Stage 1: 8%Stage 1: 9%Stage 1: 10%Stage 1: 11%Stage 1: 12%Stage 1: 13%Stage 1: 14%Stage 1: 15%Stage 1: 16%Stage 1: 17%Stage 1: 18%Stage 1: 19%Stage 1: 20%Stage 1: 21%Stage 1: 22%Stage 1: 23%Stage 1: 24%Stage 1: 25%Stage 1: 26%Stage 1: 27%Stage 1: 28%Stage 1: 29%Stage 1: 30%Stage 1: 31%Stage 1: 32%Stage 1: 33%Stage 1: 34%Stage 1: 35%Stage 1: 36%Stage 1: 37%Stage 1: 38%Stage 1: 39%Stage 1: 40%Stage 1: 41%Stage 1: 42%Stage 1: 43%Stage 1: 44%Stage 1: 45%Stage 1: 46%Stage 1: 47%Stage 1: 48%Stage 1: 49%Stage 1: 50%Stage 1: 51%Stage 1: 52%Stage 1: 53%Stage 1: 54%Stage 1: 55%Stage 1: 56%Stage 1: 57%Stage 1: 58%Stage 1: 59%Stage 1: 60%Stage 1: 61%Stage 1: 62%Stage 1: 63%Stage 1: 64%Stage 1: 65%Stage 1: 66%Stage 1: 67%Stage 1: 68%Stage 1: 69%Stage 1: 70%Stage 1: 71%Stage 1: 72%Stage 1: 73%Stage 1: 74%Stage 1: 75%Stage 1: 76%Stage 1: 77%Stage 1: 78%Stage 1: 79%Stage 1: 80%Stage 1: 81%Stage 1: 82%Stage 1: 83%Stage 1: 84%Stage 1: 85%Stage 1: 86%Stage 1: 87%Stage 1: 88%Stage 1: 89%Stage 1: 90%Stage 1: 91%Stage 1: 92%Stage 1: 93%Stage 1: 94%Stage 1: 95%Stage 1: 96%Stage 1: 97%Stage 1: 98%Stage 1: 99%Stage 1: 100%
+Stage 2: 0%Stage 2: 1%Stage 2: 2%Stage 2: 3%Stage 2: 4%Stage 2: 5%Stage 2: 6%Stage 2: 7%Stage 2: 8%Stage 2: 9%Stage 2: 10%Stage 2: 11%Stage 2: 12%Stage 2: 13%Stage 2: 14%Stage 2: 15%Stage 2: 16%Stage 2: 17%Stage 2: 18%Stage 2: 19%Stage 2: 20%Stage 2: 21%Stage 2: 22%Stage 2: 23%Stage 2: 24%Stage 2: 25%Stage 2: 26%Stage 2: 27%Stage 2: 28%Stage 2: 29%Stage 2: 30%Stage 2: 31%Stage 2: 32%Stage 2: 33%Stage 2: 34%Stage 2: 35%Stage 2: 36%Stage 2: 37%Stage 2: 38%Stage 2: 39%Stage 2: 40%Stage 2: 41%Stage 2: 42%Stage 2: 43%Stage 2: 44%Stage 2: 45%Stage 2: 46%Stage 2: 47%Stage 2: 48%Stage 2: 49%Stage 2: 50%Stage 2: 51%Stage 2: 52%Stage 2: 53%Stage 2: 54%Stage 2: 55%Stage 2: 56%Stage 2: 57%Stage 2: 58%Stage 2: 59%Stage 2: 60%Stage 2: 61%Stage 2: 62%Stage 2: 63%Stage 2: 64%Stage 2: 65%Stage 2: 66%Stage 2: 67%Stage 2: 68%Stage 2: 69%Stage 2: 70%Stage 2: 71%Stage 2: 72%Stage 2: 73%Stage 2: 74%Stage 2: 75%Stage 2: 76%Stage 2: 77%Stage 2: 78%Stage 2: 79%Stage 2: 80%Stage 2: 81%Stage 2: 82%Stage 2: 83%Stage 2: 84%Stage 2: 85%Stage 2: 86%Stage 2: 87%Stage 2: 88%Stage 2: 89%Stage 2: 90%Stage 2: 91%Stage 2: 92%Stage 2: 93%Stage 2: 94%Stage 2: 95%Stage 2: 96%Stage 2: 97%Stage 2: 98%Stage 2: 99%Stage 2: 100%
+Filtering k-mers.
+0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99%100%
+Running compression.
+0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99%100%
+DNA size        : 6347725078
+Quality size    : 326373
+Header size     : 3058
+Meta size       : 58
+Info size       : 217
+Total time      : 8331.7s
+	Command being timed: "./../../../colord/bin/colord compress-ont -p balanced -t 20 -q none -i none /raid/qingxi/Nanopore-data/hs2.fastq /raid/qingxi/Nanopore-data/hs2.fastq.colord"
+	User time (seconds): 122929.34
+	System time (seconds): 1587.63
+	Percent of CPU this job got: 1493%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:18:55
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 23612636
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 20
+	Minor (reclaiming a frame) page faults: 364605526
+	Voluntary context switches: 41707184
+	Involuntary context switches: 679633
+	Swaps: 0
+	File system inputs: 152858048
+	File system outputs: 104422352
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+Running decompression.
+0%1%2%3%4%5%6%7%8%9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99%100%
+	Command being timed: "./../../../colord/bin/colord decompress /raid/qingxi/Nanopore-data/hs2.fastq.colord /raid/qingxi/Nanopore-data/colord_decompressed.fastq"
+	User time (seconds): 3440.62
+	System time (seconds): 177.12
+	Percent of CPU this job got: 120%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 50:00.20
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 6639024
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 18812847
+	Voluntary context switches: 55535
+	Involuntary context switches: 94464
+	Swaps: 0
+	File system inputs: 6658720
+	File system outputs: 328834504
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+Parameters - k: 7, l: 6, b: 32 
+Starting encoding in FAST MODE with 20 threads... 
+Starting adaptative encoding for 33 (32 + 1) blocks, and update every 4 blocks... 
+Starting parallelized fast encoding...
+Total encoded blocks: 16992 
+Stream <original size in bytes> -> <compressed size in bytes> (<compression ratio>)
+IDs   695428184 -> 84303047 (0.121)
+Bases 84169604141 -> 19633798807 (0.233)
+Quals 84169604141 -> 48621641279 (0.578)
+Total 169055255634 -> 68347191854 (0.404)
+Total compression time: 757.15 s
+	Command being timed: "./../../../EnanoFASTQ/enano/enano -t 20 /raid/qingxi/Nanopore-data/hs2.fastq /raid/qingxi/Nanopore-data/hs2.fastq.enano"
+	User time (seconds): 8014.69
+	System time (seconds): 106.22
+	Percent of CPU this job got: 1072%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 12:37.16
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 432760
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 8
+	Minor (reclaiming a frame) page faults: 3345154
+	Voluntary context switches: 75626
+	Involuntary context switches: 62843
+	Swaps: 0
+	File system inputs: 41681560
+	File system outputs: 133490744
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+Parameters - k: 7, l: 6, b: 32 
+Starting decoding with 20 threads... 
+Starting decoding with context model update... 
+Starting parallelized fast decoding... 
+Total decoded blocks: 16992
+Total decompression time: 1226.56 s
+	Command being timed: "./../../../EnanoFASTQ/enano/enano -d -t 20 /raid/qingxi/Nanopore-data/hs2.fastq.enano /raid/qingxi/Nanopore-data/enano_decompressed.fastq"
+	User time (seconds): 14388.35
+	System time (seconds): 179.84
+	Percent of CPU this job got: 1187%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 20:26.59
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 548816
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 1
+	Minor (reclaiming a frame) page faults: 8320413
+	Voluntary context switches: 104001
+	Involuntary context switches: 128745
+	Swaps: 0
+	File system inputs: 85889688
+	File system outputs: 331544464
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+	Command being timed: "pigz -p 20 /raid/qingxi/Nanopore-data/hs2.fastq.NanoSpring.reads"
+	User time (seconds): 13541.51
+	System time (seconds): 98.85
+	Percent of CPU this job got: 1768%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 12:51.13
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 15204
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 2
+	Minor (reclaiming a frame) page faults: 73782
+	Voluntary context switches: 1767258
+	Involuntary context switches: 224571
+	Swaps: 0
+	File system inputs: 164406000
+	File system outputs: 45221216
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+	Command being timed: "pigz -d -k -p 20 /raid/qingxi/Nanopore-data/hs2.fastq.NanoSpring.reads.gz"
+	User time (seconds): 477.79
+	System time (seconds): 140.38
+	Percent of CPU this job got: 138%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 7:26.26
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 2436
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 844
+	Voluntary context switches: 5864840
+	Involuntary context switches: 1158
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 164400472
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
