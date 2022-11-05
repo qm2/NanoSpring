@@ -13,7 +13,9 @@ jobs:
     # cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: ubuntu-latest
-
+    strategy:
+        matrix:
+            cpp-version: [gcc-4.9, gcc-5, gcc-6, gcc-7, gcc-8, gcc-9, gcc-10]
     steps:
     - uses: actions/checkout@v2
 
