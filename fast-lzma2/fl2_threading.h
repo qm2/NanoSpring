@@ -14,6 +14,7 @@
 #define THREADING_H_938743
 
 #include "mem.h"
+#include "util.h"
 
 #ifndef FL2_XZ_BUILD
 #  ifdef _WIN32
