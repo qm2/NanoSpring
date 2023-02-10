@@ -91,9 +91,6 @@ int FL2_pthread_join(FL2_pthread_t thread, void** value_ptr);
 
 #elif !defined(FL2_SINGLETHREAD) && defined(MYTHREAD_POSIX)
 /* ===   POSIX Systems   === */
-#define _GNU_SOURCE 1
-#define __signed__
-	
 #  include <sys/time.h>
 #  include <pthread.h>
 
