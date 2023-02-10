@@ -2,7 +2,7 @@ SRC = $(wildcard *.c)
 OBJ = $(SRC:.c=.o)
 DEP = $(OBJ:.o=.d)
 
-CFLAGS:=-Wall -O2 -pthread -fPIC -std=c99 -fcommon
+CFLAGS:=-Wall -O2 -pthread -fPIC -std=gnu99 -fcommon
 AR:=ar -rcs
 RM:=rm -rf
 
