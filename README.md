@@ -27,7 +27,7 @@ Note that if NanoSpring is installed this way, it should be invoked with the com
 ### Download repository
 
 ```
-git clone --recursive https://github.com/qm2/NanoSpring.git
+git clone https://github.com/qm2/NanoSpring.git
 ```
 
 ### Install
